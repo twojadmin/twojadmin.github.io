@@ -73,8 +73,15 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
 @media (pointer:coarse){
   .pads{display:flex}
   .keys{display:none}
-  .dash{bottom:calc(156px + env(safe-area-inset-bottom,0px));left:16px;transform:none;max-width:calc(100% - 160px)}
+  .pads{padding-block-end:calc(54px + env(safe-area-inset-bottom,0px))}
+  .dash{bottom:calc(6px + env(safe-area-inset-bottom,0px));left:8px;right:8px;transform:none;max-width:none;justify-content:space-between;gap:10px;padding:4px 10px}
+  .dash .st{flex:1 1 0}
+  .dash .st:first-of-type{flex:2 1 0}
+  .dash .st b{font-size:13px;white-space:nowrap}
+  .dash .st span{white-space:nowrap}
+  .dash .hp{width:100%;max-width:70px}
 }
+@media (max-width:600px){.tools{flex-direction:column;align-items:stretch;width:var(--mm);max-width:none}.tools .ghost{padding:5px 6px;font-size:12px}}
 @media (max-width:420px){.pads button{width:58px;height:58px}.pads .brake{height:84px}.pads .joy{width:116px;height:116px}.pads .small,.pads .act{height:40px}}
 .ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,12,15,.66);padding-inline:16px;padding-block:16px;box-sizing:border-box;pointer-events:auto}
 .card{width:100%;max-width:560px;max-height:100%;overflow:auto;box-sizing:border-box;background:#1a1d22;border:1px solid var(--line);border-top:6px solid var(--cab);border-radius:8px;padding:20px 22px;display:grid;gap:12px}
@@ -753,6 +760,16 @@ function landmarkSpot(lm) {
 }
 
 // ---------- routing ----------
+let auxRoutes = [];
+const auxCache = {};
+const AUX_COL = { fuel: '#3b8bff', repair: '#e8833a' }, AUX_RGB = { fuel: '59,139,255', repair: '232,131,58' };
+function auxRoute(kind, n) {
+  const nd = nearestNode(n.w.sx, n.w.sy);
+  if (!auxCache[kind] || auxCache[kind].target !== nd.id || auxCache[kind].city !== city) auxCache[kind] = { target: nd.id, city, dij: dijkstra(nd.id) };
+  const r = routeFrom(player.x, player.y, auxCache[kind].dij, n.w.sx, n.w.sy);
+  r.tgt = { x: n.w.sx, y: n.w.sy, ws: n.w }; r.kind = kind; r.dist = Math.round(n.d / 10);
+  return r;
+}
 function dijkstra(target) {
   const ns = city.nodes, n = ns.length, D = new Float64Array(n).fill(Infinity), nxt = new Int32Array(n).fill(-1), nxtE = new Int32Array(n).fill(-1);
   const hd = [], hn = [];
@@ -1434,7 +1451,7 @@ function newWorld(kind, sd) {
   if (kind === 'random') { seed = sd || seed; city = gridWorld(genCity(seed)); } else city = CITIES.find(c => c.id === kind).load();
   prepTransit(city); transitVeh.clear(); transitT = 0; player.roof = null;
   try { localStorage.setItem('kpm-seed', String(seed)); } catch (e) { /* storage unavailable */ }
-  cars = []; peds = []; parts = []; skids = []; pops = []; offers = []; job = null; routeCache = null; route = null;
+  cars = []; peds = []; parts = []; skids = []; pops = []; offers = []; job = null; routeCache = null; route = null; auxRoutes = [];
   if (city.parkSpots) for (const s of city.parkSpots) if (s.take) { const c = makeCar(randType(mulberry32(Math.round(s.x * 7 + s.y))), s.x, s.y, s.a); c.keep = true; cars.push(c); }
   // start in a taxi: Plac Wolności in Poznań, the middle of a generated town
   const startLm = (CITIES.find(c => c.id === kind) || {}).startLm, lm = city.real && startLm && city.landmarks.find(l => l.name.startsWith(startLm));
@@ -2272,7 +2289,7 @@ function step(dt) {
   // a smoking car gets a free repair at any workshop
   if (state === 'play' && player.mode === 'car' && city.workshops.length && !player.car.t.heli) {
     const c = player.car, bad = c.hp < c.t.hp * 0.45;
-    if (bad && !c.warned) { c.warned = true; toast(L('Auto dymi! Jedź do warsztatu (pomarańczowe W). Naprawa jest darmowa.', 'The car is smoking! Drive to a garage (orange G). Repairs are free.')); }
+    if (bad && !c.warned) { c.warned = true; toast(L('Auto dymi! Pomarańczowa linia prowadzi do warsztatu (W). Naprawa jest darmowa.', 'The car is smoking! The orange line leads to a garage (G). Repairs are free.')); }
     if (!bad) c.warned = false;
     if (c.hp < c.t.hp && speedOf(c) < 70) {
       const n = nearestWorkshop(c.x, c.y);
@@ -2300,6 +2317,13 @@ function step(dt) {
       route = flying ? { pts: [{ x: px, y: py }, { x: tgt.x, y: tgt.y }], len: Math.hypot(tgt.x - px, tgt.y - py) } : routeFrom(px, py, routeCache, tgt.x, tgt.y);
       route.tgt = tgt; route.kind = kind;
     } else route = null;
+    // extra guidance even with a passenger on board: blue to a petrol station when fuel is low, orange to a garage when the car is damaged
+    auxRoutes = [];
+    if (player.mode === 'car' && !player.car.t.heli) {
+      const c = player.car;
+      if (c.t.fuel && c.fuel != null && c.fuel < c.t.tank * 0.12 && city.stations.length && !(route && route.kind === 'fuel')) auxRoutes.push(auxRoute('fuel', nearestStation(px, py)));
+      if (c.hp < c.t.hp * 0.45 && city.workshops.length && !(route && route.kind === 'repair')) auxRoutes.push(auxRoute('repair', nearestWorkshop(px, py)));
+    }
   }
   // particles, skids, popups
   for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.s += dt * (p.spark ? 0 : 6); }
@@ -2539,6 +2563,7 @@ function draw() {
   const v = { x0: cam.x - RV, y0: cam.y - RV, x1: cam.x + RV, y1: cam.y + RV };
   const q = queryDraw(v);
   drawGround(v, q);
+  drawAuxLines();
   drawRouteLine();
   // markers on the ground
   if (!job) for (const o of offers) if (o.x > v.x0 - 60 && o.x < v.x1 + 60 && o.y > v.y0 - 60 && o.y < v.y1 + 60) marker(o.x, o.y, '#f2c230', null, o.ph);
@@ -2604,10 +2629,21 @@ function draw() {
     let tp = route.pts[1];
     for (let k = 1; k < route.pts.length; k++) { tp = route.pts[k]; if (Math.hypot(tp.x - a0.x, tp.y - a0.y) > 70) break; }
     const ang = Math.atan2(tp.y - player.y, tp.x - player.x), R0 = player.mode === 'car' ? 40 : 22;
-    const col = route.kind === 'repair' ? '#e8833a' : route.kind === 'fuel' ? '#c9a227' : job && job.inCar ? '#6cc070' : '#f2c230';
+    const col = route.kind === 'repair' ? '#e8833a' : route.kind === 'fuel' ? '#3b8bff' : job && job.inCar ? '#6cc070' : '#f2c230';
     ctx.save(); ctx.translate(player.x + Math.cos(ang) * R0, player.y + Math.sin(ang) * R0); ctx.rotate(ang);
     ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-6, -8); ctx.lineTo(-2, 0); ctx.lineTo(-6, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  // extra arrows (fuel, garage) on a wider ring
+  if (state === 'play' && player.mode === 'car') for (const r of auxRoutes) {
+    if (r.pts.length < 2) continue;
+    let tp = r.pts[1];
+    for (let k = 1; k < r.pts.length; k++) { tp = r.pts[k]; if (Math.hypot(tp.x - player.x, tp.y - player.y) > 70) break; }
+    const ang = Math.atan2(tp.y - player.y, tp.x - player.x), R1 = 58;
+    ctx.save(); ctx.translate(player.x + Math.cos(ang) * R1, player.y + Math.sin(ang) * R1); ctx.rotate(ang);
+    ctx.fillStyle = AUX_COL[r.kind]; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-5, -7); ctx.lineTo(-2, 0); ctx.lineTo(-5, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.restore();
   }
   // nearest enterable car hint when on foot
@@ -2629,6 +2665,14 @@ function draw() {
       ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -10); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill();
       ctx.restore();
     }
+  }
+  if (state === 'play') for (const r of auxRoutes) {
+    const [sx, sy] = w2s(r.tgt.x, r.tgt.y);
+    if (sx >= 0 && sx <= vw && sy >= 0 && sy <= vh) continue;
+    const a = Math.atan2(sy - cam.cy, sx - cam.cx), m = 40;
+    const ex = clamp(cam.cx + Math.cos(a) * vw, m, vw - m), ey = clamp(cam.cy + Math.sin(a) * vh, m + 120, vh - m - 60);
+    ctx.save(); ctx.translate(ex, ey); ctx.rotate(a); ctx.fillStyle = AUX_COL[r.kind]; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-7, -9); ctx.lineTo(-7, 9); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
   }
   drawSpeedo();
 }
@@ -2674,7 +2718,7 @@ function* buildMinimapG(w) {
 }
 function drawOverlay(g, M, big) {
   if (route) {
-    g.strokeStyle = route.kind === 'repair' ? '#e8833a' : route.kind === 'fuel' ? '#c9a227' : job && job.inCar ? '#6cc070' : '#f2c230'; g.lineWidth = big ? 4 : 3; g.lineJoin = 'round'; g.beginPath();
+    g.strokeStyle = route.kind === 'repair' ? '#e8833a' : route.kind === 'fuel' ? '#3b8bff' : job && job.inCar ? '#6cc070' : '#f2c230'; g.lineWidth = big ? 4 : 3; g.lineJoin = 'round'; g.beginPath();
     route.pts.forEach((p, k) => { const [x, y] = M(p.x, p.y); k ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
   }
   const dot = (x, y, r, col) => { const [sx, sy] = M(x, y); g.fillStyle = '#121418'; g.beginPath(); g.arc(sx, sy, r + 1.5, 0, 7); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); };
@@ -2684,7 +2728,8 @@ function drawOverlay(g, M, big) {
   for (const c of cars) if (c.t.heli && c !== player.car) dot(c.x, c.y, big ? 6 : 3.5, '#ffffff');
   for (const tv of transitVeh.values()) dot(tv.x, tv.y, big ? 4 : 2.2, tv.tram ? '#e0412f' : '#4f86d1');
   if (route && route.kind === 'repair') dot(route.tgt.x, route.tgt.y, big ? 7 : 4.5, '#e8833a');
-  if (route && route.kind === 'fuel') dot(route.tgt.x, route.tgt.y, big ? 7 : 4.5, '#c9a227');
+  if (route && route.kind === 'fuel') dot(route.tgt.x, route.tgt.y, big ? 7 : 4.5, '#3b8bff');
+  for (const r of auxRoutes) { g.strokeStyle = AUX_COL[r.kind]; g.lineWidth = big ? 3 : 2; g.setLineDash([6, 5]); g.beginPath(); r.pts.forEach((p, k) => { const [x, y] = M(p.x, p.y); k ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); g.setLineDash([]); dot(r.tgt.x, r.tgt.y, big ? 7 : 4.5, AUX_COL[r.kind]); }
   const a = player.mode === 'car' ? player.car.a : player.a, r = big ? 11 : 7, [px, py] = M(player.x, player.y);
   g.save(); g.translate(px, py); g.rotate(a);
   g.fillStyle = '#ffffff'; g.strokeStyle = '#121418'; g.lineWidth = 1.5;
@@ -2914,9 +2959,22 @@ function drawStreetNames(q, v) {
   }
 }
 // the route painted on the street ahead, as a moving dashed line
+function drawAuxLines() {
+  if (state !== 'play') return;
+  for (const r of auxRoutes) {
+    if (r.pts.length < 2) continue;
+    ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(player.x, player.y);
+    let acc = 0, px = player.x, py = player.y;
+    for (let k = 1; k < r.pts.length && acc < 3500; k++) { const p = r.pts[k]; acc += Math.hypot(p.x - px, p.y - py); ctx.lineTo(p.x, p.y); px = p.x; py = p.y; }
+    ctx.strokeStyle = 'rgba(18,20,24,.35)'; ctx.lineWidth = 9; ctx.setLineDash([14, 14]); ctx.lineDashOffset = -T * 70; ctx.stroke();
+    ctx.strokeStyle = `rgba(${AUX_RGB[r.kind]},.95)`; ctx.lineWidth = 4.5; ctx.stroke();
+    ctx.restore();
+  }
+}
 function drawRouteLine() {
   if (!route || route.pts.length < 2 || state !== 'play') return;
-  const col = route.kind === 'repair' ? '232,131,58' : route.kind === 'fuel' ? '201,162,39' : job && job.inCar ? '108,192,112' : '242,194,48';
+  const col = route.kind === 'repair' ? '232,131,58' : route.kind === 'fuel' ? '59,139,255' : job && job.inCar ? '108,192,112' : '242,194,48';
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(player.x, player.y);
   let acc = 0, px = player.x, py = player.y;
@@ -2942,7 +3000,7 @@ function hud(dt) {
     jb.classList.add('on');
     setT('jobWho', job.who); setT('jobFare', zl(job.fare));
     const left = job.limit - job.t;
-    setT('jobWhere', (job.inCar ? '→ ' + job.dest.addr : L('Czeka przy porzuconym aucie. Wróć po pasażera.', 'Waiting by the car you left. Go back for your passenger.')));
+    setT('jobWhere', (job.inCar ? '→ ' + job.dest.addr : L('Czeka przy porzuconym aucie. Wróć po pasażera.', 'Waiting by the car you left. Go back for your passenger.')) + auxRoutes.map(r => r.kind === 'fuel' ? L(` · mało paliwa: niebieska linia do stacji (${r.dist} m)`, ` · low fuel: blue line to a station (${r.dist} m)`) : L(` · auto dymi: pomarańczowa linia do warsztatu (${r.dist} m)`, ` · car smoking: orange line to a garage (${r.dist} m)`)).join(''));
     $('jobBarW').hidden = false;
     $('jobBarW').classList.toggle('late', left < 0);
     $('jobBar').style.width = clamp(left / job.limit, 0, 1) * 100 + '%';
@@ -3010,7 +3068,7 @@ function burnFuel(c, dist, thr, dt) {
   c.fuel = Math.max(0, c.fuel - used);
   if (dist > 0.5) { const inst = used / (dist / 10000) * 100, k = Math.min(1, dist / 3000); c.avgL = c.avgL + (inst - c.avgL) * k; }
   if (c.fuel <= 0) { toast(L('Skończyło się paliwo! Dotoczysz się kawałek, potem weź inne auto albo dojedź na stację.', 'Out of fuel! You will coast a bit; then take another car or reach a station.')); snd('crash', 0.2); }
-  else if (c.fuel < c.t.tank * 0.12 && !c.fuelWarned) { c.fuelWarned = true; toast(L('Mało paliwa. Strzałka prowadzi do najbliższej stacji (żółte P).', 'Low fuel. The arrow leads to the nearest petrol station (yellow F).')); }
+  else if (c.fuel < c.t.tank * 0.12 && !c.fuelWarned) { c.fuelWarned = true; toast(L('Mało paliwa. Niebieska linia prowadzi do najbliższej stacji (żółte P).', 'Low fuel. The blue line leads to the nearest petrol station (yellow F).')); }
 }
 function lowFuel() {
   const c = player.mode === 'car' ? player.car : null;
