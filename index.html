@@ -46,6 +46,12 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .cash{display:flex;align-items:baseline;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px}
 .cash b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--cab);font-variant-numeric:tabular-nums;line-height:1.1}
 .cash span{font-size:13px;color:var(--dim)}
+.cash{flex-wrap:wrap;row-gap:2px}.cash b,.cash span,.costs{white-space:nowrap}
+.costs{pointer-events:auto;font:inherit;font-size:13px;color:var(--dim);background:none;border:0;border-left:1px solid var(--line);padding:0 0 0 10px;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+.bill.ledger{top:64px;width:420px;max-height:calc(100% - 150px);overflow:auto;cursor:default;border-color:var(--line);background:#16181c}
+.ledger .lsum{margin-bottom:8px}
+.ledger .litems .brow{border-top:1px solid var(--line);padding:4px 0;font-size:13px}
+.ledger .litems small{color:var(--dim)}
 .wanted{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--stop);border-radius:6px;padding:3px 10px}
 .wanted b{font-size:18px;letter-spacing:2px;color:var(--stop)}
 .wanted span{font-size:13px;color:var(--paper);font-variant-numeric:tabular-nums}
@@ -62,6 +68,7 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .bar.late i{background:var(--stop)}
 .mmw{position:absolute;top:12px;right:16px;width:var(--mm);height:var(--mm);pointer-events:auto;cursor:pointer;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#1d4f66}
 .mmw canvas{width:100%;height:100%;display:block}
+.app.nomm .tools{top:12px}
 .mmw small{position:absolute;right:4px;bottom:2px;font-size:11px;color:var(--paper);text-shadow:0 1px 2px #000}
 .osm{position:absolute;right:4px;bottom:calc(2px + env(safe-area-inset-bottom,0px));font-size:11px;line-height:1.2;color:var(--paper);background:var(--panel);padding:1px 5px;border-radius:3px}
 .dash{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 12px;white-space:nowrap;max-width:calc(100% - 32px);box-sizing:border-box}
@@ -79,6 +86,7 @@ kbd{font-family:var(--ui);font-size:12px;border:1px solid var(--line);border-bot
 .bill{position:absolute;left:50%;top:42%;transform:translateX(-50%);width:340px;max-width:calc(100% - 32px);box-sizing:border-box;background:var(--panel);border:1px solid #e8833a;border-radius:6px;padding:10px 14px;font-size:14px;line-height:1.35;pointer-events:auto;cursor:pointer}
 .bill h3{margin:0 0 6px;font-size:16px;color:#ffb27a}
 .bill .brow{display:flex;justify-content:space-between;gap:12px}
+.bill .brow b{white-space:nowrap}
 .bill .sum{border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
 .bill p{margin:8px 0 4px}
 .bill small{color:var(--dim)}
@@ -181,7 +189,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
   <canvas id="view"></canvas>
   <div class="hud">
     <div class="tl">
-      <div class="cash"><b id="money">0 zł</b><span id="trips">kursy: 0</span><span id="clock" title="Rozkład jazdy komunikacji miejskiej według tej godziny"></span></div>
+      <div class="cash"><b id="money">0 zł</b><span id="trips">kursy: 0</span><span id="clock" title="Rozkład jazdy komunikacji miejskiej według tej godziny"></span><button class="costs" id="costBtn" type="button" title="Rachunek kosztów (K)">koszty: 0 zł</button></div>
       <div class="wanted" id="wanted" hidden><b id="stars">★☆☆☆</b><span id="fines">mandaty: 0 zł</span></div>
       <div class="job" id="job">
         <div class="who"><span id="jobWho">Szukaj pasażera</span><em id="jobFare"></em></div>
@@ -192,7 +200,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
     </div>
     <div class="mmw" id="mmw" title="Pokaż mapę miasta"><canvas id="mm" width="224" height="224"></canvas><small id="mmLbl">© OpenStreetMap</small></div>
     <small class="osm" id="osmLbl">© OpenStreetMap</small>
-    <div class="tools"><button class="ghost" id="pauseBtn" type="button">Pauza</button><button class="ghost" id="muteBtn" type="button">Dźwięk</button><button class="ghost" id="setBtn" type="button">Ustawienia</button><button class="ghost" id="autoBtn" type="button" title="Autopilot (O): jedzie sam do celu">Autopilot</button></div>
+    <div class="tools"><button class="ghost" id="pauseBtn" type="button">Pauza</button><button class="ghost" id="muteBtn" type="button">Dźwięk</button><button class="ghost" id="setBtn" type="button">Ustawienia</button><button class="ghost" id="autoBtn" type="button" title="Autopilot (O): jedzie sam do celu">Autopilot</button><button class="ghost" id="rentBtn" type="button" title="Nawigacja do aut na wynajem (R)">Wynajem</button><button class="ghost" id="mapBtn" type="button" title="Mapa miasta (M)" hidden>Mapa</button></div>
     <button class="ghost fuelbtn" id="fuelBtn" type="button" hidden>Tankuj (T)</button>
     <div class="dash" id="dash">
       <div class="spd"><span id="spd">0</span><small>km/h</small></div>
@@ -203,6 +211,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
     <div class="keys" id="keys"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>M</kbd> mapa · <kbd>H</kbd> klakson · <kbd>O</kbd> autopilot</div>
     <div class="toast hide" id="toast"></div>
     <div class="bill" id="bill" hidden></div>
+    <div class="bill ledger" id="ledger" hidden></div>
   </div>
   <div class="pads" id="pads">
     <div class="pg"><div class="joy" id="joy" aria-label="Joystick: kierunek jazdy"><div class="knob" id="knob"></div></div></div>
@@ -280,10 +289,10 @@ const MIX_SUM = TRAFFIC_MIX.reduce((a, m) => a + m[1], 0);
 function randType(rand = Math.random) { let s = rand() * MIX_SUM, acc = 0; for (const [k, w] of TRAFFIC_MIX) { acc += w; if (s < acc) return k; } return 'sedan'; }
 // fictional car-rental companies (colour of their parking bays, their fleet) and fictional insurers
 const RENT_COS = [
-  { n: 'Zielony Kluczyk', col: '#35c46a', cars: ['mikro', 'sedan', 'mikro', 'kombi'], ins: 1 },
-  { n: 'Fioletowa Fura', col: '#a066f0', cars: ['sport', 'roadster', 'super', 'sport'], ins: 2 },
-  { n: 'Pomarańczowe Koła', col: '#ff8a1f', cars: ['van', 'kombi', 'truck', 'van'], ins: 3 },
-  { n: 'Błękitny Bak', col: '#2fb8e0', cars: ['sedan', 'kombi', 'roadster', 'sedan'], ins: 1 },
+  { n: 'Zielony Kluczyk', col: '#35c46a', cars: ['mikro', 'sedan', 'mikro', 'kombi'], ins: 1, start: 3, km: 1.2, prot: 9 },
+  { n: 'Fioletowa Fura', col: '#a066f0', cars: ['sport', 'roadster', 'super', 'sport'], ins: 2, start: 15, km: 3.5, prot: 29 },
+  { n: 'Pomarańczowe Koła', col: '#ff8a1f', cars: ['van', 'kombi', 'truck', 'van'], ins: 3, start: 8, km: 2.2, prot: 15 },
+  { n: 'Błękitny Bak', col: '#2fb8e0', cars: ['sedan', 'kombi', 'roadster', 'sedan'], ins: 1, start: 5, km: 1.6, prot: 9 },
 ];
 const INSURERS = ['TU Spokojna Głowa', 'TU Złoty Zderzak', 'TU Miękkie Lądowanie', 'TU Bezpieczny Zakręt'];
 // rough price of a full repair after a crash, PLN
@@ -1223,7 +1232,18 @@ function landmarkSpot(lm) {
 // ---------- routing ----------
 let auxRoutes = [];
 const auxCache = {};
-const AUX_COL = { fuel: '#3b8bff', repair: '#e8833a' }, AUX_RGB = { fuel: '59,139,255', repair: '232,131,58' };
+const AUX_COL = { fuel: '#3b8bff', repair: '#e8833a', rent: '#b07cff' }, AUX_RGB = { fuel: '59,139,255', repair: '232,131,58', rent: '176,124,255' };
+// navigation to the nearest rental bay: always on foot, in a car when switched on (R or the Rental button)
+let rentNav = false;
+function setRentNav(on) {
+  rentNav = on; routeT = 0;
+  $('rentBtn').classList.toggle('on', on); $('rentBtn').textContent = on ? L('Wynajem: wł.', 'Rental: on') : L('Wynajem', 'Rental');
+}
+function toggleRentNav() {
+  if (state !== 'play') return;
+  setRentNav(!rentNav);
+  toast(rentNav ? L('Nawigacja do aut na wynajem włączona: fioletowa linia prowadzi do najbliższej koperty.', 'Rental navigation on: the purple line leads to the nearest bay.') : L('Nawigacja do aut na wynajem wyłączona.', 'Rental navigation off.'));
+}
 // colour of the main route line: passenger yellow, drop-off green, garage orange, petrol blue, rental car purple
 const ROUTE_COL = { repair: ['#e8833a', '232,131,58'], fuel: ['#3b8bff', '59,139,255'], rent: ['#b07cff', '176,124,255'] };
 function routeCol(rgb) { const c = route && ROUTE_COL[route.kind] || (job && job.inCar ? ['#6cc070', '108,192,112'] : ['#f2c230', '242,194,48']); return c[rgb ? 1 : 0]; }
@@ -1478,7 +1498,7 @@ function spawnParked(px, py, minD, maxD) {
 // rental cars: bays painted along the kerb all over town, in the colour of a (fictional) rental company
 function rentalSpots(w) {
   if (w.rentals) return w.rentals;
-  const rnd = mulberry32(5521), out = [], minD = w.gen ? 2400 : 3200;
+  const rnd = mulberry32(5521), out = [], minD = w.gen ? 1300 : 1800;
   const cand = w.edges.filter(e => e.cls >= 2 && e.cls <= 4 && e.len > 160 && e.w >= 70);
   for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
   for (const e of cand) {
@@ -1558,12 +1578,22 @@ function updateTow(dt) {
   const move = vmax => {
     J.cw = (J.cw || 0) - dt; if (J.cw <= 0) { J.cw = 0.6; clearWay(tr, 450); }
     const ca = Math.cos(tr.a), sa = Math.sin(tr.a);
-    J.stuck = J.v < 5 ? (J.stuck || 0) + dt : J.v > 60 ? 0 : J.stuck;   // stuck behind something for long: just squeeze past
-    if (J.stuck < 3) for (const o of cars) {
+    // held up in a jam for a moment: the tow truck noses through and shoves the cars in its way aside
+    J.stuck = J.v < 25 ? (J.stuck || 0) + dt : 0;
+    if (J.stuck > 0.6) J.push = 3;
+    J.push = Math.max(0, (J.push || 0) - dt);
+    for (const o of cars) {
       if (o === tr || o === car || o.towedBy || Math.abs(o.x - tr.x) > 200 || Math.abs(o.y - tr.y) > 200) continue;
       const rx = o.x - tr.x, ry = o.y - tr.y, along = rx * ca + ry * sa, lat = -rx * sa + ry * ca;
-      if (along > 0 && Math.abs(lat) < (o.t.W + tr.t.W) / 2 - 2) vmax = Math.min(vmax, Math.max(0, along - (o.t.L + tr.t.L) / 2 - 12) * 2.5);
+      if (along <= -tr.t.L / 2 || Math.abs(lat) >= (o.t.W + tr.t.W) / 2 - 2) continue;
+      const gap = along - (o.t.L + tr.t.L) / 2 - 12;
+      if (J.push > 0 && gap < 40) {
+        const sd = lat >= 0 ? 1 : -1, k = 190 * dt;
+        o.x += -sa * sd * k + ca * k * 0.35; o.y += ca * sd * k + sa * k * 0.35; o.vx *= 0.5; o.vy *= 0.5;
+        if (o.ai) { o.ai.yieldT = Math.max(o.ai.yieldT || 0, 3); o.ai.blocked = 0; }
+      } else if (along > 0 && J.push <= 0) vmax = Math.min(vmax, Math.max(0, gap) * 2.5);
     }
+    if (J.push > 0) vmax = Math.min(vmax, 90);
     const left = J.end - J.s, vt = Math.min(vmax, Math.sqrt(Math.max(0, left) * 520) + 8);
     J.v += clamp(vt - J.v, -600 * dt, 170 * dt); J.s = Math.min(J.end, J.s + J.v * dt);
     const p = pathAt(J.P, J.s), off = 16 * clamp(Math.min(J.s / 120, (J.end - J.s) / 160), 0, 1), ox = tr.x, oy = tr.y;
@@ -1620,12 +1650,43 @@ function towSkip() {
     J.tr.vx = J.tr.vy = 0; cam.x = player.x; cam.y = player.y;
   }
 }
+// costs you never see in the yellow balance: rentals, cover, towing, repairs. Listed in the cost sheet next to the balance.
+let ledger = [], ledgerT = 0;
+function addCost(k, l, v, by) { const e = { k, l, v, by, at: clockLabel() }; ledger.push(e); return e; }
+const clockLabel = () => L(`${Math.floor(T / 60)} min gry`, `${Math.floor(T / 60)} min in`);
+const ledgerSum = () => ledger.reduce((a, e) => a + e.v, 0);
+// a rented car: start fee and protection package now, the per-km price as you drive
+function startRental(c) {
+  const C = c.rental;
+  c.rentE = addCost('rent', L(`Wynajem: ${C.n}, ${tName(c.t)} (${zl(money2(C.start))} + ${zl(money2(C.km))}/km)`, `Rental: ${C.n}, ${tName(c.t)} (${zl(money2(C.start))} + ${zl(money2(C.km))}/km)`), C.start, C.n);
+  c.rentE.km = 0;
+  addCost('ins', L(`Pakiet ochrony wynajmu (OC, AC, assistance): ${C.n}`, `Rental cover (third party, comprehensive, assistance): ${C.n}`), C.prot, INSURERS[C.ins]);
+}
+function rentKm(c, dist) { const e = c.rentE; if (!e) return; e.km += dist / 10000; e.v = Math.round((c.rental.start + e.km * c.rental.km) * 100) / 100; }
+function ledgerHtml() {
+  const KN = { rent: L('Wynajem aut', 'Car rental'), ins: L('Ubezpieczenie', 'Insurance'), tow: L('Holowanie', 'Towing'), repair: L('Naprawy', 'Repairs'), svc: L('Obsługa', 'Service') };
+  const row = (a, b, c2) => `<div class="brow"><span>${a}${c2 ? `<br><small>${c2}</small>` : ''}</span><b>${b}</b></div>`;
+  const items = ledger.slice().reverse().map(e => row(e.l + (e.km != null ? `, ${e.km.toFixed(1).replace('.', LANG === 'en' ? '.' : ',')} km` : ''), zl(money2(e.v)), `${e.at} · ${e.k === 'rent' ? L('rozliczenie: ', 'billed by: ') : e.k === 'ins' ? L('ubezpieczyciel: ', 'insurer: ') : L('pokrył: ', 'paid by: ')}${e.by}`)).join('');
+  const sums = Object.keys(KN).map(k => [k, ledger.filter(e => e.k === k).reduce((a, e) => a + e.v, 0)]).filter(([, v]) => v > 0).map(([k, v]) => row(KN[k], zl(money2(v)))).join('');
+  return `<h3>${L('Rachunek kosztów', 'Cost sheet')}</h3>`
+    + (ledger.length ? `<div class="lsum">${sums}<div class="brow sum"><span>${L('Razem', 'Total')}</span><b>${zl(money2(ledgerSum()))}</b></div></div><div class="litems">${items}</div>`
+      : `<p>${L('Na razie nie ma żadnych kosztów.', 'No costs so far.')}</p>`)
+    + `<p><small>${L('Tych kosztów nie odejmujemy od zarobku (żółta kwota): wynajem rozlicza wypożyczalnia, a szkody pokrywa ubezpieczyciel. Firmy są fikcyjne.', 'These costs are not taken from your earnings (the yellow amount): the rental company bills the rental and the insurer pays for damage. The companies are fictional.')}</small></p>`
+    + `<button class="ghost" id="ledgerClose" type="button">${L('Zamknij', 'Close')}</button>`;
+}
+function toggleLedger(on) {
+  const el = $('ledger'); el.hidden = on != null ? !on : !el.hidden;
+  if (!el.hidden) { $('bill').hidden = true; billT = 0; el.innerHTML = ledgerHtml(); $('ledgerClose').onclick = () => toggleLedger(false); ledgerT = 0.5; }
+}
 // what the garage did, and who paid for it
 let billT = 0;
 function showBill(car, ws, towDist, dmg) {
   const base = REPAIR_VAL[car.t.key] || 3000, r10 = v => Math.round(v / 10) * 10;
   const rep = r10(base * clamp(dmg, 0.08, 1) * mr(0.85, 1.15)), svc = r10(mr(120, 260)), km = towDist ? Math.max(1, towDist / 10000) : 0;
-  const tow = towDist ? r10(250 + km * 9) : 0, sum = rep + svc + tow, ins = insurerFor(car);
+  const tow = towDist ? r10(250 + km * 9) : 0, sum = rep + svc + tow, ins = insurerFor(car), what = `${poiName(ws)}, ${tName(car.t)}`;
+  if (tow) addCost('tow', L(`Holowanie lawetą, ${km.toFixed(1).replace('.', ',')} km`, `Tow truck, ${km.toFixed(1)} km`), tow, ins);
+  addCost('repair', L(`Naprawa: ${what}`, `Repair: ${what}`), rep, ins);
+  addCost('svc', L(`Obsługa: diagnostyka, płyny, przegląd`, `Service: diagnostics, fluids, check-up`), svc, ins);
   const row = (a, b) => `<div class="brow"><span>${a}</span><b>${b}</b></div>`;
   $('bill').innerHTML = `<h3>${poiName(ws)}: ${L('auto naprawione', 'car repaired')}</h3>`
     + (tow ? row(L(`Holowanie lawetą (${km.toFixed(1).replace('.', LANG === 'en' ? '.' : ',')} km)`, `Towing (${km.toFixed(1)} km)`), zl(tow)) : '')
@@ -1920,6 +1981,7 @@ function enterExit() {
     if (!canUse(best2)) { toast(L('To nie twoje auto. Auta na wynajem stoją w kolorowych kopertach (fioletowa linia).', 'Not your car. Rental cars stand in coloured bays (purple line).')); return; }
     const newRent = best2.rental && !best2.owned;
     best2.driver = 'player'; best2.keep = true; best2.owned = true;
+    if (newRent) { startRental(best2); if (rentNav) setRentNav(false); }
     player.mode = 'car'; player.car = best2; player.roof = null;
     initFuel(best2, best2.rental ? mr(0.6, 0.95) : undefined);   // rental cars come with a decent tank
     const fl = best2.t.fuel ? ` · ${FUEL[best2.t.fuel].n}: ${best2.fuel.toFixed(0)} / ${best2.t.tank} l` : '';
@@ -1943,6 +2005,8 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyH') honk();
   if (e.code === 'KeyT') refuelOpen();
   if (e.code === 'KeyO') toggleAuto();
+  if (e.code === 'KeyK' && state === 'play') toggleLedger();
+  if (e.code === 'KeyR') toggleRentNav();
   if (e.code === 'KeyP' || e.code === 'Escape') { if (!$('mapov').hidden) toggleMap(); else togglePause(); }
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
@@ -2093,7 +2157,7 @@ function newWorld(kind, sd) {
   for (let k = 0; k < 30; k++) spawnPed(taxi.x, taxi.y, 0, 1000);
   if (city.real || city.gen) for (let k = 0; k < 26; k++) spawnParked(taxi.x, taxi.y, 90, 1200);
   spawnMilitary(); spawnHelis(); setupPlanes();
-  towJob = null; billT = 0; $('bill').hidden = true;
+  towJob = null; billT = 0; $('bill').hidden = true; ledger = []; $('ledger').hidden = true; setRentNav(false);
   rentalSpots(city); updateRentals(0, true);
   money = START_MONEY; trips = 0; T = 0; wanted = 0; fines = 0; reasons = []; bustT = 0; escapeT = 0;
   buildMinimap();
@@ -2148,7 +2212,7 @@ function nearbyInfo() {
 }
 
 // ---------- settings ----------
-const SET = { gfx: 'auto', preset: 'normal', dmg: 1, dead: 0.18, curve: 2, joy: 0.45, gas: 0.55, turnSlow: 0.5, reach: 1.4, vmax: 90, night: 'auto', names: true, pois: true };
+const SET = { gfx: 'auto', preset: 'normal', dmg: 1, dead: 0.18, curve: 2, joy: 0.45, gas: 0.55, turnSlow: 0.5, reach: 1.4, vmax: 90, night: 'auto', names: true, pois: true, minimap: true };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('kpm-set3') || '{}')); } catch (e) { /* storage unavailable */ }
 function saveSet() { try { localStorage.setItem('kpm-set3', JSON.stringify(SET)); } catch (e) { /* storage unavailable */ } }
 const SLIDERS = () => [
@@ -2182,6 +2246,7 @@ function showSettings(back) {
     <fieldset class="seg"><legend>${L('Pora dnia', 'Time of day')}</legend>
       ${[['auto', L('Jak za oknem', 'Like outside')], ['day', L('Dzień', 'Day')], ['night', L('Noc', 'Night')]].map(([v, l]) => `<label for="night_${v}"><input type="radio" name="night" id="night_${v}" value="${v}" ${SET.night === v ? 'checked' : ''}> ${l}</label>`).join('')}
     </fieldset>
+    <label class="chk" for="setMinimap"><input id="setMinimap" type="checkbox" ${SET.minimap ? 'checked' : ''}> ${L('Minimapa w rogu ekranu (bez niej gra działa odrobinę lżej, a mapę miasta otwiera przycisk Mapa albo klawisz M)', 'Minimap in the corner (the game runs slightly lighter without it; the Map button or M opens the city map)')}</label>
     <label class="chk" for="setNames"><input id="setNames" type="checkbox" ${SET.names ? 'checked' : ''}> ${L('Nazwy ulic w czasie jazdy', 'Street names while driving')}</label>
     <label class="chk" for="setPois"><input id="setPois" type="checkbox" ${SET.pois ? 'checked' : ''}> ${L('Oznaczenia sklepów, szkół, kościołów i innych miejsc', 'Icons for shops, schools, churches and other places')}</label>
     <div class="row"><button class="btn" id="setDone" type="button">${back === 'menu' ? L('Gotowe', 'Done') : L('Wróć do gry', 'Back to the game')}</button></div>`;
@@ -2194,6 +2259,7 @@ function showSettings(back) {
   for (const el of document.querySelectorAll('input[name=gfx]')) el.onchange = e => { SET.gfx = e.target.value; gfxScale = 1; upTries = 0; resize(); saveSet(); };
   for (const el of document.querySelectorAll('input[name=night]')) el.onchange = e => { SET.night = e.target.value; saveSet(); };
   $('setNames').onchange = e => { SET.names = e.target.checked; saveSet(); };
+  $('setMinimap').onchange = e => { SET.minimap = e.target.checked; applyMinimap(); saveSet(); };
   $('setPois').onchange = e => { SET.pois = e.target.checked; saveSet(); };
   $('setDone').onclick = () => { if (back === 'menu') { state = 'menu'; showStart(); return; } state = prev === 'paused' ? 'play' : prev; if (state === 'menu') state = 'play'; $('ov').hidden = true; };
   $('ov').hidden = false;
@@ -2841,7 +2907,7 @@ function step(dt) {
     if (c.t.fuel && c.fuel <= 0 && ctl.thr > 0) ctl.thr = 0;   // empty tank: the engine stalls
     const ox = c.x, oy = c.y;
     if (c.t.heli) heliPhysics(c, ctl, dt); else physics(c, ctl.thr, ctl.steer, ctl.hb, dt);
-    if (state === 'play') burnFuel(c, Math.hypot(c.x - ox, c.y - oy), ctl.thr, dt);
+    if (state === 'play') { const d = Math.hypot(c.x - ox, c.y - oy); burnFuel(c, d, ctl.thr, dt); if (c.rentE && !c.towedBy) rentKm(c, d); }
     player.x = c.x; player.y = c.y;
   } else {
     player.a += ctl.steer * 3.4 * dt;
@@ -2862,7 +2928,7 @@ function step(dt) {
     if (c.pol && c.pol.chase && c.driver === 'ai' && !c.wreck) { const u = policeDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
     else if (c.ai && !c.wreck) { const u = aiDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
     else if (c.t.heli) heliPhysics(c, { thr: 0, steer: 0, hb: false }, dt);
-    else physics(c, 0, 0, false, dt);
+    else if (c.vx || c.vy || c.spin) { physics(c, 0, 0, false, dt); if (Math.abs(c.vx) + Math.abs(c.vy) < 0.05 && Math.abs(c.spin) < 0.001) c.vx = c.vy = c.spin = 0; }   // parked cars at rest need no physics
   }
   // collisions only matter near the player; far-away cars just drive
   updateTow(dt);
@@ -2965,6 +3031,11 @@ function step(dt) {
       if (c.t.fuel && c.fuel != null && c.fuel < c.t.tank * 0.12 && city.stations.length && !(route && route.kind === 'fuel')) auxRoutes.push(auxRoute('fuel', nearestStation(px, py)));
       if (c.hp < c.t.hp * 0.45 && city.workshops.length && !(route && route.kind === 'repair')) auxRoutes.push(auxRoute('repair', nearestWorkshop(px, py)));
     }
+    const wantRent = player.mode === 'foot' ? !player.roof : rentNav && !player.car.t.heli && !towRide();
+    if (wantRent && !(route && route.kind === 'rent' && route.tgt.rent)) {
+      const n = nearestRental(px, py);
+      if (n) auxRoutes.push(auxRoute('rent', { w: { sx: n.r.x, sy: n.r.y, rent: n.r }, d: n.d }));
+    }
   }
   // particles, skids, popups
   for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.s += dt * (p.spark ? 0 : 6); }
@@ -3001,9 +3072,24 @@ function queryDraw(v) {
   return q;
 }
 function polyPath(pts) { ctx.moveTo(pts[0].x, pts[0].y); for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y); }
+// the ground is drawn in batches: one path per colour and line width instead of one per polygon
+// polygons batched into one path must share a winding direction, or overlaps cancel out under the nonzero rule
+function windSign(o) { if (o._ws == null) { let a = 0; const P = o.pts; for (let k = 0, j = P.length - 1; k < P.length; j = k++) a += (P[j].x - P[k].x) * (P[j].y + P[k].y); o._ws = a >= 0 ? 1 : -1; } return o._ws; }
+function polyPathW(o, dx = 0, dy = 0) {
+  const P = o.pts, n = P.length;
+  if (windSign(o) > 0) { ctx.moveTo(P[0].x + dx, P[0].y + dy); for (let k = 1; k < n; k++) ctx.lineTo(P[k].x + dx, P[k].y + dy); }
+  else { ctx.moveTo(P[n - 1].x + dx, P[n - 1].y + dy); for (let k = n - 2; k >= 0; k--) ctx.lineTo(P[k].x + dx, P[k].y + dy); }
+  ctx.closePath();
+}
+function groupBy(list, key) { const m = new Map(); for (const it of list) { const k = key(it); let a = m.get(k); if (!a) m.set(k, a = []); a.push(it); } return m; }
+const GREEN_ORDER = ['wood', 'park', 'cemetery', 'beach', 'apron', 'walk', 'plaza', 'parking', 'pitch'];
 function drawGround(v, q) {
   ctx.fillStyle = city.real ? COLORS.ground : COLORS.grass2; ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
-  for (const g of q.g) { ctx.fillStyle = GREEN_COL[g.kind] || COLORS.grass; ctx.beginPath(); polyPath(g.pts); ctx.closePath(); ctx.fill(); }
+  const gk = groupBy(q.g, g => g.kind);
+  for (const k of [...GREEN_ORDER, ...[...gk.keys()].filter(k => !GREEN_ORDER.includes(k))]) {
+    const list = gk.get(k); if (!list) continue;
+    ctx.fillStyle = GREEN_COL[k] || COLORS.grass; ctx.beginPath(); for (const g of list) polyPathW(g); ctx.fill();
+  }
   drawMilitary(q);
   if (!city.real) for (const g of q.g) if (g.kind === 'parking' && g.lot) {
     const l = g.lot; ctx.strokeStyle = 'rgba(240,236,224,.45)'; ctx.lineWidth = 1.5; ctx.beginPath();
@@ -3018,11 +3104,16 @@ function drawGround(v, q) {
     ctx.strokeStyle = COLORS.shore; ctx.lineWidth = 6; ctx.stroke();
   }
   // railway beds under the streets
-  for (const r of q.l) if (!r.tram) { ctx.strokeStyle = '#6e6152'; ctx.lineWidth = 30; ctx.lineJoin = 'round'; ctx.beginPath(); polyPath(r.pts); ctx.stroke(); }
+  ctx.strokeStyle = '#6e6152'; ctx.lineWidth = 30; ctx.lineJoin = 'round'; ctx.beginPath();
+  for (const r of q.l) if (!r.tram) polyPath(r.pts);
+  ctx.stroke();
   // streets: kerb casing first, then asphalt, so junctions merge cleanly
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  for (const r of q.r) { ctx.strokeStyle = COLORS.casing; ctx.lineWidth = r.w + 8; ctx.beginPath(); polyPath(r.pts); ctx.stroke(); }
-  for (const r of q.r) { ctx.strokeStyle = r.cls === 6 ? COLORS.plaza : r.cls === 7 ? '#55595f' : r.cls === 8 ? '#5e6268' : COLORS.asphalt; ctx.lineWidth = r.w; ctx.beginPath(); polyPath(r.pts); ctx.stroke(); }
+  ctx.strokeStyle = COLORS.casing;
+  for (const [w, list] of groupBy(q.r, r => r.w)) { ctx.lineWidth = w + 8; ctx.beginPath(); for (const r of list) polyPath(r.pts); ctx.stroke(); }
+  for (const [k, list] of groupBy(q.r, r => (r.cls === 6 ? COLORS.plaza : r.cls === 7 ? '#55595f' : r.cls === 8 ? '#5e6268' : COLORS.asphalt) + '|' + r.w)) {
+    ctx.strokeStyle = k.split('|')[0]; ctx.lineWidth = list[0].w; ctx.beginPath(); for (const r of list) polyPath(r.pts); ctx.stroke();
+  }
   ctx.lineCap = 'butt';
   ctx.strokeStyle = COLORS.mark; ctx.lineWidth = 2; ctx.setLineDash([16, 14]); ctx.beginPath();
   for (const r of q.r) if (r.cls <= 4 && r.cls !== 5 && !r.ow && r.w >= 64 && r.len > 60) polyPath(r.pts);
@@ -3035,14 +3126,17 @@ function drawGround(v, q) {
     ctx.stroke(); ctx.setLineDash([]);
   }
   // tram and train tracks
-  for (const r of q.l) {
-    ctx.beginPath(); polyPath(r.pts);
+  for (const tram of [false, true]) {
+    ctx.beginPath(); let any = false;
+    for (const r of q.l) if (!!r.tram === tram) { polyPath(r.pts); any = true; }
+    if (!any) continue;
     ctx.strokeStyle = 'rgba(30,30,34,.8)'; ctx.lineWidth = 17; ctx.stroke();
-    ctx.strokeStyle = r.tram ? 'rgba(88,88,92,.95)' : '#7a6a58'; ctx.lineWidth = 12; ctx.stroke();
+    ctx.strokeStyle = tram ? 'rgba(88,88,92,.95)' : '#7a6a58'; ctx.lineWidth = 12; ctx.stroke();
   }
-  // building shadows
-  ctx.fillStyle = 'rgba(0,0,0,.2)';
-  for (const b of q.b) { const o = Math.min(30, b.h * 0.15); ctx.save(); ctx.translate(o, o); ctx.beginPath(); polyPath(b.pts); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  // building shadows, all in one path
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath();
+  for (const b of q.b) { const o = Math.min(30, b.h * 0.15); polyPathW(b, o, o); }
+  ctx.fill();
   // tyre marks
   ctx.lineWidth = 3; ctx.lineCap = 'round';
   for (const s of skids) {
@@ -3060,13 +3154,18 @@ function drawBuilding(b) {
   }
   const R = b.rp;
   for (let k = 0; k < n; k++) { R[k].x = cx + (P[k].x - cx) * s; R[k].y = cy + (P[k].y - cy) * s; }
-  // walls that face the camera
-  for (let k = 0, j = n - 1; k < n; j = k++) {
-    const a = P[j], c = P[k], nx = (c.y - a.y) * b.sg, ny = -(c.x - a.x) * b.sg;
-    if (nx * (cx - (a.x + c.x) / 2) + ny * (cy - (a.y + c.y) / 2) <= 0) continue;
-    const q = Math.round((Math.atan2(ny, nx) + Math.PI) / (Math.PI / 2)) % 4;
-    ctx.fillStyle = b.cols.w[q];
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.lineTo(R[k].x, R[k].y); ctx.lineTo(R[j].x, R[j].y); ctx.closePath(); ctx.fill();
+  // walls that face the camera, one fill per shade
+  if (!b.wq) b.wq = P.map((c, k) => { const a = P[(k + n - 1) % n], nx = (c.y - a.y) * b.sg, ny = -(c.x - a.x) * b.sg; return Math.round((Math.atan2(ny, nx) + Math.PI) / (Math.PI / 2)) % 4; });
+  for (let q = 0; q < 4; q++) {
+    let any = false;
+    for (let k = 0, j = n - 1; k < n; j = k++) {
+      if (b.wq[k] !== q) continue;
+      const a = P[j], c = P[k], nx = (c.y - a.y) * b.sg, ny = -(c.x - a.x) * b.sg;
+      if (nx * (cx - (a.x + c.x) / 2) + ny * (cy - (a.y + c.y) / 2) <= 0) continue;
+      if (!any) { ctx.beginPath(); any = true; }
+      ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.lineTo(R[k].x, R[k].y); ctx.lineTo(R[j].x, R[j].y); ctx.closePath();
+    }
+    if (any) { ctx.fillStyle = b.cols.w[q]; ctx.fill(); }
   }
   ctx.beginPath(); polyPath(R); ctx.closePath();
   ctx.fillStyle = b.cols.roof; ctx.fill();
@@ -3317,11 +3416,11 @@ function draw() {
     ctx.restore();
   }
   // extra arrows (fuel, garage) on a wider ring
-  if (state === 'play' && player.mode === 'car') for (const r of auxRoutes) {
+  if (state === 'play') for (const r of auxRoutes) {
     if (r.pts.length < 2) continue;
     let tp = r.pts[1];
     for (let k = 1; k < r.pts.length; k++) { tp = r.pts[k]; if (Math.hypot(tp.x - player.x, tp.y - player.y) > 70) break; }
-    const ang = Math.atan2(tp.y - player.y, tp.x - player.x), R1 = 58;
+    const ang = Math.atan2(tp.y - player.y, tp.x - player.x), R1 = player.mode === 'car' ? 58 : 34;
     ctx.save(); ctx.translate(player.x + Math.cos(ang) * R1, player.y + Math.sin(ang) * R1); ctx.rotate(ang);
     ctx.fillStyle = AUX_COL[r.kind]; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-5, -7); ctx.lineTo(-2, 0); ctx.lineTo(-5, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -3398,13 +3497,21 @@ function* buildMinimapG(w) {
   for (const p of w.stations) { g.fillStyle = '#e6c23a'; g.fillRect(p.x * s - 2.5, p.y * s - 2.5, 5, 5); }
   w.mapC = C; w.mapS = s;
 }
-function drawOverlay(g, M, big) {
+// vb: the part of the world in view, so off-screen markers (thousands of rental bays in Poznań) are skipped
+function drawOverlay(g, M, big, vb) {
+  const inV = (x, y) => x > vb.x0 && x < vb.x1 && y > vb.y0 && y < vb.y1;
   if (route) {
     g.strokeStyle = routeCol(); g.lineWidth = big ? 4 : 3; g.lineJoin = 'round'; g.beginPath();
     route.pts.forEach((p, k) => { const [x, y] = M(p.x, p.y); k ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
   }
-  const dot = (x, y, r, col) => { const [sx, sy] = M(x, y); g.fillStyle = '#121418'; g.beginPath(); g.arc(sx, sy, r + 1.5, 0, 7); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); };
-  for (const r of city.rentals || []) if (!(r.car && r.car.owned)) { const [sx, sy] = M(r.x, r.y); g.fillStyle = '#121418'; g.fillRect(sx - (big ? 4 : 3), sy - (big ? 4 : 3), big ? 8 : 6, big ? 8 : 6); g.fillStyle = RENT_COS[r.co].col; g.fillRect(sx - (big ? 3 : 2), sy - (big ? 3 : 2), big ? 6 : 4, big ? 6 : 4); }
+  const dot = (x, y, r, col) => { if (!inV(x, y)) return; const [sx, sy] = M(x, y); g.fillStyle = '#121418'; g.beginPath(); g.arc(sx, sy, r + 1.5, 0, 7); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); };
+  // rental bays: on the big map only once zoomed in enough for them not to cover the town
+  if (!big || MV.z > 0.025) {
+    const a = big ? 4 : 3, b = big ? 3 : 2;
+    g.fillStyle = '#121418';
+    for (const r of city.rentals || []) if (inV(r.x, r.y) && !(r.car && r.car.owned)) { const [sx, sy] = M(r.x, r.y); g.fillRect(sx - a, sy - a, 2 * a, 2 * a); }
+    for (const r of city.rentals || []) if (inV(r.x, r.y) && !(r.car && r.car.owned)) { const [sx, sy] = M(r.x, r.y); g.fillStyle = RENT_COS[r.co].col; g.fillRect(sx - b, sy - b, 2 * b, 2 * b); }
+  }
   if (towJob && towJob.tr.sig) dot(towJob.tr.x, towJob.tr.y, big ? 6 : 4, Math.floor(T * 4) % 2 ? '#ffc21a' : '#7a5a10');
   if (!job) for (const o of offers) dot(o.x, o.y, big ? 6 : 4, '#f2c230');
   if (job) { if (job.inCar) dot(job.dest.x, job.dest.y, big ? 7 : 4.5, '#6cc070'); else dot(job.waitAt.x, job.waitAt.y, big ? 6 : 4, '#f2c230'); }
@@ -3427,7 +3534,7 @@ function drawMinimap() {
   mctx.imageSmoothingEnabled = true;
   mctx.translate(W / 2, W / 2); mctx.rotate(cam.rot); mctx.translate(-W / 2, -W / 2);
   mctx.drawImage(mapC, x0 * mapS, y0 * mapS, 2 * E * mapS, 2 * E * mapS, W / 2 - E * k, W / 2 - E * k, 2 * E * k, 2 * E * k);
-  drawOverlay(mctx, (x, y) => [W / 2 + (x - player.x) * k, W / 2 + (y - player.y) * k], false);
+  drawOverlay(mctx, (x, y) => [W / 2 + (x - player.x) * k, W / 2 + (y - player.y) * k], false, { x0: player.x - E * 1.5, y0: player.y - E * 1.5, x1: player.x + E * 1.5, y1: player.y + E * 1.5 });
   mctx.setTransform(1, 0, 0, 1, 0, 0);
   // north marker on the rim
   const nx = Math.sin(cam.rot), ny = -Math.cos(cam.rot), nr = W / 2 - 11;
@@ -3521,7 +3628,7 @@ function renderBigMap() {
   }
   if (MV.pick) {
     if (MV.pickPt) { const [x, y] = M(MV.pickPt.x, MV.pickPt.y); g.fillStyle = '#f2c230'; g.strokeStyle = '#121418'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.arc(x, y - 22, 11, Math.PI * 0.75, Math.PI * 2.25); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#121418'; g.beginPath(); g.arc(x, y - 22, 4, 0, 7); g.fill(); }
-  } else drawOverlay(g, M, true);
+  } else drawOverlay(g, M, true, { x0: x0 - 200, y0: y0 - 200, x1: x1 + 200, y1: y1 + 200 });
   // scale bar
   const metres = [20, 50, 100, 200, 500, 1000, 2000].find(m => m * 10 * z > 70) || 2000, bw = metres * 10 * z;
   g.fillStyle = 'rgba(18,20,24,.8)'; g.fillRect(12, h - 34, bw + 16, 24);
@@ -3672,7 +3779,8 @@ function drawRouteLine() {
 
 // ---------- HUD ----------
 function hud(dt) {
-  setT('money', zl(money2(money))); setT('trips', L('kursy: ', 'trips: ') + trips); if (TR) setT('clock', L('godz. ', '') + fmtClock(clockSec));
+  setT('money', zl(money2(money))); setT('costBtn', L('koszty: ', 'costs: ') + zl(money2(ledgerSum())));
+  if (!$('ledger').hidden && (ledgerT -= dt) <= 0) { ledgerT = 0.5; const sc = $('ledger').scrollTop; $('ledger').innerHTML = ledgerHtml(); $('ledgerClose').onclick = () => toggleLedger(false); $('ledger').scrollTop = sc; } setT('trips', L('kursy: ', 'trips: ') + trips); if (TR) setT('clock', L('godz. ', '') + fmtClock(clockSec));
   $('wanted').hidden = !wanted;
   if (wanted) {
     setT('stars', '★'.repeat(wanted) + '☆'.repeat(4 - wanted));
@@ -3684,7 +3792,7 @@ function hud(dt) {
     jb.classList.add('on');
     setT('jobWho', job.who); setT('jobFare', zl(job.fare));
     const left = job.limit - job.t;
-    setT('jobWhere', (job.inCar ? '→ ' + job.dest.addr : L('Czeka przy porzuconym aucie. Wróć po pasażera.', 'Waiting by the car you left. Go back for your passenger.')) + auxRoutes.map(r => r.kind === 'fuel' ? L(` · mało paliwa: niebieska linia do stacji (${r.dist} m)`, ` · low fuel: blue line to a station (${r.dist} m)`) : L(` · auto dymi: pomarańczowa linia do warsztatu (${r.dist} m)`, ` · car smoking: orange line to a garage (${r.dist} m)`)).join(''));
+    setT('jobWhere', (job.inCar ? '→ ' + job.dest.addr : L('Czeka przy porzuconym aucie. Wróć po pasażera.', 'Waiting by the car you left. Go back for your passenger.')) + auxRoutes.map(r => r.kind === 'rent' ? L(` · fioletowa linia: auto na wynajem (${r.dist} m)`, ` · purple line: rental car (${r.dist} m)`) : r.kind === 'fuel' ? L(` · mało paliwa: niebieska linia do stacji (${r.dist} m)`, ` · low fuel: blue line to a station (${r.dist} m)`) : L(` · auto dymi: pomarańczowa linia do warsztatu (${r.dist} m)`, ` · car smoking: orange line to a garage (${r.dist} m)`)).join(''));
     $('jobBarW').hidden = false;
     $('jobBarW').classList.toggle('late', left < 0);
     $('jobBar').style.width = clamp(left / job.limit, 0, 1) * 100 + '%';
@@ -3703,6 +3811,7 @@ function hud(dt) {
       $('jobBarW').hidden = true;
     }
     else if (dmg) { setT('jobWho', L('Auto dymi', 'Car is smoking')); setT('jobFare', ''); setT('jobWhere', L(`Najbliższy warsztat: ${poiName(route.tgt.ws)}, ${dist} m. Naprawę pokryje ubezpieczenie.`, `Nearest garage: ${dist} m away. Insurance covers the repair.`)); $('jobBarW').hidden = true; }
+    else if (player.mode === 'car' && auxRoutes.some(r => r.kind === 'rent')) { const r = auxRoutes.find(r => r.kind === 'rent'); setT('jobWho', L('Zmiana auta', 'Change car')); setT('jobFare', ''); setT('jobWhere', L(`Najbliższe auto na wynajem: ${RENT_COS[r.tgt.ws.rent.co].n}, ${r.dist} m (fioletowa linia). R wyłącza nawigację.`, `Nearest rental car: ${RENT_COS[r.tgt.ws.rent.co].n}, ${r.dist} m (purple line). R turns navigation off.`)); $('jobBarW').hidden = true; }
     else if (route && route.kind === 'fuel' && player.mode === 'car') { setT('jobWho', player.car.fuel <= 0 ? L('Brak paliwa', 'Out of fuel') : L('Mało paliwa', 'Low fuel')); setT('jobFare', ''); setT('jobWhere', L(`Najbliższa stacja: ${dist} m, ${fuelPriceTxt(route.tgt.ws)}. Zatrzymaj się przy dystrybutorze i naciśnij T (Tankuj).`, `Nearest petrol station: ${dist} m, ${fuelPriceTxt(route.tgt.ws)}. Stop at the pump and press T (Refuel).`)); $('jobBarW').hidden = true; }
     else {
     setT('jobWho', player.mode === 'foot' ? L('Pieszo', 'On foot') : L('Szukaj pasażera', 'Find a passenger')); setT('jobFare', '');
@@ -3878,12 +3987,16 @@ function applyStatic() {
   const T2 = [
     ['clock', 'title', 'Rozkład jazdy komunikacji miejskiej według tej godziny', 'Public transport timetable at this time of day'],
     ['mmw', 'title', 'Pokaż mapę miasta', 'Show the city map'],
+    ['mapBtn', 'text', 'Mapa', 'Map'],
+    ['mapBtn', 'title', 'Mapa miasta (M)', 'City map (M)'],
     ['mmLbl', 'text', '© OpenStreetMap', '© OpenStreetMap'],
     ['pauseBtn', 'text', 'Pauza', 'Pause'],
     ['muteBtn', 'text', SND.on ? 'Dźwięk' : 'Cisza', SND.on ? 'Sound' : 'Muted'],
     ['setBtn', 'text', 'Ustawienia', 'Settings'],
     ['autoBtn', 'text', autoOn ? 'Autopilot: wł.' : 'Autopilot', autoOn ? 'Autopilot: on' : 'Autopilot'],
     ['autoBtn', 'title', 'Autopilot (O): jedzie sam do celu', 'Autopilot (O): drives to the target by itself'],
+    ['rentBtn', 'text', rentNav ? 'Wynajem: wł.' : 'Wynajem', rentNav ? 'Rental: on' : 'Rental'],
+    ['rentBtn', 'title', 'Nawigacja do aut na wynajem (R)', 'Navigation to rental cars (R)'],
     ['fuelBtn', 'text', 'Tankuj (T)', 'Refuel (T)'],
     ['fuelPad', 'text', 'Tankuj', 'Refuel'],
     ['hornPad', 'text', 'Klakson', 'Horn'],
@@ -3897,7 +4010,8 @@ function applyStatic() {
     ['mapClose', 'text', 'Wróć do jazdy', 'Back to driving'],
     ['mapNote', 'html', 'Dane mapy © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">autorzy OpenStreetMap</a>', 'Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'],
     ['bigmap', 'aria-label', 'Mapa miasta: przeciągnij, żeby przesunąć, szczypnij albo użyj + i −, żeby przybliżyć', 'City map: drag to pan, pinch or use + and − to zoom'],
-    ['keys', 'html', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>H</kbd> klakson · <kbd>T</kbd> tankuj · <kbd>M</kbd> mapa · <kbd>O</kbd> autopilot', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> drive · <kbd>Space</kbd> handbrake · <kbd>E</kbd> get in / out · <kbd>H</kbd> horn · <kbd>T</kbd> refuel · <kbd>M</kbd> map · <kbd>O</kbd> autopilot'],
+    ['keys', 'html', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>H</kbd> klakson · <kbd>T</kbd> tankuj · <kbd>M</kbd> mapa · <kbd>O</kbd> autopilot · <kbd>R</kbd> wynajem · <kbd>K</kbd> koszty', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> drive · <kbd>Space</kbd> handbrake · <kbd>E</kbd> get in / out · <kbd>H</kbd> horn · <kbd>T</kbd> refuel · <kbd>M</kbd> map · <kbd>O</kbd> autopilot · <kbd>R</kbd> rental · <kbd>K</kbd> costs'],
+    ['costBtn', 'title', 'Rachunek kosztów: wynajem, ubezpieczenie, naprawy (K)', 'Cost sheet: rentals, insurance, repairs (K)'],
   ];
   for (const [id, what, pl, en] of T2) {
     const el = $(id); if (!el) continue;
@@ -3977,8 +4091,9 @@ const HOWTO_PL = `
   <li><b>Paliwo:</b> każde auto ma swój bak i realne spalanie w mieście (np. sedan ok. 7,5 l/100 km, ciężarówka ok. 32 l). Zatrzymaj się na stacji (żółte P) i naciśnij T albo „Tankuj”. Ceny według średnich cen z ${PRICE_DATE}.</li>
   <li><b>Klakson (H):</b> auta przed tobą włączają kierunkowskaz, zjeżdżają do prawej krawędzi, zatrzymują się i przepuszczają cię. Piesi się odsuwają.</li>
   <li><b>Auta:</b> supersamochód i kabriolet są najszybsze, ciężarówka wytrzymała, maluch zwrotny i oszczędny. Na terenach wojskowych stoją terenówki, ciężarówki i czołgi (tylko do jazdy). Gdy auto dymi, warsztat (pomarańczowe W, fikcyjny) je naprawi, a koszty pokryje ubezpieczyciel.</li>
-  <li><b>Wynajem:</b> cudzych aut nie da się ukraść. Auta na wynajem stoją w całym mieście w kopertach w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia.</li>
+  <li><b>Wynajem:</b> cudzych aut nie da się ukraść. Auta na wynajem stoją w całym mieście w kopertach w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia, a w aucie możesz ją włączyć klawiszem R albo przyciskiem „Wynajem”, gdy chcesz zmienić auto.</li>
   <li><b>Laweta:</b> gdy auto się rozbije, przyjeżdża laweta na sygnale i odholowuje je do warsztatu. Holowanie, naprawę i obsługę pokrywa ubezpieczyciel (fikcyjny), a rachunek pojawia się na ekranie.</li>
+  <li><b>Koszty (K):</b> przycisk „koszty” obok stanu konta pokazuje pełny rachunek: wynajem (opłata startowa i za kilometr), pakiet ochrony, holowanie, naprawy i obsługę. Te kwoty nie są odejmowane od zarobku.</li>
   <li><b>Helikopter:</b> stoi na lotnisku i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku.</li>
   <li><b>Autopilot (O):</b> sam jedzie do pasażera, do celu albo na stację. Dotknięcie sterowania go wyłącza.</li>
   <li><b>Komunikacja:</b> autobusy i tramwaje jeżdżą według rozkładu na aktualną godzinę, z numerami linii na dachach.</li>
@@ -3990,8 +4105,9 @@ const HOWTO_EN = `
   <li><b>Fuel:</b> every car has its own tank and realistic city consumption (e.g. a sedan about 7.5 l/100 km, a truck about 32 l). Stop at a petrol station (yellow F) and press T or "Refuel". Prices follow Polish averages of ${PRICE_DATE}.</li>
   <li><b>Horn (H):</b> cars ahead switch on their indicator, pull over to the right-hand kerb, stop and let you through. Pedestrians step aside.</li>
   <li><b>Cars:</b> the supercar and convertible are fastest, the truck is tough, the mini car is nimble and frugal. Military areas hold jeeps, trucks and tanks (driving only). When your car smokes, a garage (orange G, fictional) fixes it and the insurer pays.</li>
-  <li><b>Rentals:</b> other people's cars can't be stolen. Rental cars stand all over town in bays painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them.</li>
+  <li><b>Rentals:</b> other people's cars can't be stolen. Rental cars stand all over town in bays painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them; in a car, switch it on with R or the "Rental" button when you want to change cars.</li>
   <li><b>Tow truck:</b> when your car is wrecked, a tow truck arrives with beacons flashing and takes it to a garage. Towing, repair and service are paid by a (fictional) insurer, and the bill shows on screen.</li>
+  <li><b>Costs (K):</b> the "costs" button next to your balance opens the full sheet: rentals (start fee and per km), cover, towing, repairs and service. These amounts are not taken from your earnings.</li>
   <li><b>Helicopter:</b> parked at the airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included.</li>
   <li><b>Autopilot (O):</b> drives to the passenger, the drop-off or a petrol station by itself. Touch the controls to take over.</li>
   <li><b>Public transport:</b> buses and trams run to the timetable for the current time, with line numbers on their roofs.</li>
@@ -4093,9 +4209,15 @@ function toggleAuto() {
   setAuto(true, L('Autopilot: jadę do celu. Dotknij sterowania, żeby przejąć.', 'Autopilot: driving to the target. Touch the controls to take over.'));
 }
 $('autoBtn').onclick = toggleAuto;
+$('rentBtn').onclick = toggleRentNav;
+$('mapBtn').onclick = () => openMap();
+// minimap on or off (settings): without it the buttons move up and a Map button takes its place
+function applyMinimap() { $('mmw').hidden = !SET.minimap; $('mapBtn').hidden = SET.minimap; $('app').classList.toggle('nomm', !SET.minimap); }
+applyMinimap();
 $('pauseBtn').onclick = () => { if (state === 'play' || state === 'paused') togglePause(); };
 $('setBtn').onclick = () => { if (state === 'play' || state === 'paused') showSettings('play'); };
 $('bill').onclick = () => { $('bill').hidden = true; billT = 0; };
+$('costBtn').onclick = () => toggleLedger();
 $('muteBtn').onclick = () => { SND.on = !SND.on; $('muteBtn').textContent = SND.on ? L('Dźwięk', 'Sound') : L('Cisza', 'Muted'); };
 
 resize();
@@ -4141,7 +4263,8 @@ function frame(now) {
   try {
     if (state === 'play') { step(dt / 2); step(dt / 2); }
     if (state === 'map') { if (MV.dirty) renderBigMap(); } else draw();
-    drawMinimap(); hud(dt); engineSound();
+    if (SET.minimap) drawMinimap();
+    hud(dt); engineSound();
   } catch (err) { console.error(err); }
 }
 requestAnimationFrame(frame);
