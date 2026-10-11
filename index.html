@@ -1,29 +1,9 @@
-<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>Kurs przez Miasto – gra taksówkarska po Poznaniu</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kurs przez Miasto</title>
 <meta name="description" content="Darmowa gra taksówkarska w przeglądarce po prawdziwym Poznaniu z okolicami. Wozisz pasażerów, tankujesz na stacjach, a tramwaje i autobusy jeżdżą według rozkładu ZTM. Wersja polska i angielska.">
-<meta name="theme-color" content="#121418">
-<meta name="author" content="Witek, Jaś i Maks">
-<link rel="canonical" href="https://www.kursprzezmiasto.pl/">
-<link rel="icon" href="/favicon.ico" sizes="48x48">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Kurs przez Miasto">
-<meta property="og:title" content="Kurs przez Miasto – gra taksówkarska po Poznaniu">
-<meta property="og:description" content="Darmowa gra taksówkarska w przeglądarce po prawdziwym Poznaniu z okolicami. Wozisz pasażerów, tankujesz na stacjach, a tramwaje i autobusy jeżdżą według rozkładu ZTM. Wersja polska i angielska.">
-<meta property="og:url" content="https://www.kursprzezmiasto.pl/">
-<meta property="og:image" content="https://www.kursprzezmiasto.pl/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Widok z góry na ulice Poznania i żółtą taksówkę, tytuł Kurs przez Miasto">
-<meta property="og:locale" content="pl_PL">
-<meta property="og:locale:alternate" content="en_GB">
-<meta name="twitter:card" content="summary_large_image">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "VideoGame", "name": "Kurs przez Miasto", "alternateName": "City taxi game – Poznań", "description": "Darmowa gra taksówkarska w przeglądarce po prawdziwym Poznaniu z okolicami. Wozisz pasażerów, tankujesz na stacjach, a tramwaje i autobusy jeżdżą według rozkładu ZTM. Wersja polska i angielska.", "url": "https://www.kursprzezmiasto.pl/", "image": "https://www.kursprzezmiasto.pl/og-image.png", "inLanguage": ["pl", "en"], "genre": ["Driving", "Simulation", "Casual"], "gamePlatform": "Web browser", "applicationCategory": "Game", "operatingSystem": "Any", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "PLN"}, "author": [{"@type": "Person", "name": "Witek"}, {"@type": "Person", "name": "Jaś"}, {"@type": "Person", "name": "Maks"}], "publisher": {"@type": "Organization", "name": "Witek, Jaś i Maks", "email": "kursprzezmiasto@icloud.com"}, "contentLocation": {"@type": "City", "name": "Poznań"}}</script>
-</head><body>
-<noscript><div style="max-width:640px;margin:40px auto;padding:0 16px;font:16px/1.5 sans-serif;color:#f3eee2"><h1>Kurs przez Miasto</h1><p>Darmowa gra taksówkarska w przeglądarce po prawdziwym Poznaniu. Do gry potrzebny jest włączony JavaScript.</p><p lang="en">A free browser taxi game set in the real city of Poznań, Poland. JavaScript is required.</p><p>Kontakt: kursprzezmiasto@icloud.com</p></div></noscript>
-
-
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
@@ -175,7 +155,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
   <canvas id="view"></canvas>
   <div class="hud">
     <div class="tl">
-      <div class="cash"><b id="money">0 zł</b><span id="trips">kursy: 0</span><span id="clock" title="Rozkład jazdy ZTM według tej godziny"></span></div>
+      <div class="cash"><b id="money">0 zł</b><span id="trips">kursy: 0</span><span id="clock" title="Rozkład jazdy komunikacji miejskiej według tej godziny"></span></div>
       <div class="wanted" id="wanted" hidden><b id="stars">★☆☆☆</b><span id="fines">mandaty: 0 zł</span></div>
       <div class="job" id="job">
         <div class="who"><span id="jobWho">Szukaj pasażera</span><em id="jobFare"></em></div>
@@ -184,7 +164,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
         <div class="say" id="jobSay"></div>
       </div>
     </div>
-    <div class="mmw" id="mmw" title="Pokaż mapę miasta"><canvas id="mm" width="224" height="224"></canvas><small id="mmLbl">mapa</small></div>
+    <div class="mmw" id="mmw" title="Pokaż mapę miasta"><canvas id="mm" width="224" height="224"></canvas><small id="mmLbl">© OpenStreetMap</small></div>
     <div class="tools"><button class="ghost" id="pauseBtn" type="button">Pauza</button><button class="ghost" id="muteBtn" type="button">Dźwięk</button><button class="ghost" id="setBtn" type="button">Ustawienia</button><button class="ghost" id="autoBtn" type="button" title="Autopilot (O): jedzie sam do celu">Autopilot</button></div>
     <button class="ghost fuelbtn" id="fuelBtn" type="button" hidden>Tankuj (T)</button>
     <div class="dash" id="dash">
@@ -449,7 +429,28 @@ function inPoly(x, y, pts) {
 }
 const CS = 384;          // cell size of the collision and street-segment grids
 const HELI_ALT = 600;    // cruising height of a helicopter in px (60 m)
-const WORLDS = {};
+const WORLDS = {}, CITY_META = {}, CITY_BYTES = {};
+// a city's data: embedded in the page (<script id="<id>-meta"> + base64 <script id="<id>-bin">) or fetched from data/<id>.json + data/<id>.bin
+async function fetchCityData(id, onProgress) {
+  if ($(id + '-meta') || CITY_META[id]) return;
+  const meta = await (await fetch(`data/${id}.json`)).json();
+  const res = await fetch(`data/${id}.bin`).catch(() => null);
+  if (!res || !res.ok) {
+    // hosts that only serve text get the same bytes as base64
+    const t = await fetch(`data/${id}.b64.txt`); if (!t.ok) throw new Error('data ' + t.status);
+    onProgress && onProgress(0.8);
+    const raw = atob((await t.text()).trim()), b = new Uint8Array(raw.length); for (let k = 0; k < raw.length; k++) b[k] = raw.charCodeAt(k);
+    CITY_META[id] = meta; CITY_BYTES[id] = b; return;
+  }
+  const total = +res.headers.get('content-length') || 0, reader = res.body && res.body.getReader ? res.body.getReader() : null;
+  let bytes;
+  if (reader && total) {
+    bytes = new Uint8Array(total); let got = 0;
+    for (;;) { const { done, value } = await reader.read(); if (done) break; if (got + value.length > bytes.length) { const b2 = new Uint8Array(got + value.length); b2.set(bytes.subarray(0, got)); bytes = b2; } bytes.set(value, got); got += value.length; onProgress && onProgress(got / total); }
+    bytes = bytes.subarray(0, got);
+  } else bytes = new Uint8Array(await res.arrayBuffer());
+  CITY_META[id] = meta; CITY_BYTES[id] = bytes;
+}
 // ---------- what the public map may show ----------
 // Only public places are marked, always under a generic label and never with a business or personal name.
 // Shops, restaurants, hotels, pharmacies, real garages and real petrol stations are not marked at all:
@@ -467,7 +468,7 @@ const LM_GENERIC = { 'Stary Browar': 'Centrum handlowe przy Półwiejskiej', 'Ga
   'IKEA Franowo': 'Sklep meblowy na Franowie', 'CH M1': 'Centrum handlowe przy Szwedzkiej', 'Kino Muza': 'Kino przy Św. Marcinie', 'Targi Poznańskie': 'Tereny targowe' };
 const LM_DROP = new Set(['Lotnisko wojskowe Krzesiny']);
 // brand names inside official stop names are replaced with generic words
-const STOP_GENERIC = [[/Enea Stadion/g, 'Stadion'], [/Centrum Handlowe ETC/g, 'Centrum Handlowe'], [/Poznań Plaza/g, 'Centrum Handlowe'], [/Factory Outlet/g, 'Centrum Handlowe'], [/Auchan/g, 'Centrum Handlowe']];
+const STOP_GENERIC = [[/Enea Stadion/g, 'Stadion'], [/Centrum Handlowe ETC/g, 'Centrum Handlowe'], [/Poznań Plaza/g, 'Centrum Handlowe'], [/Factory Outlet/g, 'Centrum Handlowe'], [/Auchan/g, 'Centrum Handlowe'], [/Ikea/gi, 'Centrum Handlowe'], [/Stomil Brama/g, 'Brama'], [/Stomil/g, 'Zakłady'], [/ - Polon$/g, '']];
 const cleanStop = n => STOP_GENERIC.reduce((a, [re, to]) => a.replace(re, to), n);
 // fictional garages and petrol stations: spread along main streets, independent of real businesses
 function gameSpots(w, cat, minD, salt) {
@@ -485,10 +486,10 @@ const loadPoznan = () => loadCityData('poznan', 'Poznań');
 function loadCityData(id, title) { for (const _ of loadCityDataG(id, title)); return WORLDS[id]; }
 function* loadCityDataG(id, title) {
   if (WORLDS[id]) return;
-  const d = JSON.parse($(id + '-meta').textContent), q = d.q;
+  const d = CITY_META[id] || JSON.parse($(id + '-meta').textContent), q = d.q;
   // geometry and timetable: zig-zag varints, coordinates as deltas from the previous point
-  const raw = atob($(id + '-bin').textContent.trim()), B = new Uint8Array(raw.length);
-  for (let k = 0; k < raw.length; k++) B[k] = raw.charCodeAt(k);
+  let B = CITY_BYTES[id];
+  if (!B) { const raw = atob($(id + '-bin').textContent.trim()); B = new Uint8Array(raw.length); for (let k = 0; k < raw.length; k++) B[k] = raw.charCodeAt(k); }
   yield;
   let o = 0, cx = 0, cy = 0;
   const u = () => { let v = 0, m = 1, b; do { b = B[o++]; v += (b & 127) * m; m *= 128; } while (b & 128); return v; };
@@ -496,7 +497,7 @@ function* loadCityDataG(id, title) {
   const pts = () => { const n = u(), out = new Array(n); for (let k = 0; k < n; k++) { cx += i(); cy += i(); out[k] = { x: cx * q, y: cy * q }; } return out; };
   const rep = f => { const n = u(), out = new Array(n); for (let k = 0; k < n; k++) out[k] = f(); return out; };
   const name = () => { const v = u(); return v ? d.names[v - 1] : ''; };
-  const w = { title, real: true, W: d.w * q, H: d.h * q, q };
+  const w = { title, real: true, W: d.w * q, H: d.h * q, q, lat: d.lat || 52.41, lon: d.lon || 16.93 };
   w.nodes = pts().map((p, id) => ({ id, x: p.x, y: p.y }));
   w.edges = rep(() => { const a = u(), b = u(), cls = u(), w2 = u(), nm = name(), ow = u(); return { a, b, cls, w: w2 * 5, name: nm, ow, pts: pts() }; });
   yield;
@@ -1261,7 +1262,7 @@ function startJob(o) {
   routeCache = null;
   toast(L(`${o.who} wsiada: ${o.dest.addr}`, `${o.who} gets in: ${o.dest.addr}`));
   const lm = o.dest.lm || '';
-  say(lm.includes('Dworzec') ? L('Na dworzec, pociąg nie poczeka!', 'To the station, the train won\'t wait!') : lm.includes('Szpital') ? L('Do szpitala, szybko!', 'To the hospital, quickly!') : lm.includes('Ratusz') ? L('Chcę zdążyć na koziołki w południe!', 'I want to see the goats at noon!') : lm.includes('targow') ? L('Na targi, stoisko czeka.', 'To the fair, my stand is waiting.') : lm.includes('Lotnisko') ? L('Na Ławicę, mam samolot!', 'To Ławica airport, I have a flight!') : lm.includes('Stadion') ? L('Na mecz, szybko!', 'To the match, quickly!') : lm.includes('Bajkowe') ? L('Na Bajkowe, ulica Kopciuszka.', 'To Bajkowe, Kopciuszka street.') : mpick(L(HURRY, HURRY_EN)));
+  say(lm.includes('Dworzec') ? L('Na dworzec, pociąg nie poczeka!', 'To the station, the train won\'t wait!') : lm.includes('Szpital') ? L('Do szpitala, szybko!', 'To the hospital, quickly!') : lm.includes('Ratusz') ? L('Chcę zdążyć na koziołki w południe!', 'I want to see the goats at noon!') : lm.includes('targow') ? L('Na targi, stoisko czeka.', 'To the fair, my stand is waiting.') : lm.includes('Lotnisko') ? L('Na lotnisko, mam samolot!', 'To the airport, I have a flight!') : lm.includes('Stadion') ? L('Na mecz, szybko!', 'To the match, quickly!') : lm.includes('Bajkowe') ? L('Na Bajkowe, ulica Kopciuszka.', 'To Bajkowe, Kopciuszka street.') : mpick(L(HURRY, HURRY_EN)));
   snd('door', 0.6);
 }
 function finishJob() {
@@ -2028,9 +2029,9 @@ function sigStopDist(c, cur) {
 let nightK = 0, maskC = null, maskG = null;
 function sunDarkness() {
   const d = new Date(), doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
-  const dec = 23.44 * Math.PI / 180 * Math.sin(2 * Math.PI * (284 + doy) / 365), lat = 52.41 * Math.PI / 180;
+  const dec = 23.44 * Math.PI / 180 * Math.sin(2 * Math.PI * (284 + doy) / 365), lat = (city && city.lat || 52.41) * Math.PI / 180;
   const w0 = Math.acos(clamp(-Math.tan(lat) * Math.tan(dec), -1, 1)) * 180 / Math.PI, half = w0 / 15;
-  const noon = 12 - 16.93 / 15 - d.getTimezoneOffset() / 60;   // local clock time of solar noon
+  const noon = 12 - (city && city.lon || 16.93) / 15 - d.getTimezoneOffset() / 60;   // local clock time of solar noon
   const h = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
   const fromDay = Math.min(h - (noon - half), (noon + half) - h);   // hours of daylight left (negative: after sunset)
   return clamp(0.5 - fromDay / 1.2, 0, 1);                           // about an hour of dusk
@@ -3179,6 +3180,8 @@ function refuelClose(msg) {
 const CITIES = [
   { id: 'poznan', name: 'Poznań', ready: true, startLm: 'Okrąglak', load: () => loadPoznan(),
     desc: ['Prawdziwa mapa z okolicami: od Kiekrza i Ławicy po Maltę i Luboń. Tramwaje i autobusy według rozkładu ZTM.', 'Real map with suburbs, from Kiekrz and Ławica to Malta and Luboń. Trams and buses run to the ZTM timetable.'] },
+  { id: 'bydgoszcz', name: 'Bydgoszcz', ready: true, startLm: 'Stary Rynek', load: () => loadCityData('bydgoszcz', 'Bydgoszcz'),
+    desc: ['Prawdziwa mapa: od Myślęcinka i lotniska po Fordon i most na Wiśle. Tramwaje i autobusy według rozkładu ZDMiKP.', 'Real map from Myślęcinek and the airport to Fordon and the Vistula bridge. Trams and buses run to the ZDMiKP timetable.'] },
   { id: 'warszawa', name: 'Warszawa', en: 'Warsaw', ready: false },
   { id: 'krakow', name: 'Kraków', en: 'Kraków', ready: false },
   { id: 'wroclaw', name: 'Wrocław', en: 'Wrocław', ready: false },
@@ -3196,9 +3199,9 @@ function setLang(l) {
 function applyStatic() {
   document.documentElement.lang = LANG;
   const T2 = [
-    ['clock', 'title', 'Rozkład jazdy ZTM według tej godziny', 'ZTM timetable at this time of day'],
+    ['clock', 'title', 'Rozkład jazdy komunikacji miejskiej według tej godziny', 'Public transport timetable at this time of day'],
     ['mmw', 'title', 'Pokaż mapę miasta', 'Show the city map'],
-    ['mmLbl', 'text', 'mapa', 'map'],
+    ['mmLbl', 'text', '© OpenStreetMap', '© OpenStreetMap'],
     ['pauseBtn', 'text', 'Pauza', 'Pause'],
     ['muteBtn', 'text', SND.on ? 'Dźwięk' : 'Cisza', SND.on ? 'Sound' : 'Muted'],
     ['setBtn', 'text', 'Ustawienia', 'Settings'],
@@ -3227,6 +3230,25 @@ function applyStatic() {
 }
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
 function noticeSeen() { try { return localStorage.getItem('kpm-notice') === '1'; } catch (e) { return false; } }
+// cities other than Poznań are downloaded and prepared only when chosen
+let cityBusy = false;
+async function ensureCity(id) {
+  if (WORLDS[id] && WORLDS[id].mapC) return true;
+  if (cityBusy) return false;
+  cityBusy = true;
+  const c = CITIES.find(x => x.id === id), st = () => $('loadStatus'), btns = ['startBtn', 'pickBtn'].map($).filter(Boolean);
+  btns.forEach(b => { b.disabled = true; });
+  try {
+    await fetchCityData(id, f => { if (st()) st().textContent = L(`Pobieram mapę: ${c.name}… ${Math.round(f * 60)}%`, `Downloading the ${c.en || c.name} map… ${Math.round(f * 60)}%`); });
+    await runSliced(loadCityDataG(id, c.name), 60, 90);
+    await runSliced(buildMinimapG(WORLDS[id]), 90, 99);
+    return true;
+  } catch (err) {
+    console.error(err);
+    if (st()) st().textContent = L('Nie udało się pobrać mapy. Sprawdź połączenie i spróbuj ponownie.', 'Could not download the map. Check your connection and try again.');
+    return false;
+  } finally { cityBusy = false; btns.forEach(b => { b.disabled = false; }); }
+}
 function showStart() {
   if (state === 'play' || state === 'paused') state = 'menu';
   const cityCard = c => {
@@ -3235,7 +3257,7 @@ function showStart() {
   };
   const sel = CITIES.find(c => c.id === pickCity);
   const goLbl = pickCity === 'random' ? L('Jedź po losowym mieście', 'Drive a random town') : L(`Jedź po mieście: ${sel.name}`, `Drive around ${sel.en || sel.name}`);
-  const status = loadErr ? L('Nie udało się wczytać mapy. Odśwież stronę.', 'Could not load the map. Please reload the page.') : !worldReady ? L('Wczytuję mapę Poznania i rozkład jazdy…', 'Loading the Poznań map and timetable…') : best ? L(`Rekord: ${best} zł`, `Best: PLN ${best}`) : '';
+  const status = loadErr ? L('Nie udało się wczytać mapy. Odśwież stronę.', 'Could not load the map. Please reload the page.') : !worldReady ? L('Wczytuję grę…', 'Loading the game…') : best ? L(`Rekord: ${best} zł`, `Best: PLN ${best}`) : '';
   $('card').innerHTML = `
     <div class="toprow"><h1>Kurs przez Miasto</h1>
       <div class="langs" role="group" aria-label="${L('Język', 'Language')}"><button type="button" class="ghost${LANG === 'pl' ? ' on' : ''}" data-lang="pl" lang="pl">PL</button><button type="button" class="ghost${LANG === 'en' ? ' on' : ''}" data-lang="en" lang="en">EN</button></div></div>
@@ -3248,16 +3270,16 @@ function showStart() {
     <p class="soonrow">${L('Wkrótce:', 'Coming soon:')} ${CITIES.filter(c => !c.ready).map(c => `<span>${esc(L(c.name, c.en || c.name))}</span>`).join('')}</p>
     <div class="row"><button class="btn" id="startBtn" type="button" ${worldReady ? '' : 'disabled'}>${esc(goLbl)}</button>${pickCity !== 'random' ? `<button class="ghost" id="pickBtn" type="button" ${worldReady ? '' : 'disabled'}>${L('Wybierz start na mapie', 'Pick a start on the map')}</button>` : ''}<button class="ghost" id="setBtnM" type="button">${L('Ustawienia', 'Settings')}</button><span class="seed" id="loadStatus">${esc(status)}</span></div>
     <details><summary>${L('Jak grać', 'How to play')}</summary><ul>${L(HOWTO_PL, HOWTO_EN)}</ul></details>
-    <p class="seed foot">${L('Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">autorzy OpenStreetMap</a> (ODbL) · rozkład: <a href="https://www.ztm.poznan.pl/otwarte-dane/dla-deweloperow/" target="_blank" rel="noopener">ZTM Poznań</a>, otwarte dane GTFS z 2.10.2026, przetworzone', 'Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL) · timetable: <a href="https://www.ztm.poznan.pl/otwarte-dane/dla-deweloperow/" target="_blank" rel="noopener">ZTM Poznań</a> open GTFS data of 2 Oct 2026, processed')} · <button class="linkish" type="button" id="legalBtn">${L('Informacje prawne i prywatność', 'Legal notice and privacy')}</button><br>${L('Pomysł i wydanie: Witek, Jaś i Maks', 'Created and published by Witek, Jaś and Maks')} · <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a></p>`;
+    <p class="seed foot">${L('Mapa © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">autorzy OpenStreetMap</a> (ODbL) · rozkład: <a href="https://www.ztm.poznan.pl/otwarte-dane/dla-deweloperow/" target="_blank" rel="noopener">ZTM Poznań</a>, otwarte dane GTFS z 2.10.2026, przetworzone; <a href="https://mkuran.pl/gtfs/" target="_blank" rel="noopener">ZDMiKP Bydgoszcz</a>, GTFS z 9.10.2026 (CC0), przetworzone', 'Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL) · timetable: <a href="https://www.ztm.poznan.pl/otwarte-dane/dla-deweloperow/" target="_blank" rel="noopener">ZTM Poznań</a> open GTFS data of 2 Oct 2026, processed; <a href="https://mkuran.pl/gtfs/" target="_blank" rel="noopener">ZDMiKP Bydgoszcz</a> GTFS of 9 Oct 2026 (CC0), processed')} · <button class="linkish" type="button" id="legalBtn">${L('Informacje prawne i prywatność', 'Legal notice and privacy')}</button><br>${L('Pomysł i wydanie: Witek, Jaś i Maks', 'Created and published by Witek, Jaś and Maks')} · <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a></p>`;
   for (const b of $('card').querySelectorAll('[data-lang]')) b.onclick = () => { setLang(b.dataset.lang); showStart(); };
   for (const b of $('card').querySelectorAll('[data-city]')) b.onclick = () => { pickCity = b.dataset.city; try { localStorage.setItem('kpm-city', pickCity); } catch (e) { /* storage unavailable */ } showStart(); };
-  $('startBtn').onclick = () => {
+  $('startBtn').onclick = async () => {
     if (!worldReady) return;
     if (pickCity === 'random') newWorld('random', 1000 + Math.floor(Math.random() * 9000));
-    else if (cityKind !== pickCity || T > 0.5) newWorld(pickCity);
+    else { if (!await ensureCity(pickCity)) return; if (cityKind !== pickCity || T > 0.5) newWorld(pickCity); }
     start();
   };
-  if ($('pickBtn')) $('pickBtn').onclick = () => { if (cityKind !== pickCity) newWorld(pickCity); openMap(true); };
+  if ($('pickBtn')) $('pickBtn').onclick = async () => { if (!await ensureCity(pickCity)) return; if (cityKind !== pickCity) newWorld(pickCity); openMap(true); };
   $('setBtnM').onclick = () => showSettings('menu');
   $('legalBtn').onclick = () => showLegal('menu');
   if ($('noticeOk')) $('noticeOk').onclick = () => { try { localStorage.setItem('kpm-notice', '1'); } catch (e) { /* storage unavailable */ } showStart(); };
@@ -3270,9 +3292,9 @@ const HOWTO_PL = `
   <li><b>Paliwo:</b> każde auto ma swój bak i realne spalanie w mieście (np. sedan ok. 7,5 l/100 km, ciężarówka ok. 32 l). Zatrzymaj się na stacji (żółte P) i naciśnij T albo „Tankuj”. Ceny według średnich cen z ${PRICE_DATE}.</li>
   <li><b>Klakson (H):</b> auta przed tobą włączają kierunkowskaz, zjeżdżają do prawej krawędzi, zatrzymują się i przepuszczają cię. Piesi się odsuwają.</li>
   <li><b>Auta:</b> supersamochód i kabriolet są najszybsze, ciężarówka wytrzymała, maluch zwrotny i oszczędny. Na terenach wojskowych stoją terenówki, ciężarówki i czołgi (tylko do jazdy). Gdy auto dymi, warsztat (pomarańczowe W, fikcyjny) naprawi je za darmo.</li>
-  <li><b>Helikopter:</b> stoi na Ławicy i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku.</li>
+  <li><b>Helikopter:</b> stoi na lotnisku i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku.</li>
   <li><b>Autopilot (O):</b> sam jedzie do pasażera, do celu albo na stację. Dotknięcie sterowania go wyłącza.</li>
-  <li><b>Komunikacja:</b> autobusy i tramwaje ZTM jeżdżą według rozkładu na aktualną godzinę, z numerami linii na dachach.</li>
+  <li><b>Komunikacja:</b> autobusy i tramwaje (ZTM Poznań, ZDMiKP Bydgoszcz) jeżdżą według rozkładu na aktualną godzinę, z numerami linii na dachach.</li>
   <li><b>Policja:</b> reaguje, gdy widzi kradzież auta albo taranowanie radiowozu. Zatrzymaj się przy radiowozie i zapłać mandat albo uciekaj.</li>
   <li><b>Telefon:</b> joystick do góry to gaz, w dół hamowanie i wsteczny, na boki skręt.</li>`;
 const HOWTO_EN = `
@@ -3281,9 +3303,9 @@ const HOWTO_EN = `
   <li><b>Fuel:</b> every car has its own tank and realistic city consumption (e.g. a sedan about 7.5 l/100 km, a truck about 32 l). Stop at a petrol station (yellow F) and press T or "Refuel". Prices follow Polish averages of ${PRICE_DATE}.</li>
   <li><b>Horn (H):</b> cars ahead switch on their indicator, pull over to the right-hand kerb, stop and let you through. Pedestrians step aside.</li>
   <li><b>Cars:</b> the supercar and convertible are fastest, the truck is tough, the mini car is nimble and frugal. Military areas hold jeeps, trucks and tanks (driving only). When your car smokes, a garage (orange G, fictional) fixes it for free.</li>
-  <li><b>Helicopter:</b> parked at Ławica airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included.</li>
+  <li><b>Helicopter:</b> parked at the airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included.</li>
   <li><b>Autopilot (O):</b> drives to the passenger, the drop-off or a petrol station by itself. Touch the controls to take over.</li>
-  <li><b>Public transport:</b> ZTM buses and trams run to the timetable for the current time, with line numbers on their roofs.</li>
+  <li><b>Public transport:</b> buses and trams (ZTM Poznań, ZDMiKP Bydgoszcz) run to the timetable for the current time, with line numbers on their roofs.</li>
   <li><b>Police:</b> react when they see a car theft or a rammed patrol car. Stop next to the police car and pay the fine, or get away.</li>
   <li><b>Phone:</b> joystick up is throttle, down is brake and reverse, sideways steers.</li>`;
 
@@ -3302,52 +3324,82 @@ const LEGAL_PL = () => `
   <h2>Czym jest ta gra</h2>
   <p>„Kurs przez Miasto” to darmowa, niekomercyjna gra przeglądarkowa i fikcja. Postacie, pojazdy, stacje paliw, ceny kursów, zachowanie policji i ruchu drogowego są wymyślone. Kradzież aut, ucieczki przed policją czy wjazdy w tramwaj są elementami zabawy i nie zachęcają do łamania przepisów. Gra nie jest nawigacją ani symulatorem nauki jazdy. Sugerowany wiek: 12+ (to nie jest oficjalna klasyfikacja PEGI).</p>
   <h2>Mapa</h2>
-  <p>Ulice, budynki, wody i nazwy miejsc pochodzą z <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © autorzy OpenStreetMap, na licencji <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. Dane zostały uproszczone i mogą być nieaktualne. Uproszczona baza zapisana w tej stronie jest bazą pochodną OSM i jest udostępniana na tej samej licencji ODbL.</p>
-  <h2>Komunikacja miejska</h2>
+  <p>Ulice, budynki, wody i nazwy miejsc pochodzą z <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © autorzy OpenStreetMap, na licencji <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. Dane zostały uproszczone i mogą być nieaktualne. Uproszczone bazy zapisane w tej stronie i w plikach danych miast (folder <code>data</code>) są bazami pochodnymi OSM i są udostępniane na tej samej licencji ODbL; można je pobrać razem ze stroną.</p>
+  <h2>Komunikacja miejska: Poznań</h2>
   <p>Zgodnie z <a href="https://www.ztm.poznan.pl/otwarte-dane/dla-deweloperow/" target="_blank" rel="noopener">zasadami udostępniania danych ZTM w Poznaniu</a> (treści są udostępniane bezwnioskowo i bezpłatnie; warunkiem ponownego wykorzystania jest informacja o źródle, o ostatniej aktualizacji i o przetworzeniu danych) informujemy:</p>
   <ul><li><b>Źródło:</b> Zarząd Transportu Miejskiego w Poznaniu, otwarte dane, rozkład jazdy w formacie GTFS.</li>
   <li><b>Ostatnia aktualizacja danych:</b> plik <code>20261003_20261018.zip</code> z 2.10.2026, rozkład ważny od 3 do 18.10.2026. Po tym okresie gra używa tego samego rozkładu według dnia tygodnia, więc może on odbiegać od rzeczywistego.</li>
   <li><b>Przetworzenie:</b> dane zostały przetworzone przez autora gry: zostawiono tylko linie, przystanki, przebiegi tras i godziny kursów w obszarze mapy, uproszczono kształty tras i zakodowano je w formacie gry, a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi (np. „Stadion”, „Centrum Handlowe”). Pozycje pojazdów są wyliczane z rozkładu, a nie pochodzą z danych na żywo.</li></ul>
   <p>Rozkład w grze nie służy do planowania podróży. Gra nie jest powiązana z ZTM w Poznaniu ani z przewoźnikami, nie używa logo Miasta Poznania ani ZTM, a wygląd pojazdów jest ogólny. Gra nie łączy się z systemem PEKA. ZTM w Poznaniu nie ponosi odpowiedzialności za dalsze wykorzystanie tych danych.</p>
+  <h2>Komunikacja miejska: Bydgoszcz</h2>
+  <ul><li><b>Źródło:</b> rozkład jazdy Zarządu Dróg Miejskich i Komunikacji Publicznej w Bydgoszczy (ZDMiKP), w formacie GTFS przygotowanym przez Mikołaja Kuranowskiego (<a href="https://mkuran.pl/gtfs/" target="_blank" rel="noopener">mkuran.pl/gtfs</a>), udostępnionym na licencji <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.pl" target="_blank" rel="noopener">CC0 1.0</a>.</li>
+  <li><b>Ostatnia aktualizacja danych:</b> plik pobrany 11.10.2026 (wersja 2026-10-01/2026-10-12/2026-10-16), kursy od 8.10.2026 do 6.04.2027.</li>
+  <li><b>Przetworzenie:</b> dane nie zawierają przebiegów tras, więc autor gry wyznaczył je po ulicach i torach tramwajowych z OpenStreetMap; mogą się różnić od rzeczywistych. Zostawiono tylko linie i przystanki z obszaru mapy, a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi.</li></ul>
+  <p>Rozkład w grze nie służy do planowania podróży. Gra nie jest powiązana z ZDMiKP, Miejskimi Zakładami Komunikacyjnymi ani innymi przewoźnikami w Bydgoszczy i nie używa ich logo.</p>
   <h2>Nazwy i znaki towarowe</h2>
   <p>Gra nie pokazuje żadnych firm. Sklepy, centra handlowe, restauracje, hotele, apteki, prywatne gabinety, kluby i siłownie nie są zaznaczone na mapie. Warsztaty i stacje paliw w grze są fikcyjne: stoją w wybranych przez grę punktach przy głównych ulicach, a nie w miejscach prawdziwych warsztatów i stacji, więc ich ceny i usługi nie dotyczą żadnej istniejącej firmy. Gra nie wyświetla nazw budynków ani nazw jednostek wojskowych.</p>
-  <p>Zaznaczone są tylko miejsca publiczne (szkoły, przedszkola, uczelnie, szpitale, komisariaty, straż pożarna, biblioteki, muzea, teatry, miejskie obiekty sportowe, miejsca kultu), zawsze pod nazwą ogólną. Centra handlowe występujące jako cele kursów mają opisy ogólne (np. „Centrum handlowe na Ratajach”), a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi. Nazwy ulic, dzielnic i znanych miejsc publicznych (np. Stary Rynek, Dworzec Poznań Główny) służą wyłącznie do opisania położenia. Gra nie jest powiązana z Miastem Poznań, żadną firmą ani instytucją i nie jest przez nie sponsorowana ani zatwierdzona. Jeśli uważasz, że jakieś oznaczenie narusza Twoje prawa, napisz do nas, a usuniemy je.</p>
+  <p>Zaznaczone są tylko miejsca publiczne (szkoły, przedszkola, uczelnie, szpitale, komisariaty, straż pożarna, biblioteki, muzea, teatry, miejskie obiekty sportowe, miejsca kultu), zawsze pod nazwą ogólną. Centra handlowe występujące jako cele kursów mają opisy ogólne (np. „Centrum handlowe na Ratajach”, „Centrum handlowe przy Fordońskiej”), a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi. Nazwy ulic, dzielnic i znanych miejsc publicznych (np. Stary Rynek, Dworzec Poznań Główny) służą wyłącznie do opisania położenia. Gra nie jest powiązana z Miastem Poznań, Miastem Bydgoszcz, żadną firmą ani instytucją i nie jest przez nie sponsorowana ani zatwierdzona. Jeśli uważasz, że jakieś oznaczenie narusza Twoje prawa, napisz do nas, a usuniemy je.</p>
   <h2>Ceny paliw i spalanie</h2>
   <p>Ceny są orientacyjne: średnie ceny maksymalne ogłoszone na ${PRICE_DATE} (Pb95 ${money2(FUEL.pb95.p)} zł/l, Pb98 ${money2(FUEL.pb98.p)} zł/l, ON ${money2(FUEL.on.p)} zł/l, LPG ${money2(FUEL.lpg.p)} zł/l). Stacje w grze są fikcyjne (nie stoją w miejscach prawdziwych stacji) i liczą 0–4% mniej. Spalanie jest przybliżonym spalaniem miejskim dla danego typu pojazdu. Nie jest to oferta handlowa ani porada.</p>
   <h2 id="legal-privacy">Prywatność i ciasteczka</h2>
   <p>Gra nie ustawia plików cookie, nie ma reklam, analityki ani kont użytkowników i nie zbiera danych osobowych. W pamięci Twojej przeglądarki (localStorage) zapisuje tylko to, co jest potrzebne do działania funkcji, z których korzystasz:</p>
   <ul><li><code>kpm-set3</code>: ustawienia sterowania i wyświetlania,</li><li><code>kpm-lang</code>: wybrany język,</li><li><code>kpm-city</code>, <code>kpm-seed</code>, <code>kpm-start</code>: wybrane miasto, numer losowego miasta i miejsce startu,</li><li><code>kpm-best</code>: rekord,</li><li><code>kpm-notice</code>: że informacja o prywatności została zamknięta.</li></ul>
   <p>Te dane nie opuszczają Twojego urządzenia i nie są wysyłane do autora. Takie przechowywanie jest niezbędne do świadczenia usługi, o którą prosisz, więc nie wymaga zgody (art. 5 ust. 3 dyrektywy 2002/58/WE, w Polsce art. 399 Prawa komunikacji elektronicznej). Możesz je w każdej chwili usunąć, czyszcząc dane witryny w przeglądarce. Pytania o prywatność: <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a>.</p>
-  <p>Czcionki (Bungee, Barlow Semi Condensed, licencja SIL Open Font License) są pobierane z Google Fonts, więc Twoja przeglądarka łączy się z serwerami Google, które widzą Twój adres IP (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">polityka prywatności Google</a>). Serwer, na którym działa strona, może zapisywać standardowe logi (adres IP, czas wizyty, typ przeglądarki) wyłącznie w celach technicznych i bezpieczeństwa.</p>
+  <p>Czcionki (Bungee, Barlow Semi Condensed, licencja SIL Open Font License) są pobierane z Google Fonts, więc Twoja przeglądarka łączy się z serwerami Google, które widzą Twój adres IP (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">polityka prywatności Google</a>). Strona jest hostowana na platformie claude.ai firmy Anthropic, która może stosować własne pliki cookie zgodnie ze swoją <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">polityką prywatności</a>.</p>
+  <h2 id="legal-terms">Zasady korzystania (regulamin)</h2>
+  <ul><li>Gra jest udostępniana bezpłatnie, bez rejestracji i bez kont. Korzystanie z niej oznacza akceptację tych zasad.</li>
+  <li>Wymagania techniczne: aktualna przeglądarka internetowa z włączonym JavaScriptem (Chrome, Edge, Firefox, Safari), połączenie z internetem przy pierwszym wczytaniu.</li>
+  <li>Gra nie przyjmuje od użytkowników żadnych treści, więc nie da się w niej publikować treści bezprawnych.</li>
+  <li>Uwagi i zgłoszenia (np. błędy, nieprawidłowe dane, oznaczenia naruszające czyjeś prawa) przyjmujemy e-mailem i staramy się odpowiadać jak najszybciej. Na prośby dotyczące danych osobowych odpowiadamy w ciągu miesiąca.</li>
+  <li>Możemy w każdej chwili zmienić grę lub te zasady albo zakończyć jej udostępnianie.</li></ul>
   <h2>Wydawca i kontakt</h2>
   <p>Gra jest pomysłem Witka, Jasia i Maksa, którzy ją wydają. Pytania, uwagi, zgłoszenia błędów i naruszeń: <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a>.</p>
+  <h2 id="legal-gdpr">Dane osobowe w korespondencji</h2>
+  <p>Jeśli napiszesz do nas e-mail, administratorami Twoich danych (adresu e-mail i treści wiadomości) są wydawcy gry: Witek, Jaś i Maks, kontakt: <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a>. Używamy ich wyłącznie, żeby odpowiedzieć na wiadomość i rozpatrzyć zgłoszenie (art. 6 ust. 1 lit. f RODO), i usuwamy je najpóźniej po roku od zakończenia sprawy. Wiadomości są przechowywane w usłudze poczty iCloud firmy Apple. Masz prawo do dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania i sprzeciwu, a także do skargi do Prezesa Urzędu Ochrony Danych Osobowych (uodo.gov.pl).</p>
   <h2>Odpowiedzialność</h2>
-  <p>Gra jest udostępniana bezpłatnie, „tak jak jest”, bez gwarancji poprawności danych. Dźwięki są generowane w przeglądarce.</p>`;
+  <p>Gra jest udostępniana bezpłatnie, „tak jak jest”, bez gwarancji poprawności danych. Dźwięki są generowane w przeglądarce.</p>
+  <h2>Prawa autorskie</h2>
+  <p>© 2026 Witek, Jaś i Maks. Kod, grafika i teksty gry są chronione prawem autorskim. Dane map, rozkładów i czcionek należą do ich autorów i są wykorzystywane na licencjach opisanych powyżej.</p>`;
 const LEGAL_EN = () => `
   <h2>What this game is</h2>
   <p>"Kurs przez Miasto" is a free, non-commercial browser game and a work of fiction. Characters, vehicles, petrol stations, fares, police and traffic behaviour are made up. Stealing cars, escaping the police or bumping into trams are part of the game and do not encourage breaking the law. The game is not a navigation tool or a driving-school simulator. Suggested age: 12+ (not an official PEGI rating).</p>
   <h2>Map</h2>
-  <p>Streets, buildings, water and place names come from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © OpenStreetMap contributors, under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. The data is simplified and may be out of date. The simplified database embedded in this page is a derivative of OSM and is made available under the same ODbL licence.</p>
-  <h2>Public transport</h2>
+  <p>Streets, buildings, water and place names come from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © OpenStreetMap contributors, under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. The data is simplified and may be out of date. The simplified databases embedded in this page and in the city data files (the <code>data</code> folder) are derivatives of OSM and are made available under the same ODbL licence; they can be downloaded together with the page.</p>
+  <h2>Public transport: Poznań</h2>
   <p>Under the <a href="https://www.ztm.poznan.pl/otwarte-dane/dla-deweloperow/" target="_blank" rel="noopener">data sharing rules of ZTM Poznań</a> (content is shared free of charge without a request; reuse requires stating the source, the last update and that the data was processed):</p>
   <ul><li><b>Source:</b> Zarząd Transportu Miejskiego w Poznaniu (Poznań Public Transport Authority), open data, GTFS timetable.</li>
   <li><b>Last data update:</b> file <code>20261003_20261018.zip</code> of 2 Oct 2026, timetable valid 3–18 Oct 2026. After that the game reuses it by day of the week, so it may differ from the real one.</li>
   <li><b>Processing:</b> the data was processed by the game's author: only lines, stops, route paths and trip times within the map area were kept, route shapes were simplified and encoded in the game's format, and company names in a few stop names were replaced with generic words (e.g. "Stadion", "Centrum Handlowe"). Vehicle positions are calculated from the timetable, not taken from live data.</li></ul>
   <p>The in-game timetable is not for planning journeys. The game is not affiliated with ZTM Poznań or any operator, does not use the City of Poznań or ZTM logos, and the vehicle livery is generic. The game does not connect to the PEKA system. ZTM Poznań is not responsible for any further reuse of this data.</p>
+  <h2>Public transport: Bydgoszcz</h2>
+  <ul><li><b>Source:</b> timetable of Zarząd Dróg Miejskich i Komunikacji Publicznej w Bydgoszczy (ZDMiKP), in the GTFS format prepared by Mikołaj Kuranowski (<a href="https://mkuran.pl/gtfs/" target="_blank" rel="noopener">mkuran.pl/gtfs</a>), released under <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">CC0 1.0</a>.</li>
+  <li><b>Last data update:</b> file downloaded on 11 Oct 2026 (version 2026-10-01/2026-10-12/2026-10-16), trips from 8 Oct 2026 to 6 Apr 2027.</li>
+  <li><b>Processing:</b> the data has no route paths, so the game's author derived them along streets and tram tracks from OpenStreetMap; they may differ from the real ones. Only lines and stops within the map area were kept, and company names in a few stop names were replaced with generic words.</li></ul>
+  <p>The in-game timetable is not for planning journeys. The game is not affiliated with ZDMiKP, Miejskie Zakłady Komunikacyjne or other operators in Bydgoszcz and does not use their logos.</p>
   <h2>Names and trademarks</h2>
   <p>The game shows no businesses. Shops, shopping centres, restaurants, hotels, pharmacies, private practices, clubs and gyms are not marked on the map. Garages and petrol stations in the game are fictional: they stand at points chosen by the game along main streets, not where real garages and stations are, so their prices and services do not relate to any real business. The game shows no building names and no names of military units.</p>
-  <p>Only public places are marked (schools, kindergartens, universities, hospitals, police and fire stations, libraries, museums, theatres, municipal sports grounds, places of worship), always under a generic label. Shopping centres used as trip destinations have generic descriptions (e.g. "Centrum handlowe na Ratajach"), and company names in a few stop names were replaced with generic words. Street, district and well-known public place names (e.g. Stary Rynek, Poznań Główny station) are used only to describe locations. The game is not affiliated with, sponsored or endorsed by the City of Poznań or any company or institution. If you believe a marking infringes your rights, write to us and we will remove it.</p>
+  <p>Only public places are marked (schools, kindergartens, universities, hospitals, police and fire stations, libraries, museums, theatres, municipal sports grounds, places of worship), always under a generic label. Shopping centres used as trip destinations have generic descriptions (e.g. "Centrum handlowe na Ratajach"), and company names in a few stop names were replaced with generic words. Street, district and well-known public place names (e.g. Stary Rynek, Poznań Główny station) are used only to describe locations. The game is not affiliated with, sponsored or endorsed by the City of Poznań, the City of Bydgoszcz or any company or institution. If you believe a marking infringes your rights, write to us and we will remove it.</p>
   <h2>Fuel prices and consumption</h2>
   <p>Prices are approximate: Polish average maximum pump prices announced for ${PRICE_DATE} (Petrol 95 PLN ${money2(FUEL.pb95.p)}/l, Petrol 98 PLN ${money2(FUEL.pb98.p)}/l, Diesel PLN ${money2(FUEL.on.p)}/l, LPG PLN ${money2(FUEL.lpg.p)}/l). Stations in the game are fictional (not located where real stations are) and charge 0–4% less. Consumption is an approximate city figure for each vehicle type. This is not a commercial offer or advice.</p>
   <h2 id="legal-privacy">Privacy and cookies</h2>
   <p>The game sets no cookies, shows no ads, runs no analytics, has no accounts and collects no personal data. It only stores what the features you use need in your browser's localStorage:</p>
   <ul><li><code>kpm-set3</code>: control and display settings,</li><li><code>kpm-lang</code>: chosen language,</li><li><code>kpm-city</code>, <code>kpm-seed</code>, <code>kpm-start</code>: chosen city, random town number and start point,</li><li><code>kpm-best</code>: best score,</li><li><code>kpm-notice</code>: that you dismissed the privacy note.</li></ul>
   <p>This data never leaves your device and is not sent to the author. Such storage is strictly necessary for the service you request, so no consent is needed (Art. 5(3) of Directive 2002/58/EC; in Poland Art. 399 of the Electronic Communications Law). You can delete it at any time by clearing this site's data in your browser. Privacy questions: <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a>.</p>
-  <p>Fonts (Bungee, Barlow Semi Condensed, SIL Open Font License) are loaded from Google Fonts, so your browser connects to Google servers, which see your IP address (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google privacy policy</a>). The server hosting this page may keep standard logs (IP address, time of visit, browser type) for technical and security purposes only.</p>
+  <p>Fonts (Bungee, Barlow Semi Condensed, SIL Open Font License) are loaded from Google Fonts, so your browser connects to Google servers, which see your IP address (<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google privacy policy</a>). The page is hosted on Anthropic's claude.ai platform, which may use its own cookies under its <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">privacy policy</a>.</p>
+  <h2 id="legal-terms-en">Terms of use</h2>
+  <ul><li>The game is free, with no registration and no accounts. Using it means accepting these terms.</li>
+  <li>Technical requirements: an up-to-date web browser with JavaScript enabled (Chrome, Edge, Firefox, Safari) and an internet connection for the first load.</li>
+  <li>The game accepts no content from users, so no unlawful content can be published in it.</li>
+  <li>Feedback and reports (e.g. bugs, wrong data, markings that infringe someone's rights) are accepted by e-mail and we try to reply as soon as we can. Requests about personal data are answered within one month.</li>
+  <li>We may change the game or these terms, or stop providing it, at any time.</li></ul>
   <h2>Publisher and contact</h2>
   <p>The game is the idea of Witek, Jaś and Maks, who publish it. Questions, feedback, bug reports and infringement notices: <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a>.</p>
+  <h2>Personal data in correspondence</h2>
+  <p>If you e-mail us, the controllers of your data (e-mail address and message) are the game's publishers, Witek, Jaś and Maks, contact: <a href="mailto:kursprzezmiasto@icloud.com">kursprzezmiasto@icloud.com</a>. We use it only to reply and handle your request (Art. 6(1)(f) GDPR) and delete it no later than one year after the matter is closed. Messages are stored in Apple's iCloud Mail. You have the right to access, rectify, erase, restrict and object to processing, and to lodge a complaint with the Polish data protection authority (uodo.gov.pl).</p>
   <h2>Liability</h2>
-  <p>The game is provided free of charge, "as is", with no guarantee that the data is accurate. Sounds are generated in the browser.</p>`;
+  <p>The game is provided free of charge, "as is", with no guarantee that the data is accurate. Sounds are generated in the browser.</p>
+  <h2>Copyright</h2>
+  <p>© 2026 Witek, Jaś and Maks. The game's code, graphics and texts are protected by copyright. Map, timetable and font data belong to their authors and are used under the licences described above.</p>`;
 
 // ---------- flow ----------
 function start() {
@@ -3390,7 +3442,7 @@ async function runSliced(gen, p0, p1) {
     n++;
     if (performance.now() - t > 25) {
       const el = $('loadStatus'), pct = Math.round(p0 + (p1 - p0) * (1 - Math.exp(-n / 30)));
-      if (el) el.textContent = L(`Wczytuję mapę i rozkład jazdy… ${pct}%`, `Loading the map and timetable… ${pct}%`);
+      if (el) el.textContent = L(`Przygotowuję mapę i rozkład jazdy… ${pct}%`, `Preparing the map and timetable… ${pct}%`);
       await nextTask(); t = performance.now();
     }
   }
