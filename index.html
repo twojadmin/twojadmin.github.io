@@ -63,6 +63,7 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .mmw{position:absolute;top:12px;right:16px;width:var(--mm);height:var(--mm);pointer-events:auto;cursor:pointer;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#1d4f66}
 .mmw canvas{width:100%;height:100%;display:block}
 .mmw small{position:absolute;right:4px;bottom:2px;font-size:11px;color:var(--paper);text-shadow:0 1px 2px #000}
+.osm{position:absolute;right:4px;bottom:calc(2px + env(safe-area-inset-bottom,0px));font-size:11px;line-height:1.2;color:var(--paper);background:var(--panel);padding:1px 5px;border-radius:3px}
 .dash{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 12px;white-space:nowrap;max-width:calc(100% - 32px);box-sizing:border-box}
 .dash .spd{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums;color:var(--paper);min-width:3.2ch;text-align:right}
 .dash .spd small{font-family:var(--ui);font-size:12px;color:var(--dim);margin-left:3px}
@@ -75,6 +76,12 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 kbd{font-family:var(--ui);font-size:12px;border:1px solid var(--line);border-bottom-width:2px;border-radius:3px;padding:0 4px;color:var(--paper)}
 .toast{position:absolute;left:50%;top:34%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font-size:16px;font-weight:600;text-align:center;max-width:calc(100% - 32px);box-sizing:border-box;transition:opacity .25s}
 .toast.hide{opacity:0}
+.bill{position:absolute;left:50%;top:42%;transform:translateX(-50%);width:340px;max-width:calc(100% - 32px);box-sizing:border-box;background:var(--panel);border:1px solid #e8833a;border-radius:6px;padding:10px 14px;font-size:14px;line-height:1.35;pointer-events:auto;cursor:pointer}
+.bill h3{margin:0 0 6px;font-size:16px;color:#ffb27a}
+.bill .brow{display:flex;justify-content:space-between;gap:12px}
+.bill .sum{border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
+.bill p{margin:8px 0 4px}
+.bill small{color:var(--dim)}
 .tools{position:absolute;right:16px;top:calc(12px + var(--mm) + 8px);display:flex;gap:6px;pointer-events:auto}
 .ghost{font:inherit;font-size:13px;font-weight:600;color:var(--paper);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:4px 9px;cursor:pointer}
 button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
@@ -184,6 +191,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
       </div>
     </div>
     <div class="mmw" id="mmw" title="Pokaż mapę miasta"><canvas id="mm" width="224" height="224"></canvas><small id="mmLbl">© OpenStreetMap</small></div>
+    <small class="osm" id="osmLbl">© OpenStreetMap</small>
     <div class="tools"><button class="ghost" id="pauseBtn" type="button">Pauza</button><button class="ghost" id="muteBtn" type="button">Dźwięk</button><button class="ghost" id="setBtn" type="button">Ustawienia</button><button class="ghost" id="autoBtn" type="button" title="Autopilot (O): jedzie sam do celu">Autopilot</button></div>
     <button class="ghost fuelbtn" id="fuelBtn" type="button" hidden>Tankuj (T)</button>
     <div class="dash" id="dash">
@@ -194,6 +202,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
     </div>
     <div class="keys" id="keys"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>M</kbd> mapa · <kbd>H</kbd> klakson · <kbd>O</kbd> autopilot</div>
     <div class="toast hide" id="toast"></div>
+    <div class="bill" id="bill" hidden></div>
   </div>
   <div class="pads" id="pads">
     <div class="pg"><div class="joy" id="joy" aria-label="Joystick: kierunek jazdy"><div class="knob" id="knob"></div></div></div>
@@ -242,7 +251,7 @@ const hsl = (c, dl = 0) => `hsl(${c[0]},${c[1]}%,${clamp(c[2] + dl, 4, 96)}%)`;
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
 // ---------- world constants (1 px = 0.1 m) ----------
-const RW = 32, LANE = 16, SW = 14, NC = 11, HC = 2600;
+const HC = 2600;
 const TYPES = {
   taxi:  { name: 'Taksówka', en: 'Taxi', fuel: 'pb95', tank: 43, cons: 5.5,   L: 40, W: 19, max: 420, acc: 330, brake: 620, grip: 7,   steer: 2.7, hp: 100, mass: 1.2, cols: ['#f2c230'] },
   sedan: { name: 'Sedan', en: 'Sedan', fuel: 'pb95', tank: 50, cons: 7.5,      L: 40, W: 19, max: 390, acc: 300, brake: 600, grip: 6.5, steer: 2.6, hp: 100, mass: 1.2, cols: ['#b8332b', '#2d5d9f', '#3f7a4a', '#d9d4c7', '#5b5f66', '#7b3f8c'] },
@@ -258,6 +267,7 @@ const TYPES = {
   tank:     { name: 'Czołg', en: 'Tank', fuel: 'on', tank: 1200, cons: 300, L: 92, W: 44, max: 190, acc: 170, brake: 520, grip: 14, steer: 1.5, hp: 900, mass: 9, cols: ['#55603a'], tracks: 1 },
   heli:     { name: 'Helikopter', en: 'Helicopter', L: 54, W: 14, max: 1000, acc: 560, brake: 650, grip: 2, steer: 2.3, hp: 150, mass: 2, cols: ['#c8102e'], heli: 1 },
   truck: { name: 'Ciężarówka', en: 'Truck', fuel: 'on', tank: 300, cons: 32, L: 72, W: 24, max: 280, acc: 150, brake: 430, grip: 5,   steer: 1.7, hp: 240, mass: 3.2, cols: ['#c9532d', '#2c6a8a', '#4c7a3a'] },
+  tow:   { name: 'Laweta', en: 'Tow truck', L: 74, W: 24, max: 300, acc: 200, brake: 500, grip: 6, steer: 1.8, hp: 400, mass: 3.5, cols: ['#f0a020'] },
 };
 for (const k in TYPES) {
   const t = TYPES[k], n = Math.max(2, Math.round(t.L / t.W));
@@ -268,21 +278,63 @@ const tName = t => L(t.name, t.en);
 const TRAFFIC_MIX = [['sedan', 28], ['kombi', 14], ['mikro', 12], ['taxi', 10], ['van', 12], ['truck', 7], ['sport', 9], ['super', 4], ['roadster', 6], ['jeep', 1]];
 const MIX_SUM = TRAFFIC_MIX.reduce((a, m) => a + m[1], 0);
 function randType(rand = Math.random) { let s = rand() * MIX_SUM, acc = 0; for (const [k, w] of TRAFFIC_MIX) { acc += w; if (s < acc) return k; } return 'sedan'; }
-
-const DISTRICTS = [
-  { name: 'Zielone Wzgórze',   h: [26, 52],  roofs: [[14, 55, 42], [24, 40, 38], [100, 12, 40], [8, 45, 35]], park: .22, parking: .08, split: .7 },
-  { name: 'Nowe Miasto',       h: [40, 90],  roofs: [[210, 10, 45], [200, 18, 38], [30, 20, 50]], park: .1, parking: .12, split: .8 },
-  { name: 'Port',              h: [28, 50],  roofs: [[18, 40, 36], [200, 8, 48], [190, 25, 34]], park: .03, parking: .22, split: .4 },
-  { name: 'Wola',              h: [34, 80],  roofs: [[16, 35, 40], [35, 30, 46], [210, 8, 42]], park: .12, parking: .12, split: .75 },
-  { name: 'Śródmieście',       h: [70, 175], roofs: [[200, 6, 34], [185, 20, 36], [40, 22, 52], [220, 12, 44]], park: .06, parking: .08, split: .9 },
-  { name: 'Nadbrzeże',         h: [40, 110], roofs: [[195, 15, 42], [30, 25, 48], [12, 30, 40]], park: .14, parking: .1, split: .8 },
-  { name: 'Osiedle Słoneczne', h: [60, 120], roofs: [[45, 8, 62], [200, 6, 58], [30, 12, 55]], park: .18, parking: .14, split: .6 },
-  { name: 'Przemysłowa',       h: [26, 56],  roofs: [[200, 5, 44], [20, 30, 34], [90, 8, 36]], park: .03, parking: .2, split: .4 },
-  { name: 'Stocznia',          h: [26, 50],  roofs: [[205, 20, 40], [15, 45, 38], [200, 4, 52]], park: .02, parking: .2, split: .35 },
+// fictional car-rental companies (colour of their parking bays, their fleet) and fictional insurers
+const RENT_COS = [
+  { n: 'Zielony Kluczyk', col: '#35c46a', cars: ['mikro', 'sedan', 'mikro', 'kombi'], ins: 1 },
+  { n: 'Fioletowa Fura', col: '#a066f0', cars: ['sport', 'roadster', 'super', 'sport'], ins: 2 },
+  { n: 'Pomarańczowe Koła', col: '#ff8a1f', cars: ['van', 'kombi', 'truck', 'van'], ins: 3 },
+  { n: 'Błękitny Bak', col: '#2fb8e0', cars: ['sedan', 'kombi', 'roadster', 'sedan'], ins: 1 },
 ];
-const H_NAMES = ['Lipowa', 'Długa', 'Kwiatowa', 'Polna', 'Ogrodowa', 'Słoneczna', 'Kolejowa', 'Szkolna', 'Młyńska', 'Targowa', 'Portowa', 'Fabryczna', 'Piekarska', 'Rybna'];
-const V_NAMES = ['Mickiewicza', 'Kościuszki', 'Sienkiewicza', 'Żeromskiego', 'Wolności', 'Leśna', 'Zielona', 'Wiśniowa', 'Brzozowa', 'Spacerowa', 'Krótka', 'Nowa', 'Chopina', 'Reymonta'];
-const LANDMARKS = ['Dworzec Główny', 'Szpital Miejski', 'Ratusz', 'Uniwersytet', 'Hotel Pod Różą', 'Kino Wolność', 'Hala Targowa', 'Teatr Nowy', 'Poczta Główna', 'Basen Miejski', 'Galeria Centrum', 'Stadion'];
+const INSURERS = ['TU Spokojna Głowa', 'TU Złoty Zderzak', 'TU Miękkie Lądowanie', 'TU Bezpieczny Zakręt'];
+// rough price of a full repair after a crash, PLN
+const REPAIR_VAL = { taxi: 3200, sedan: 3200, kombi: 3500, sport: 7500, mikro: 1800, van: 4800, police: 4000, super: 14500, roadster: 8200, jeep: 6000, army: 9000, tank: 40000, heli: 60000, truck: 9500, tow: 9000 };
+
+// ---------- city generation ----------
+// A seaside town grown from a seed: a river with bridges, an old town round a market square, avenues and ring roads,
+// districts with their own street patterns (tenements, blocks of flats, villas, industry, port), parks, woods, a beach,
+// a railway with a station and an airport. It is built straight into the shared world format (see the world model below),
+// so traffic, jobs, the minimap and everything else work the same way as on the real maps.
+let city = null;
+const GEN_SIZE = 36000;   // the generated map is a 3.6 km square
+// district kinds: spacing of the long streets (a) and of the cross streets (b), wavy streets (wv), street width,
+// every how many long streets one is wider, how much cross streets shift and drop out, and the buildings along them
+// (height, frontage, depth, setback from the pavement, gap between neighbours)
+const GEN_KINDS = {
+  old:      { a: [480, 560], b: [420, 520], w: 70, major: 0, jit: 0.2, drop: 0.05, h: [60, 130], f: [90, 160], d: [120, 170], set: [0, 4], gap: [0, 2], bt: 'residential', roofs: [[8, 46, 38], [14, 42, 33], [20, 30, 30], [4, 38, 42], [24, 36, 40]] },
+  centre:   { a: [720, 880], b: [560, 700], w: 80, major: 3, jit: 0.05, drop: 0.06, h: [80, 175], f: [120, 220], d: [130, 190], set: [0, 6], gap: [0, 3], bt: 'residential', roofs: [[210, 10, 45], [200, 18, 38], [30, 20, 50], [16, 35, 40], [35, 30, 46]] },
+  blocks:   { a: [1150, 1400], b: [900, 1150], w: 80, major: 2, jit: 0.1, drop: 0.12, h: [100, 180], f: [500, 1000], d: [110, 140], set: [150, 230], gap: [220, 420], rows: 1, bt: 'apartments', roofs: [[45, 8, 62], [200, 6, 58], [30, 12, 55], [210, 8, 50]] },
+  houses:   { a: [620, 760], b: [900, 1300], wv: [40, 110], w: 60, major: 0, jit: 0.3, drop: 0.2, h: [26, 46], f: [90, 130], d: [85, 115], set: [60, 100], gap: [60, 140], trees: 0.7, bt: 'house', roofs: [[14, 55, 42], [24, 40, 38], [100, 12, 40], [8, 45, 35], [4, 40, 36]] },
+  industry: { a: [1300, 1700], b: [1100, 1400], w: 90, major: 2, jit: 0.1, drop: 0.2, h: [30, 60], f: [300, 700], d: [250, 500], set: [60, 110], gap: [80, 200], yard: 1, bt: 'industrial', roofs: [[200, 5, 44], [20, 30, 34], [90, 8, 36], [205, 10, 50]] },
+  port:     { a: [1200, 1500], b: [1000, 1300], w: 90, major: 2, jit: 0.1, drop: 0.15, h: [28, 55], f: [400, 800], d: [200, 400], set: [60, 110], gap: [80, 180], yard: 1, bt: 'warehouse', roofs: [[18, 40, 36], [200, 8, 48], [190, 25, 34], [205, 20, 40]] },
+};
+const GEN_DISTRICTS = {
+  old: ['Stare Miasto'],
+  centre: ['Śródmieście', 'Nowe Miasto', 'Wola', 'Zatorze', 'Podgórze', 'Młynówka', 'Bielany', 'Piaski', 'Przedmieście', 'Kolonia'],
+  blocks: ['Osiedle Słoneczne', 'Osiedle Kwiatowe', 'Osiedle Leśne', 'Osiedle Młodych', 'Osiedle Tysiąclecia', 'Osiedle Przyjaźni', 'Osiedle Batorego', 'Osiedle Kopernika'],
+  houses: ['Zielone Wzgórze', 'Zalesie', 'Sady', 'Dąbrowa', 'Górki', 'Wrzosy', 'Łęgi', 'Nowy Dwór', 'Kępa', 'Stary Dwór', 'Nadbrzeże', 'Łąki', 'Olszynka', 'Brzezie', 'Wydmy', 'Lipki'],
+  industry: ['Przemysłowa', 'Zakłady', 'Glinianki', 'Cegielnia', 'Gazownia'],
+  port: ['Port', 'Stocznia'],
+};
+const GEN_STREETS = {
+  main: ['Warszawska', 'Gdańska', 'Krakowska', 'Poznańska', 'Toruńska', 'Wrocławska', 'Łódzka', 'Lubelska', 'Szczecińska', 'Olsztyńska', 'Pomorska', 'Kaszubska'],
+  ring: ['Aleja Solidarności', 'Aleja Niepodległości', 'Aleja Tysiąclecia', 'Aleja Wojska Polskiego'],
+  old: ['Piekarska', 'Szewska', 'Kowalska', 'Rybacka', 'Garncarska', 'Tkacka', 'Ciesielska', 'Murarska', 'Kupiecka', 'Bednarska', 'Stolarska', 'Ślusarska', 'Kuśnierska', 'Złotnicza', 'Franciszkańska',
+    'Dominikańska', 'Zamkowa', 'Mostowa', 'Wałowa', 'Kramarska', 'Sukiennicza', 'Browarna', 'Solna', 'Wielka', 'Mała', 'Klasztorna', 'Kościelna', 'Młyńska', 'Targowa', 'Farna'],
+  town: ['Mickiewicza', 'Słowackiego', 'Kochanowskiego', 'Reymonta', 'Prusa', 'Orzeszkowej', 'Konopnickiej', 'Norwida', 'Fredry', 'Krasickiego', 'Sienkiewicza', 'Żeromskiego', 'Kopernika', 'Chopina',
+    'Moniuszki', 'Matejki', 'Wyspiańskiego', 'Kościuszki', 'Pułaskiego', 'Traugutta', 'Kilińskiego', 'Okrzei', 'Paderewskiego', 'Szymanowskiego', 'Asnyka', 'Tuwima', 'Brzechwy', 'Staffa', 'Kasprowicza',
+    'Lelewela', 'Staszica', 'Kołłątaja', 'Śniadeckich', 'Grottgera', 'Kossaka', 'Chełmońskiego', 'Wybickiego', 'Dąbrowskiego', 'Sobieskiego', 'Kraszewskiego', 'Wieniawskiego', 'Karłowicza', 'Ogińskiego',
+    'Konarskiego', 'Zamoyskiego', 'Czackiego', 'Reja', 'Długosza', 'Korczaka', 'Polna', 'Ogrodowa', 'Słoneczna', 'Cicha', 'Spokojna', 'Krótka', 'Długa', 'Szeroka', 'Zielona', 'Wesoła', 'Pogodna',
+    'Spacerowa', 'Parkowa', 'Szkolna', 'Stawowa', 'Rzeczna', 'Nadbrzeżna', 'Wodna', 'Źródlana', 'Piaskowa', 'Kamienna', 'Graniczna', 'Sadowa', 'Kwiatowa', 'Podgórna', 'Górna', 'Dolna', 'Boczna', 'Nowa', 'Jasna'],
+  green: ['Lipowa', 'Dębowa', 'Klonowa', 'Brzozowa', 'Jodłowa', 'Sosnowa', 'Bukowa', 'Grabowa', 'Jaworowa', 'Wierzbowa', 'Topolowa', 'Olchowa', 'Jesionowa', 'Modrzewiowa', 'Cisowa', 'Świerkowa',
+    'Kasztanowa', 'Akacjowa', 'Jarzębinowa', 'Leszczynowa', 'Wiązowa', 'Platanowa', 'Różana', 'Tulipanowa', 'Fiołkowa', 'Konwaliowa', 'Bzowa', 'Makowa', 'Słonecznikowa', 'Liliowa', 'Chabrowa',
+    'Storczykowa', 'Narcyzowa', 'Wrzosowa', 'Jaśminowa', 'Malwowa', 'Irysowa', 'Goździkowa', 'Stokrotkowa', 'Piwoniowa', 'Krokusowa', 'Wiśniowa', 'Czereśniowa', 'Jabłoniowa', 'Gruszkowa', 'Śliwkowa',
+    'Morelowa', 'Brzoskwiniowa', 'Malinowa', 'Agrestowa', 'Porzeczkowa', 'Poziomkowa', 'Jagodowa', 'Słowicza', 'Skowronkowa', 'Jaskółcza', 'Sowia', 'Orla', 'Sokola', 'Żurawia', 'Bociania', 'Wróbla',
+    'Szpacza', 'Gołębia', 'Łabędzia', 'Kukułcza', 'Łąkowa', 'Leśna', 'Widokowa', 'Polanka', 'Zacisze'],
+  work: ['Fabryczna', 'Przemysłowa', 'Składowa', 'Magazynowa', 'Hutnicza', 'Kolejowa', 'Towarowa', 'Warsztatowa', 'Techniczna', 'Energetyczna', 'Cementowa', 'Ceglana', 'Stalowa', 'Elektryczna',
+    'Gazowa', 'Chemiczna', 'Drzewna', 'Tartaczna', 'Spedycyjna', 'Rzemieślnicza', 'Portowa', 'Stoczniowa', 'Dokerska', 'Okrętowa', 'Żeglarska', 'Kapitańska', 'Bosmańska', 'Kutrowa', 'Morska',
+    'Sternicza', 'Kotwiczna', 'Latarniana', 'Falochronowa', 'Celna', 'Przeładunkowa'],
+};
+const GEN_STREET_POOL = { old: 'old', centre: 'town', blocks: 'town', houses: 'green', industry: 'work', port: 'work' };
 const PEOPLE = ['Pani Halina', 'Pan Zbyszek', 'Kasia', 'Pan Tadeusz', 'Ola', 'Pani Grażyna', 'Pan Mirek', 'Bartek', 'Pani Krysia', 'Kuba', 'Pan Ryszard', 'Magda', 'Pani Basia', 'Pan Edek', 'Zosia', 'Pan Henio', 'Ania', 'Pan Stefan'];
 const OUCH_EN = ['Ouch!', 'Careful, please!', 'My shopping!', 'Who gave you a licence?', 'Good grief!', 'I have coffee here!'];
 const HURRY_EN = ['Quickly, please.', 'I\'m in a hurry!', 'No crazy stuff, OK?', 'Do you know the way?', 'As long as we\'re on time.'];
@@ -290,141 +342,548 @@ const personName = n => (LANG === 'en' ? n.replace(/^Pani /, 'Mrs ').replace(/^P
 const OUCH = ['Ała!', 'Panie, ostrożnie!', 'Moje zakupy!', 'Kto panu dał prawko?', 'Jezus Maria!', 'Ja tu mam kawę!'];
 const HURRY = ['Tylko szybko, proszę.', 'Spieszę się!', 'Bez szaleństw, dobrze?', 'Zna pan drogę?', 'Byle przed czasem.'];
 
-// ---------- city generation ----------
-let city = null;
-function genCity(seed) {
-  R = mulberry32(seed);
-  const xs = [180], ys = [180];
-  for (let k = 1; k <= NC; k++) { xs.push(xs[k - 1] + ri(300, 440)); ys.push(ys[k - 1] + ri(300, 440)); }
-  const c = { seed, xs, ys };
-  c.land = { x0: xs[0] - RW - 80, y0: ys[0] - RW - 80, x1: xs[NC] + RW + 80, y1: ys[NC] + RW + 80 };
-  c.W = c.land.x1 + 180; c.H = c.land.y1 + 180;
-  c.hseg = Array.from({ length: NC + 1 }, () => Array(NC).fill(true));
-  c.vseg = Array.from({ length: NC }, () => Array(NC + 1).fill(true));
-  const deg = (i, j) => (j > 0 && c.hseg[i][j - 1] ? 1 : 0) + (j < NC && c.hseg[i][j] ? 1 : 0) + (i > 0 && c.vseg[i - 1][j] ? 1 : 0) + (i < NC && c.vseg[i][j] ? 1 : 0);
-  const connected = () => {
-    const seen = new Set(['0,0']), q = [[0, 0]];
-    while (q.length) {
-      const [i, j] = q.pop();
-      const nb = [];
-      if (j > 0 && c.hseg[i][j - 1]) nb.push([i, j - 1]);
-      if (j < NC && c.hseg[i][j]) nb.push([i, j + 1]);
-      if (i > 0 && c.vseg[i - 1][j]) nb.push([i - 1, j]);
-      if (i < NC && c.vseg[i][j]) nb.push([i + 1, j]);
-      for (const n of nb) { const k = n + ''; if (!seen.has(k)) { seen.add(k); q.push(n); } }
-    }
-    return seen.size === (NC + 1) * (NC + 1);
-  };
-  // drop some inner street segments for variety, never leaving a dead end
-  const cand = [];
-  for (let i = 1; i < NC; i++) for (let j = 0; j < NC; j++) cand.push(['h', i, j]);
-  for (let i = 0; i < NC; i++) for (let j = 1; j < NC; j++) cand.push(['v', i, j]);
-  shuffle(cand);
-  let removed = 0;
-  for (const [t, i, j] of cand) {
-    if (removed > NC * 2.2) break;
-    if (R() > 0.35) continue;
-    const ends = t === 'h' ? [[i, j], [i, j + 1]] : [[i, j], [i + 1, j]];
-    if (ends.some(([a, b]) => deg(a, b) < 3)) continue;
-    if (t === 'h') c.hseg[i][j] = false; else c.vseg[i][j] = false;
-    if (!connected()) { if (t === 'h') c.hseg[i][j] = true; else c.vseg[i][j] = true; continue; }
-    removed++;
+function segDist(x, y, a, b) {
+  const ex = b.x - a.x, ey = b.y - a.y, L2 = ex * ex + ey * ey || 1, t = clamp(((x - a.x) * ex + (y - a.y) * ey) / L2, 0, 1);
+  return Math.hypot(x - a.x - ex * t, y - a.y - ey * t);
+}
+// Douglas-Peucker: drop points that lie within eps of a straight line
+function simplifyLine(pts, eps) {
+  if (pts.length < 3) return pts;
+  const keep = new Uint8Array(pts.length), st = [[0, pts.length - 1]]; keep[0] = keep[pts.length - 1] = 1;
+  while (st.length) {
+    const [i, j] = st.pop(), a = pts[i], b = pts[j];
+    let md = 0, mk = -1;
+    for (let k = i + 1; k < j; k++) { const d = segDist(pts[k].x, pts[k].y, a, b); if (d > md) { md = d; mk = k; } }
+    if (md > eps) { keep[mk] = 1; st.push([i, mk], [mk, j]); }
   }
-  // graph
-  c.nodes = [];
-  for (let i = 0; i <= NC; i++) for (let j = 0; j <= NC; j++) c.nodes.push({ id: i * (NC + 1) + j, i, j, x: xs[j], y: ys[i], adj: [] });
-  const N = (i, j) => c.nodes[i * (NC + 1) + j];
-  for (let i = 0; i <= NC; i++) for (let j = 0; j < NC; j++) if (c.hseg[i][j]) { N(i, j).adj.push(N(i, j + 1).id); N(i, j + 1).adj.push(N(i, j).id); }
-  for (let i = 0; i < NC; i++) for (let j = 0; j <= NC; j++) if (c.vseg[i][j]) { N(i, j).adj.push(N(i + 1, j).id); N(i + 1, j).adj.push(N(i, j).id); }
-  c.hNames = shuffle(H_NAMES.slice()).slice(0, NC + 1);
-  c.vNames = shuffle(V_NAMES.slice()).slice(0, NC + 1);
+  return pts.filter((_, k) => keep[k]);
+}
+// do two convex polygons overlap by more than a couple of pixels?
+function polysOverlap(A, B) {
+  for (const P of [A, B]) for (let i = 0; i < P.length; i++) {
+    const p = P[i], q = P[(i + 1) % P.length], nx = q.y - p.y, ny = p.x - q.x, ln = Math.hypot(nx, ny) || 1;
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    for (const v of A) { const d = (v.x * nx + v.y * ny) / ln; if (d < a0) a0 = d; if (d > a1) a1 = d; }
+    for (const v of B) { const d = (v.x * nx + v.y * ny) / ln; if (d < b0) b0 = d; if (d > b1) b1 = d; }
+    if (a1 < b0 + 2 || b1 < a0 + 2) return false;
+  }
+  return true;
+}
+// built in slices so the loader can show progress; the seeded random numbers stay with the generator between slices
+const GEN_READY = new Map();
+function* genWorldG(seed) {
+  const rng = mulberry32(seed), it = genWorldR(seed);
+  let r;
+  for (;;) {
+    const prev = R; R = rng;
+    try { r = it.next(); } finally { R = prev; }
+    if (r.done) break;
+    yield;
+  }
+  yield* prepWorldG(r.value);
+  yield* buildMinimapG(r.value);
+  GEN_READY.set(seed, r.value);
+}
+function genWorld(seed) {
+  for (const _ of genWorldG(seed));
+  const w = GEN_READY.get(seed); GEN_READY.delete(seed); return w;
+}
+function* genWorldR(seed) {
+  const S = GEN_SIZE;
+  const wave = (n, amp, len) => {
+    const ph = [], fr = []; for (let k = 0; k < n; k++) { ph.push(rr(0, 6.283)); fr.push((k + 1) * rr(0.75, 1.3)); }
+    return t => { let v = 0; for (let k = 0; k < n; k++) v += Math.sin(t / len * fr[k] + ph[k]) / (k + 1); return v * amp; };
+  };
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const pool = list => { let p = []; return () => { if (!p.length) p = shuffle(list.slice()); return p.pop(); }; };
+  // local frame: u along the angle, v to its left
+  const frame = (o, ang) => { const ux = Math.cos(ang), uy = Math.sin(ang); return (u, v) => ({ x: o.x + ux * u - uy * v, y: o.y + uy * u + ux * v }); };
+  const quad = (F, u0, v0, u1, v1) => [F(u0, v0), F(u1, v0), F(u1, v1), F(u0, v1)];
+  const blob = (c, r, irr = 0.25, n = 20) => {
+    const p1 = rr(0, 6.283), p2 = rr(0, 6.283);
+    return Array.from({ length: n }, (_, k) => { const a = k / n * 6.283, d = r * (1 + irr * 0.6 * Math.sin(a * 2 + p1) + irr * 0.4 * Math.sin(a * 3 + p2) + rr(-0.08, 0.08)); return { x: c.x + Math.cos(a) * d, y: c.y + Math.sin(a) * d }; });
+  };
 
-  // blocks, lots, buildings
-  c.cells = []; c.buildings = []; c.trees = []; c.lots = []; c.parkSpots = [];
-  for (let i = 0; i < NC; i++) for (let j = 0; j < NC; j++) {
-    const di = clamp(Math.floor(i * 3 / NC), 0, 2) * 3 + clamp(Math.floor(j * 3 / NC), 0, 2);
-    const D = DISTRICTS[di];
-    const cell = { i, j, di, x0: xs[j] + RW, y0: ys[i] + RW, x1: xs[j + 1] - RW, y1: ys[i + 1] - RW, lots: [] };
-    cell.ring = { x0: cell.x0 + SW / 2, y0: cell.y0 + SW / 2, x1: cell.x1 - SW / 2, y1: cell.y1 - SW / 2 };
-    const inner = { x0: cell.x0 + SW, y0: cell.y0 + SW, x1: cell.x1 - SW, y1: cell.y1 - SW };
-    let lots;
-    if (R() < 0.05) lots = [{ ...inner, type: 'park', big: true }];
-    else {
-      const split = (r, d) => {
-        const w = r.x1 - r.x0, h = r.y1 - r.y0;
-        if ((w < 150 && h < 150) || d > 3 || (d > 0 && R() > D.split)) return [r];
-        if (w >= h) { const m = r.x0 + w * rr(0.36, 0.64); return [...split({ ...r, x1: m }, d + 1), ...split({ ...r, x0: m }, d + 1)]; }
-        const m = r.y0 + h * rr(0.36, 0.64); return [...split({ ...r, y1: m }, d + 1), ...split({ ...r, y0: m }, d + 1)];
-      };
-      lots = split(inner, 0).map(l => {
-        const p = R();
-        l.type = p < D.park ? 'park' : p < D.park + D.parking ? 'parking' : 'building';
-        return l;
-      });
+  // ---- the land: sea along the bottom (the whole map is turned at the end), a river flowing into it
+  const coastF = wave(3, 700, 2600), coastY = x => S * 0.85 + coastF(x);
+  const rx0 = S * rr(0.35, 0.65), riverF = wave(3, 1300, 3800), riverX = y => rx0 + riverF(y), RIVW = rr(300, 420);
+  const riverW = y => RIVW * (1 + 1.4 * clamp((y - coastY(riverX(y)) + 3000) / 3000, 0, 1));   // wider towards the mouth
+  const riverD = (x, y) => Math.abs(x - riverX(y)) / Math.hypot(1, (riverX(y + 30) - riverX(y - 30)) / 60);
+  const inRiver = (x, y, m) => riverD(x, y) < riverW(y) / 2 + m;
+  const inSea = (x, y, m) => y > coastY(x) - m;
+  const inMap = (x, y, m = 250) => x > m && x < S - m && y > m && y < S - m;
+  const land = (x, y, m = 0) => inMap(x, y) && !inSea(x, y, 300 + m) && !inRiver(x, y, 80 + m);
+  const side = R() < 0.5 ? -1 : 1, cy = S * rr(0.42, 0.52), C = { x: riverX(cy) + side * rr(1500, 2200), y: cy };
+  const R1 = rr(5000, 6000), R2 = rr(10500, 12000);
+
+  // ---- reserved areas: no streets and no ordinary buildings inside
+  const res = [];
+  const addRes = (kind, pts) => { const r = { kind, pts, bb: bboxOf(pts) }; res.push(r); return r; };
+  const resAt = (x, y) => { for (const r of res) if (x >= r.bb.x0 && x <= r.bb.x1 && y >= r.bb.y0 && y <= r.bb.y1 && inPoly(x, y, r.pts)) return r; return null; };
+  const resNear = (c, r) => res.some(o => c.x + r > o.bb.x0 && c.x - r < o.bb.x1 && c.y + r > o.bb.y0 && c.y - r < o.bb.y1);
+  const buildings = [], green = [], water = [], roads = [], trees = [], landmarks = [], helipads = [], streets = [];
+  const bG = new Map();
+  const addBuilding = (pts, h, roof, extra = {}) => { const b = { h: Math.round(h), pts, roof, ...extra }; buildings.push(b); gAdd(bG, 256, bboxOf(pts), { pts }); return b; };
+  const LM_ROOFS = [[352, 45, 42], [205, 45, 40], [150, 30, 36], [38, 60, 48]];
+  const landmark = (b, name) => { b.name = name; b.roof = LM_ROOFS[landmarks.length % 4].slice(); const bb = bboxOf(b.pts); landmarks.push({ name, x: (bb.x0 + bb.x1) / 2, y: (bb.y0 + bb.y1) / 2 }); };
+
+  // ---- airport on the outskirts, its terminal facing the town
+  let airport = null;
+  for (let k = 0; k < 120 && !airport; k++) {
+    const a = rr(0, 6.283), d = rr(11000, 15500), A = { x: C.x + Math.cos(a) * d, y: C.y + Math.sin(a) * d };
+    const F = frame(A, Math.atan2(C.y - A.y, C.x - A.x) - Math.PI / 2);
+    let ok = true;
+    for (let i = 0; i <= 8 && ok; i++) for (let j = 0; j <= 4 && ok; j++) { const p = F(-3700 + i * 925, -1300 + j * 700); if (!land(p.x, p.y, 150)) ok = false; }
+    if (ok) airport = { A, F, box: quad(F, -3700, -1300, 3700, 1500) };
+  }
+  if (airport) {
+    const F = airport.F;
+    addRes('airport', airport.box);
+    roads.push({ cls: 7, w: 450, name: '', pts: [F(-3200, -700), F(3200, -700)] });
+    roads.push({ cls: 8, w: 180, name: '', pts: [F(-3000, -700), F(-3000, -150), F(3000, -150), F(3000, -700)] });
+    green.push({ kind: 'apron', pts: quad(F, -1600, -60, 1600, 900) });
+    green.push({ kind: 'parking', pts: quad(F, -1000, 1270, 1000, 1480) });
+    landmark(addBuilding(quad(F, -1000, 950, 1000, 1250), 110, null, { btype: 'transportation' }), 'Lotnisko');
+    helipads.push(F(2300, 1150));
+  }
+
+  // ---- railway across the town, passing the old town at a distance
+  let rail = null;
+  for (let k = 0; k < 60 && !rail; k++) {
+    const th = rr(0, Math.PI), off = rr(2400, 3200) * (R() < 0.5 ? -1 : 1), F = frame(C, th), wv = wave(2, 500, 5000), smp = [];
+    for (let t = -S * 1.5; t <= S * 1.5; t += 300) { const p = F(t, off + wv(t)); if (inMap(p.x, p.y, -600)) smp.push({ p, ok: !inSea(p.x, p.y, 250) }); }
+    let mid = 0, md = Infinity; smp.forEach((s, i) => { const d = dist(s.p, C); if (d < md) { md = d; mid = i; } });
+    if (!smp.length || !smp[mid].ok) continue;
+    let i0 = mid, i1 = mid; while (i0 > 0 && smp[i0 - 1].ok) i0--; while (i1 < smp.length - 1 && smp[i1 + 1].ok) i1++;
+    const pts = smp.slice(i0, i1 + 1).map(s => s.p);
+    if (pts.length < 30 || (airport && pts.some(p => inPoly(p.x, p.y, airport.box) || segDist(p.x, p.y, airport.A, airport.A) < 4500))) continue;
+    rail = { pts };
+  }
+  const railSegs = [], railG = new Map();
+  if (rail) for (let k = 1; k < rail.pts.length; k++) { const a = rail.pts[k - 1], b = rail.pts[k]; railSegs.push([a, b]); gAdd(railG, 600, bboxOf([a, b], 45), { a, b, hw: 45 }); }
+  const nearRail = (x, y, m) => gQuery(railG, 600, x - m, y - m, x + m, y + m).some(s => segDist(x, y, s.a, s.b) < m);
+
+  // ---- avenues out of the centre, two ring roads and the airport road
+  const okMain = (x, y) => inMap(x, y, 150) && !inSea(x, y, 350) && !(airport && inPoly(x, y, airport.box));
+  const mainNames = pool(GEN_STREETS.main), ringNames = pool(GEN_STREETS.ring);
+  const NR = ri(6, 8), th0 = rr(0, 6.283);
+  let angs = Array.from({ length: NR }, (_, k) => th0 + k * 6.283 / NR + rr(-0.18, 0.18));
+  const avenue = (x, y, h, cls, w, name, toC) => {
+    const pts = [], h0 = h;
+    for (let k = 0; k < 300; k++) {
+      if (!okMain(x, y)) break;
+      pts.push({ x, y });
+      if (toC && Math.hypot(x - C.x, y - C.y) < R1 * 0.55) break;
+      const want = toC ? Math.atan2(C.y - y, C.x - x) : h0;
+      h += rr(-0.06, 0.06) + wrapA(want - h) * (toC ? 0.25 : 0.1);
+      x += Math.cos(h) * 300; y += Math.sin(h) * 300;
     }
-    for (const l of lots) {
-      l.cell = cell;
-      if (l.type === 'building') {
-        const b = { x0: l.x0 + 5, y0: l.y0 + 5, x1: l.x1 - 5, y1: l.y1 - 5, lot: l };
-        const cxn = Math.hypot(i - NC / 2, j - NC / 2) / (NC / 2);
-        b.h = Math.round(rr(D.h[0], D.h[1]) * (di === 4 ? 1.15 - 0.3 * cxn : 1));
-        b.roof = pick(D.roofs).slice(); b.roof[2] += rr(-5, 5);
-        b.details = [];
-        const nd = ri(0, 3);
-        for (let k = 0; k < nd; k++) b.details.push([rr(0.12, 0.7), rr(0.12, 0.7), rr(0.08, 0.2), rr(0.08, 0.2)]);
-        l.b = b; c.buildings.push(b);
-      } else if (l.type === 'park') {
-        const area = (l.x1 - l.x0) * (l.y1 - l.y0), n = Math.min(14, Math.floor(area / 5000));
-        for (let k = 0; k < n; k++) c.trees.push({ x: rr(l.x0 + 14, l.x1 - 14), y: rr(l.y0 + 14, l.y1 - 14), r: rr(9, 16), col: [ri(85, 120), ri(30, 45), ri(24, 36)] });
-      } else if (l.type === 'parking') {
-        // stalls along the longer side; some are taken by parked cars
-        const horiz = (l.x1 - l.x0) >= (l.y1 - l.y0);
-        l.horiz = horiz;
-        const len = horiz ? l.x1 - l.x0 : l.y1 - l.y0, n = Math.floor((len - 10) / 26);
-        for (let k = 0; k < n; k++) {
-          for (const side of [0, 1]) {
-            const along = (horiz ? l.x0 : l.y0) + 18 + k * 26;
-            if (horiz) { const y = side ? l.y1 - 26 : l.y0 + 26; if (l.y1 - l.y0 < 90 && side) continue; c.parkSpots.push({ x: along, y, a: side ? -Math.PI / 2 : Math.PI / 2, take: R() < 0.28 }); }
-            else { const x = side ? l.x1 - 26 : l.x0 + 26; if (l.x1 - l.x0 < 90 && side) continue; c.parkSpots.push({ x, y: along, a: side ? Math.PI : 0, take: R() < 0.28 }); }
-          }
-        }
+    if (pts.length > 3) streets.push({ pts, cls, w, name, main: true });
+  };
+  if (airport) {
+    const aA = Math.atan2(airport.A.y - C.y, airport.A.x - C.x);
+    angs.splice(angs.reduce((b, a, i) => (Math.abs(wrapA(a - aA)) < Math.abs(wrapA(angs[b] - aA)) ? i : b), 0), 1);
+    const p = airport.F(0, 1560);
+    avenue(p.x, p.y, Math.atan2(C.y - p.y, C.x - p.x), 2, 130, 'Lotniskowa', true);
+  }
+  angs.forEach((a, k) => avenue(C.x + Math.cos(a) * 1100, C.y + Math.sin(a) * 1100, a, k === 0 ? 1 : k % 2 ? 3 : 2, k === 0 ? 160 : k % 2 ? 110 : 130, mainNames()));
+  const ring = (Rr, cls, w, name) => {
+    const n = Math.ceil(6.283 * Rr / 300), p1 = rr(0, 6.283), p2 = rr(0, 6.283), runs = [];
+    let cur = [], startOk = false;
+    for (let k = 0; k <= n; k++) {
+      const a = k / n * 6.283, d = Rr * (1 + 0.07 * Math.sin(2 * a + p1) + 0.04 * Math.sin(3 * a + p2)), p = { x: C.x + Math.cos(a) * d, y: C.y + Math.sin(a) * d };
+      if (okMain(p.x, p.y)) { if (!k) startOk = true; cur.push(p); } else { if (cur.length) runs.push(cur); cur = []; }
+    }
+    // a run through angle 0 is cut in two: join it back (a ring with no gaps stays closed)
+    if (cur.length) { if (startOk && runs.length) runs[0] = cur.concat(runs[0].slice(1)); else runs.push(cur); }
+    for (const r of runs) if (r.length > 3) streets.push({ pts: r, cls, w, name, main: true });
+  };
+  ring(R1, 2, 130, ringNames()); ring(R2, 3, 110, ringNames());
+  yield;
+  const mainG = new Map();
+  for (const s of streets) for (let k = 1; k < s.pts.length; k++) { const a = s.pts[k - 1], b = s.pts[k]; gAdd(mainG, 600, bboxOf([a, b], s.w / 2), { a, b, hw: s.w / 2 }); }
+  const nearMain = (x, y, m) => gQuery(mainG, 600, x - m, y - m, x + m, y + m).some(s => segDist(x, y, s.a, s.b) < s.hw + m);
+  // a street running alongside an avenue or the railway would overlap it
+  const parallel = (g, x, y, ux, uy, m) => gQuery(g, 600, x - m, y - m, x + m, y + m).some(s => {
+    if (segDist(x, y, s.a, s.b) > s.hw + m) return false;
+    const ex = s.b.x - s.a.x, ey = s.b.y - s.a.y; return Math.abs(ex * ux + ey * uy) / (Math.hypot(ex, ey) || 1) > 0.8;
+  });
+  const alongMain = (x, y, ux, uy, m) => parallel(mainG, x, y, ux, uy, m) || parallel(railG, x, y, ux, uy, m);
+
+  // ---- the station beside the railway, on the town side, where no avenue passes
+  if (rail) {
+    const cand = rail.pts.map((p, i) => ({ p, i, d: dist(p, C) })).sort((a, b) => a.d - b.d).slice(0, 60);
+    for (const c of cand) {
+      if (c.i < 2 || c.i > rail.pts.length - 3) continue;
+      const a = rail.pts[c.i - 1], b = rail.pts[c.i + 1], ang = Math.atan2(b.y - a.y, b.x - a.x), F = frame(c.p, ang);
+      const sd = (C.x - c.p.x) * -Math.sin(ang) + (C.y - c.p.y) * Math.cos(ang) > 0 ? 1 : -1, G = (u, v) => F(u, v * sd);
+      let ok = true;
+      for (let i = 0; i <= 5 && ok; i++) for (let j = 0; j <= 4 && ok; j++) { const p = G(-500 + i * 200, 90 + j * 160); if (!land(p.x, p.y) || nearMain(p.x, p.y, 40) || resAt(p.x, p.y)) ok = false; }
+      if (!ok) continue;
+      addRes('station', quad(G, -500, 90, 500, 730));
+      green.push({ kind: 'plaza', pts: quad(G, -500, 320, 500, 730) });
+      landmark(addBuilding(quad(G, -420, 110, 420, 300), 90, null, { btype: 'train_station' }), 'Dworzec Główny');
+      break;
+    }
+  }
+
+  // ---- parks with a lake, a cemetery, woods on the outskirts and a beach
+  const parks = [];
+  for (let k = 0, n = ri(5, 7); k < 400 && parks.length < n; k++) {
+    const a = rr(0, 6.283), d = rr(2400, R2 * 1.05), c = { x: C.x + Math.cos(a) * d, y: C.y + Math.sin(a) * d }, r = rr(900, 1800);
+    if (!inMap(c.x, c.y, r) || inSea(c.x, c.y, r + 400) || inRiver(c.x, c.y, r + 100) || nearMain(c.x, c.y, r + 150) || nearRail(c.x, c.y, r + 100) || resNear(c, r) || parks.some(p => dist(p.c, c) < p.r + r + 900)) continue;
+    const pts = blob(c, r); parks.push({ c, r, pts }); addRes('park', pts); green.push({ kind: 'park', pts });
+  }
+  if (parks.length) { const p = parks.reduce((a, b) => (b.r > a.r ? b : a)); water.push({ rings: [{ outer: true, pts: blob({ x: p.c.x + rr(-0.2, 0.2) * p.r, y: p.c.y + rr(-0.2, 0.2) * p.r }, p.r * 0.35, 0.3) }] }); }
+  for (let k = 0; k < 200; k++) {
+    const a = rr(0, 6.283), d = rr(R1 * 0.9, R2), c = { x: C.x + Math.cos(a) * d, y: C.y + Math.sin(a) * d }, r = rr(800, 1100);
+    if (!land(c.x, c.y, r) || nearMain(c.x, c.y, r + 150) || nearRail(c.x, c.y, r + 100) || resNear(c, r)) continue;
+    const pts = blob(c, r, 0.12, 12); addRes('cemetery', pts); green.push({ kind: 'cemetery', pts }); break;
+  }
+  for (let k = 0, n = ri(3, 5), m = 0; k < 200 && m < n; k++) {
+    const a = rr(0, 6.283), d = rr(R2 * 1.1, S * 0.7), c = { x: C.x + Math.cos(a) * d, y: C.y + Math.sin(a) * d }, r = rr(2200, 3800);
+    if (!inMap(c.x, c.y, -r * 0.5) || inSea(c.x, c.y, 200) || (airport && dist(c, airport.A) < r + 4500)) continue;
+    const pts = blob(c, r, 0.3, 24); addRes('wood', pts); green.push({ kind: 'wood', pts }); m++;
+  }
+  // the port sits by the river mouth; elsewhere the coast is a sandy beach
+  const mouthX = riverX(coastY(rx0)), portSide = R() < 0.5 ? -1 : 1, port = { x: mouthX + portSide * rr(2600, 3400), y: 0 };
+  port.y = coastY(port.x) - 1900;
+  const beachGap = x => Math.abs(x - mouthX) < RIVW * 2.5 + 300 || Math.abs(x - port.x) < 3200;
+  let run = [];
+  const flushBeach = () => { if (run.length > 2) { const pts = run.map(x => ({ x, y: coastY(x) - 280 })).concat(run.slice().reverse().map(x => ({ x, y: coastY(x) + 120 }))); addRes('beach', pts); green.push({ kind: 'beach', pts }); } run = []; };
+  for (let x = -600; x <= S + 600; x += 250) { if (beachGap(x)) flushBeach(); else run.push(x); }
+  flushBeach();
+
+  // ---- landmark lots along the avenues: hospital, university, shopping centre, stadium, swimming pool
+  const avenues = streets.filter(s => s.main);
+  const placeLot = (fw, fd, dmin, dmax) => {
+    for (let k = 0; k < 400; k++) {
+      const st = pick(avenues), i = ri(1, st.pts.length - 1), a = st.pts[i - 1], b = st.pts[i], t = rr(0.15, 0.85);
+      const p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }, dd = dist(p, C);
+      if (dd < dmin || dd > dmax) continue;
+      const F = frame(p, Math.atan2(b.y - a.y, b.x - a.x)), sd = R() < 0.5 ? 1 : -1, G = (u, v) => F(u, sd * (st.w / 2 + 60 + v));
+      let ok = true;
+      for (let iu = 0; iu <= 6 && ok; iu++) for (let iv = 0; iv <= 5 && ok; iv++) {
+        const q = G(-fw / 2 + fw * iu / 6, fd * iv / 5);
+        if (!land(q.x, q.y, 40) || resAt(q.x, q.y) || nearRail(q.x, q.y, 80) || nearMain(q.x, q.y, 45)) ok = false;
       }
-      cell.lots.push(l); c.lots.push(l);
+      if (!ok) continue;
+      const pts = quad(G, -fw / 2, 0, fw / 2, fd);
+      if (res.some(r => polysOverlap(r.pts.length === 4 ? r.pts : bboxPts(r.bb), pts))) continue;
+      addRes('lot', pts);
+      return G;
     }
-    c.cells.push(cell);
-  }
-  // removed segments become small green squares with trees
-  for (let i = 1; i < NC; i++) for (let j = 0; j < NC; j++) if (!c.hseg[i][j]) for (let k = 0; k < 3; k++) c.trees.push({ x: rr(xs[j] + RW + 20, xs[j + 1] - RW - 20), y: ys[i] + rr(-14, 14), r: rr(9, 14), col: [ri(85, 120), ri(30, 45), ri(24, 36)] });
-  for (let i = 0; i < NC; i++) for (let j = 1; j < NC; j++) if (!c.vseg[i][j]) for (let k = 0; k < 3; k++) c.trees.push({ x: xs[j] + rr(-14, 14), y: rr(ys[i] + RW + 20, ys[i + 1] - RW - 20), r: rr(9, 14), col: [ri(85, 120), ri(30, 45), ri(24, 36)] });
-
-  // landmarks: big buildings spread over the city
-  const bigs = c.buildings.filter(b => (b.x1 - b.x0) * (b.y1 - b.y0) > 12000);
-  shuffle(bigs);
-  c.landmarks = [];
-  for (const b of bigs) {
-    if (c.landmarks.length >= LANDMARKS.length) break;
-    const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
-    if (c.landmarks.some(o => Math.hypot(o.x - cx, o.y - cy) < 700)) continue;
-    b.name = LANDMARKS[c.landmarks.length];
-    b.roof = [[352, 45, 42], [205, 45, 40], [150, 30, 36], [38, 60, 48]][c.landmarks.length % 4];
-    b.h = Math.max(b.h, 60);
-    c.landmarks.push({ name: b.name, x: cx, y: cy, b, cell: b.lot.cell });
-  }
-
-  // solids in a spatial hash
-  c.grid = new Map();
-  const G = 128, put = (s, x0, y0, x1, y1) => {
-    for (let gx = Math.floor(x0 / G); gx <= Math.floor(x1 / G); gx++) for (let gy = Math.floor(y0 / G); gy <= Math.floor(y1 / G); gy++) {
-      const k = gx + ',' + gy; let a = c.grid.get(k); if (!a) c.grid.set(k, a = []); a.push(s);
-    }
+    return null;
   };
-  for (const b of c.buildings) put({ rect: 1, x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 }, b.x0, b.y0, b.x1, b.y1);
-  for (const t of c.trees) { const r = t.r * 0.5; put({ circ: 1, x: t.x, y: t.y, r }, t.x - r, t.y - r, t.x + r, t.y + r); }
-  const L = c.land;
-  for (const r of [{ x0: -400, y0: -400, x1: c.W + 400, y1: L.y0 }, { x0: -400, y0: L.y1, x1: c.W + 400, y1: c.H + 400 }, { x0: -400, y0: -400, x1: L.x0, y1: c.H + 400 }, { x0: L.x1, y0: -400, x1: c.W + 400, y1: c.H + 400 }])
-    put({ rect: 1, ...r }, Math.max(-200, r.x0), Math.max(-200, r.y0), Math.min(c.W + 200, r.x1), Math.min(c.H + 200, r.y1));
-  R = Math.random;
-  return c;
+  const bboxPts = bb => [{ x: bb.x0, y: bb.y0 }, { x: bb.x1, y: bb.y0 }, { x: bb.x1, y: bb.y1 }, { x: bb.x0, y: bb.y1 }];
+  let G = placeLot(1000, 750, 3000, 10000);
+  if (G) {
+    landmark(addBuilding(quad(G, -480, 140, 150, 700), 120, null, { btype: 'hospital' }), 'Szpital Miejski');
+    addBuilding(quad(G, 150, 140, 460, 380), 80, [200, 8, 56], { btype: 'hospital' });
+    helipads.push(G(310, 560));
+  }
+  if ((G = placeLot(1400, 950, 2500, 9000))) {
+    green.push({ kind: 'walk', pts: quad(G, -700, 0, 700, 950) });
+    landmark(addBuilding(quad(G, -50, 100, 620, 380), 140, null, { btype: 'university' }), 'Uniwersytet');
+    addBuilding(quad(G, -650, 100, -150, 420), 110, [30, 20, 50], { btype: 'university' });
+    addBuilding(quad(G, -350, 560, 350, 880), 90, [30, 20, 50], { btype: 'university' });
+  }
+  if ((G = placeLot(1400, 1100, 2500, 10000))) {
+    green.push({ kind: 'parking', pts: quad(G, -680, 20, 680, 420) });
+    landmark(addBuilding(quad(G, -620, 460, 620, 1060), 90, null, { btype: 'retail' }), 'Galeria Centrum');
+  }
+  if ((G = placeLot(1400, 1150, 3500, 12500))) {
+    green.push({ kind: 'pitch', pts: quad(G, -525, 250, 525, 950) });
+    landmark(addBuilding(quad(G, -640, 130, 640, 230), 90, null, { btype: 'sports_centre' }), 'Stadion');
+    addBuilding(quad(G, -640, 970, 640, 1070), 90, [205, 10, 50], { btype: 'sports_centre' });
+    addBuilding(quad(G, -690, 240, -570, 960), 70, [205, 10, 50], { btype: 'sports_centre' });
+    addBuilding(quad(G, 570, 240, 690, 960), 70, [205, 10, 50], { btype: 'sports_centre' });
+  }
+  yield;
+  if ((G = placeLot(800, 650, 2000, 9000))) landmark(addBuilding(quad(G, -320, 120, 320, 560), 70, null, { btype: 'sports_hall' }), 'Basen Miejski');
+
+  // ---- districts: Voronoi cells round seed points, with wobbly borders
+  const dNames = {}; for (const k in GEN_DISTRICTS) dNames[k] = pool(GEN_DISTRICTS[k]);
+  const seeds = [{ x: C.x, y: C.y, kind: 'old', ang: rr(0, Math.PI) }];
+  if (land(port.x, port.y, 300)) seeds.push({ x: port.x, y: port.y, kind: 'port' });
+  for (let k = 0; k < 4000 && seeds.length < 60; k++) {
+    const p = { x: rr(600, S - 600), y: rr(600, S - 600) };
+    if (!land(p.x, p.y, 100) || seeds.some(s => dist(s, p) < (s.kind === 'old' ? 3600 : 4300))) continue;
+    const d = dist(p, C), q = R();
+    p.kind = d < R1 * 0.95 ? 'centre' : d < R2 * 0.8 ? (q < 0.5 ? 'blocks' : q < 0.75 ? 'centre' : 'houses') : q < 0.6 ? 'houses' : q < 0.85 ? 'industry' : 'blocks';
+    if (coastY(p.x) - p.y < 2800 && p.kind !== 'centre') p.kind = 'houses';
+    seeds.push(p);
+  }
+  for (const s of seeds) { s.name = dNames[s.kind](); if (s.ang === undefined) s.ang = Math.atan2(s.y - C.y, s.x - C.x) + rr(-0.35, 0.35); }
+  const wpx = wave(2, 700, 2200), wpy = wave(2, 700, 2400);
+  const distAt = (x, y) => {
+    const X = x + wpx(y), Y = y + wpy(x); let b = 0, bd = Infinity;
+    for (let i = 0; i < seeds.length; i++) { const s = seeds[i], d = ((s.x - X) ** 2 + (s.y - Y) ** 2) * (s.kind === 'old' ? 1.5 : 1); if (d < bd) { bd = d; b = i; } }
+    return b;
+  };
+  const okGrid = (x, y) => land(x, y) && !resAt(x, y);
+  for (let si = 0; si < seeds.length; si++) {
+    const D = seeds[si], K = GEN_KINDS[D.kind], F = frame(D, D.ang), names = pool(GEN_STREETS[GEN_STREET_POOL[D.kind]]);
+    const ux = Math.cos(D.ang), uy = Math.sin(D.ang), old = D.kind === 'old';
+    const a = rr(K.a[0], K.a[1]), b = rr(K.b[0], K.b[1]), ext = old ? 4200 : 8500, SQ = old ? rr(950, 1150) : 0;
+    const offs = [];
+    if (old) for (let o = SQ / 2; o < ext; o += a) offs.push(o, -o);
+    else for (let o = rr(0, a) - ext; o < ext; o += a) offs.push(o);
+    offs.sort((p, q) => p - q);
+    const lines = offs.map((o, i) => { const big = K.major && i % K.major === 0; return { o, f: K.wv ? wave(2, rr(K.wv[0], K.wv[1]), rr(1400, 2400)) : null, name: names(), cls: big ? 3 : 4, w: big ? 110 : K.w }; });
+    const P = (ln, t) => F(t, ln.o + (ln.f ? ln.f(t) : 0));
+    // long streets: the runs inside the district, carried on up to 300 px into the next one so the grids meet
+    for (const ln of lines) {
+      // the district test is cheap, the terrain test is done only where needed
+      const smp = [];
+      for (let t = -ext; t <= ext; t += 60) { const p = P(ln, t); smp.push({ p, ok: undefined, own: distAt(p.x, p.y) === si }); }
+      const okAt = k => { const s = smp[k]; if (s.ok === undefined) s.ok = okGrid(s.p.x, s.p.y) && !alongMain(s.p.x, s.p.y, ux, uy, ln.w / 2 + 50); return s.ok; };
+      for (let k = 0; k < smp.length;) {
+        if (!(smp[k].own && okAt(k))) { k++; continue; }
+        let j = k; while (j + 1 < smp.length && smp[j + 1].own && okAt(j + 1)) j++;
+        let s0 = k, s1 = j;
+        for (let e = 0; e < 5 && s0 > 0 && okAt(s0 - 1); e++) s0--;
+        for (let e = 0; e < 5 && s1 < smp.length - 1 && okAt(s1 + 1); e++) s1++;
+        if ((s1 - s0) * 60 >= 240) streets.push({ pts: smp.slice(s0, s1 + 1).map(s => s.p), cls: ln.cls, w: ln.w, name: ln.name });
+        k = j + 1;
+      }
+    }
+    // cross streets between neighbouring long streets, shifted a little and sometimes missing (T-junctions)
+    const colNames = new Map(), t0 = rr(0, b), nk = Math.ceil(ext / b) + 1;
+    for (let i = 0; i + 1 < lines.length; i++) {
+      const L0 = lines[i], L1 = lines[i + 1], sqStrip = old && L0.o < 0 && L1.o > 0;
+      for (let kk = -nk; kk <= nk; kk++) {
+        let t;
+        if (old) { if (!kk) continue; t = Math.sign(kk) * (SQ / 2 + (Math.abs(kk) - 1) * b); } else t = t0 + kk * b;
+        const fixed = old && Math.abs(kk) === 1 && sqStrip;   // the sides of the market square
+        if (!fixed) { if (R() < K.drop) continue; t += rr(-K.jit, K.jit) * b; }
+        if (Math.abs(t) > ext) continue;
+        const p = P(L0, t), q = P(L1, t), dx = q.x - p.x, dy = q.y - p.y, ln = Math.hypot(dx, dy) || 1;
+        const a0 = { x: p.x - dx / ln * 40, y: p.y - dy / ln * 40 }, a1 = { x: q.x + dx / ln * 40, y: q.y + dy / ln * 40 };
+        if (distAt((p.x + q.x) / 2, (p.y + q.y) / 2) !== si) continue;
+        let ok = true;
+        for (let s = 0; s <= 10 && ok; s++) { const x = a0.x + (a1.x - a0.x) * s / 10, y = a0.y + (a1.y - a0.y) * s / 10; if (!okGrid(x, y) || alongMain(x, y, dx / ln, dy / ln, K.w / 2 + 50)) ok = false; }
+        if (!ok) continue;
+        if (!colNames.has(kk)) colNames.set(kk, names());
+        streets.push({ pts: [a0, a1], cls: 4, w: K.w, name: colNames.get(kk) });
+      }
+    }
+    if (old) {
+      const m = K.w / 2 + 24, pz = quad(F, -SQ / 2 + m, -SQ / 2 + m, SQ / 2 - m, SQ / 2 - m);
+      addRes('plaza', pz); green.push({ kind: 'plaza', pts: pz });
+      landmark(addBuilding(quad(F, -160, -110, 160, 110), 110, null, { btype: 'civic' }), 'Ratusz');
+    }
+    yield;
+  }
+
+  // ---- the street network: cut every street where it crosses another, snap close points, then join into polylines
+  const segs = [];
+  streets.forEach((st, sid) => { st.pts = simplifyLine(st.pts, 2); for (let k = 1; k < st.pts.length; k++) segs.push({ id: segs.length, sid, a: st.pts[k - 1], b: st.pts[k], ts: [0, 1] }); });
+  const segG = new Map();
+  for (const s of segs) gAdd(segG, 400, bboxOf([s.a, s.b]), s);
+  for (const s of segs) {
+    const bb = bboxOf([s.a, s.b]);
+    for (const o of gQuery(segG, 400, bb.x0, bb.y0, bb.x1, bb.y1)) {
+      if (o.id <= s.id || o.sid === s.sid) continue;
+      const rx = s.b.x - s.a.x, ry = s.b.y - s.a.y, sx = o.b.x - o.a.x, sy = o.b.y - o.a.y, den = rx * sy - ry * sx;
+      if (Math.abs(den) < 1e-9) continue;
+      const qx = o.a.x - s.a.x, qy = o.a.y - s.a.y, t = (qx * sy - qy * sx) / den, u = (qx * ry - qy * rx) / den;
+      if (t >= -1e-9 && t <= 1 + 1e-9 && u >= -1e-9 && u <= 1 + 1e-9) { s.ts.push(t); o.ts.push(u); }
+    }
+    if (s.id % 2000 === 1999) yield;
+  }
+  const nodes = [], nG = new Map();
+  const nodeAt = (x, y) => {
+    for (const n of gQuery(nG, 64, x - 30, y - 30, x + 30, y + 30)) if (Math.hypot(n.x - x, n.y - y) < 30) return n.id;
+    const n = { id: nodes.length, x, y, ed: [] }; nodes.push(n); gAdd(nG, 64, { x0: x, y0: y, x1: x, y1: y }, n); return n.id;
+  };
+  const ed = [], eKey = new Set(), edG = new Map();
+  const addEd = (a, b, sid) => {
+    const k = a < b ? a + ',' + b : b + ',' + a; if (a === b || eKey.has(k)) return null;
+    eKey.add(k); const e = { i: ed.length, a, b, sid, on: true }; ed.push(e); nodes[a].ed.push(e.i); nodes[b].ed.push(e.i);
+    gAdd(edG, 400, bboxOf([nodes[a], nodes[b]]), e); return e;
+  };
+  const dropEd = i => { const e = ed[i]; if (!e.on) return; e.on = false; eKey.delete(e.a < e.b ? e.a + ',' + e.b : e.b + ',' + e.a); for (const n of [nodes[e.a], nodes[e.b]]) n.ed = n.ed.filter(j => j !== i); };
+  for (const s of segs) {
+    let prev = null;
+    for (const t of [...new Set(s.ts)].sort((p, q) => p - q)) {
+      const id = nodeAt(s.a.x + (s.b.x - s.a.x) * t, s.a.y + (s.b.y - s.a.y) * t);
+      if (prev !== null && id !== prev) addEd(prev, id, s.sid);
+      prev = id;
+    }
+  }
+  // loose ends close to another street are joined to it, if that continues the street rather than turning back
+  for (const n of nodes) {
+    if (n.ed.length !== 1) continue;
+    const e0 = ed[n.ed[0]], m = nodes[e0.a === n.id ? e0.b : e0.a], dl = Math.hypot(n.x - m.x, n.y - m.y) || 1, dx = (n.x - m.x) / dl, dy = (n.y - m.y) / dl;
+    let best = null, bd = 100;
+    for (const e of gQuery(edG, 400, n.x - 100, n.y - 100, n.x + 100, n.y + 100)) {
+      if (!e.on || e.a === n.id || e.b === n.id || e.sid === e0.sid) continue;
+      const A = nodes[e.a], B = nodes[e.b], ex = B.x - A.x, ey = B.y - A.y, L2 = ex * ex + ey * ey || 1, t = clamp(((n.x - A.x) * ex + (n.y - A.y) * ey) / L2, 0, 1);
+      const qx = A.x + ex * t, qy = A.y + ey * t, d = Math.hypot(qx - n.x, qy - n.y);
+      if (d < bd && (d < 15 || ((qx - n.x) * dx + (qy - n.y) * dy) / d > 0.5)) { bd = d; best = { e, t, qx, qy }; }
+    }
+    if (!best) continue;
+    const { e } = best, A = nodes[e.a], B = nodes[e.b];
+    let tgt;
+    if (Math.hypot(best.qx - A.x, best.qy - A.y) < 30) tgt = A.id;
+    else if (Math.hypot(best.qx - B.x, best.qy - B.y) < 30) tgt = B.id;
+    else { tgt = nodeAt(best.qx, best.qy); dropEd(e.i); addEd(e.a, tgt, e.sid); addEd(tgt, e.b, e.sid); }
+    addEd(n.id, tgt, e0.sid);
+  }
+  // short dead ends (leftovers past the last crossing) go
+  for (let pass = 0; pass < 3; pass++) for (const n of nodes) {
+    if (n.ed.length !== 1) continue;
+    const chain = []; let cur = n.id, pe = -1, len = 0;
+    for (;;) {
+      const nx = nodes[cur].ed.filter(i => i !== pe);
+      if ((cur !== n.id && nodes[cur].ed.length !== 2) || !nx.length) break;
+      const e = ed[nx[0]], o = e.a === cur ? e.b : e.a;
+      chain.push(e.i); len += Math.hypot(nodes[o].x - nodes[cur].x, nodes[o].y - nodes[cur].y); pe = e.i; cur = o;
+      if (len > 600) break;
+    }
+    if (len < 450 && nodes[cur].ed.length >= 3) chain.forEach(dropEd);
+  }
+  // keep the biggest connected part
+  const comp = new Int32Array(nodes.length).fill(-1), sizes = [];
+  for (const n of nodes) {
+    if (comp[n.id] >= 0 || !n.ed.length) continue;
+    const c = sizes.length, st = [n.id]; comp[n.id] = c; let sz = 0;
+    while (st.length) { const v = st.pop(); sz++; for (const i of nodes[v].ed) { const e = ed[i], o = e.a === v ? e.b : e.a; if (comp[o] < 0) { comp[o] = c; st.push(o); } } }
+    sizes.push(sz);
+  }
+  const bigC = sizes.indexOf(Math.max(...sizes));
+  for (const e of ed) if (e.on && comp[e.a] !== bigC) dropEd(e.i);
+  // chains of plain points between crossings become one polyline edge
+  const forced = new Set(), seen = new Uint8Array(ed.length), chains = [];
+  const isKey = n => forced.has(n.id) || n.ed.length !== 2 || ed[n.ed[0]].sid !== ed[n.ed[1]].sid;
+  const trace = (start, ei) => {
+    const ids = [start]; let cur = start, e = ei;
+    for (;;) {
+      seen[e] = 1; const E = ed[e]; cur = E.a === cur ? E.b : E.a; ids.push(cur);
+      if (cur === start || isKey(nodes[cur])) break;
+      const ne = nodes[cur].ed.find(i => i !== e); if (ne === undefined || seen[ne]) break; e = ne;
+    }
+    if (ids[0] === ids[ids.length - 1]) { const m = ids.length >> 1; forced.add(ids[m]); chains.push({ ids: ids.slice(0, m + 1), sid: ed[ei].sid }, { ids: ids.slice(m), sid: ed[ei].sid }); }
+    else chains.push({ ids, sid: ed[ei].sid });
+  };
+  for (const n of nodes) if (n.ed.length && isKey(n)) for (const ei of n.ed) if (!seen[ei]) trace(n.id, ei);
+  for (const n of nodes) for (const ei of n.ed) if (!seen[ei]) { forced.add(n.id); trace(n.id, ei); }
+  const remap = new Map(), wNodes = [], edges = [];
+  const nid = id => { if (!remap.has(id)) { remap.set(id, wNodes.length); wNodes.push({ id: wNodes.length, x: nodes[id].x, y: nodes[id].y }); } return remap.get(id); };
+  for (const c of chains) { const st = streets[c.sid]; edges.push({ a: nid(c.ids[0]), b: nid(c.ids[c.ids.length - 1]), cls: st.cls, w: st.w, name: st.name, ow: 0, pts: c.ids.map(id => ({ x: nodes[id].x, y: nodes[id].y })) }); }
+
+  yield;
+  // ---- pavements along every street and round every crossing
+  const walk = [], octa = (x, y, r) => Array.from({ length: 8 }, (_, k) => ({ x: x + Math.cos(k * 0.785 + 0.39) * r, y: y + Math.sin(k * 0.785 + 0.39) * r }));
+  const nodeR = new Float32Array(wNodes.length);
+  for (const e of edges) {
+    const hw = e.w / 2 + 24; nodeR[e.a] = Math.max(nodeR[e.a], hw); nodeR[e.b] = Math.max(nodeR[e.b], hw);
+    for (let k = 1; k < e.pts.length; k++) {
+      const a = e.pts[k - 1], b = e.pts[k], ln = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / ln * hw, ny = (b.x - a.x) / ln * hw;
+      walk.push({ kind: 'walk', pts: [{ x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny }, { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }] });
+      if (k > 1) walk.push({ kind: 'walk', pts: octa(a.x, a.y, hw) });
+    }
+  }
+  wNodes.forEach((n, i) => walk.push({ kind: 'walk', pts: octa(n.x, n.y, nodeR[i]) }));
+
+  // ---- buildings along the streets, each district in its own style
+  const rsG = new Map();
+  for (const e of edges) for (let k = 1; k < e.pts.length; k++) { const a = e.pts[k - 1], b = e.pts[k]; gAdd(rsG, 400, bboxOf([a, b], e.w / 2), { a, b, hw: e.w / 2 + 24 }); }
+  for (const [a, b] of railSegs) gAdd(rsG, 400, bboxOf([a, b], 50), { a, b, hw: 50 });
+  for (const r of roads) for (let k = 1; k < r.pts.length; k++) { const a = r.pts[k - 1], b = r.pts[k]; gAdd(rsG, 400, bboxOf([a, b], r.w / 2), { a, b, hw: r.w / 2 }); }
+  const roadFree = (x, y, m) => !gQuery(rsG, 400, x - m, y - m, x + m, y + m).some(s => segDist(x, y, s.a, s.b) < s.hw + m);
+  const spotFree = (x, y, m) => land(x, y) && !resAt(x, y) && roadFree(x, y, m);
+  const canPlace = pts => {
+    for (let i = 0; i < 4; i++) {
+      const p = pts[i], q = pts[(i + 1) % 4], n = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 45));
+      for (let k = 0; k < n; k++) if (!spotFree(p.x + (q.x - p.x) * k / n, p.y + (q.y - p.y) * k / n, 4)) return false;
+    }
+    const c = { x: (pts[0].x + pts[2].x) / 2, y: (pts[0].y + pts[2].y) / 2 };
+    if (!spotFree(c.x, c.y, 4)) return false;
+    const bb = bboxOf(pts);
+    return !gQuery(bG, 256, bb.x0, bb.y0, bb.x1, bb.y1).some(o => polysOverlap(o.pts, pts));
+  };
+  const along = (e, s) => {
+    let k = 1; while (k < e.cum.length - 1 && e.cum[k] < s) k++;
+    const a = e.pts[k - 1], b = e.pts[k], ln = e.cum[k] - e.cum[k - 1] || 1, t = clamp((s - e.cum[k - 1]) / ln, 0, 1);
+    return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, dx: (b.x - a.x) / ln, dy: (b.y - a.y) / ln };
+  };
+  const rect = (c, sd, f, off, d) => {
+    const nx = -c.dy * sd, ny = c.dx * sd, P = (u, v) => ({ x: c.x + c.dx * u + nx * v, y: c.y + c.dy * u + ny * v });
+    return [P(-f / 2, off), P(f / 2, off), P(f / 2, off + d), P(-f / 2, off + d)];
+  };
+  const tree = (x, y) => trees.push({ x, y, r: rr(14, 26), col: [ri(85, 120), ri(30, 45), ri(24, 36)] });
+  for (const [ei, e] of edges.entries()) {
+    if (ei % 200 === 199) yield;
+    e.cum = [0]; for (let k = 1; k < e.pts.length; k++) e.cum.push(e.cum[k - 1] + Math.hypot(e.pts[k].x - e.pts[k - 1].x, e.pts[k].y - e.pts[k - 1].y));
+    e.len = e.cum[e.cum.length - 1];
+    for (const sd of [1, -1]) {
+      const end = e.len - 60 - nodeR[e.b];
+      for (let s = 60 + nodeR[e.a]; s < end;) {
+        const p0 = along(e, s), D = seeds[distAt(p0.x - p0.dy * sd * (e.w / 2 + 150), p0.y + p0.dx * sd * (e.w / 2 + 150))], K = GEN_KINDS[D.kind];
+        const f = rr(K.f[0], K.f[1]); if (s + f > end) break;
+        const c = along(e, s + f / 2), off = e.w / 2 + 30 + rr(K.set[0], K.set[1]), d = rr(K.d[0], K.d[1]), pts = rect(c, sd, f, off, d);
+        if (!canPlace(pts)) { s += 50; continue; }
+        const dc = Math.min(1, dist(c, C) / R2), roof = pick(K.roofs).slice(); roof[2] += rr(-5, 5);
+        addBuilding(pts, rr(K.h[0], K.h[1]) * (D.kind === 'centre' || D.kind === 'old' ? 1.15 - 0.35 * dc : 1), roof, { btype: K.bt, gk: D.kind });
+        if (K.rows) { const p2 = rect(c, sd, f, off + d + rr(260, 420), d); if (canPlace(p2)) addBuilding(p2, rr(K.h[0], K.h[1]), roof.slice(), { btype: K.bt, gk: D.kind }); }
+        if (K.yard) green.push({ kind: 'parking', pts: rect(c, sd, f + 60, off - 20, d + 60) });
+        if (K.trees && R() < K.trees) for (let k = ri(1, 2); k > 0; k--) {
+          const u = rr(-f / 2, f / 2), v = off + d + rr(35, 90), x = c.x + c.dx * u - c.dy * sd * v, y = c.y + c.dy * u + c.dx * sd * v;
+          if (spotFree(x, y, 20)) tree(x, y);
+        }
+        s += f + rr(K.gap[0], K.gap[1]);
+      }
+    }
+    delete e.cum; delete e.len;
+  }
+  // well-known places in the biggest buildings of the old town and the centre, and the port office
+  const area = b => { const bb = bboxOf(b.pts); return (bb.x1 - bb.x0) * (bb.y1 - bb.y0); };
+  const cand = buildings.filter(b => !b.name && (b.gk === 'old' || b.gk === 'centre')).sort((a, b) => area(b) - area(a));
+  for (const nm of ['Teatr Nowy', 'Poczta Główna', 'Kino Wolność', 'Hotel Pod Różą', 'Hala Targowa']) {
+    const b = cand.find(o => { if (o.name) return false; const bb = bboxOf(o.pts), c = { x: (bb.x0 + bb.x1) / 2, y: (bb.y0 + bb.y1) / 2 }; return landmarks.every(l => dist(l, c) > 1800); });
+    if (!b) break;
+    b.h = Math.max(b.h, 90); landmark(b, nm);
+  }
+  const portB = buildings.filter(b => b.gk === 'port' && !b.name).sort((a, b) => area(b) - area(a))[0];
+  if (portB) landmark(portB, 'Port Morski');
+  // made-up local businesses
+  const NAMES = { shop: ['Sklep spożywczy', 'Delikatesy Pod Lipą', 'Market osiedlowy', 'Piekarnia Kłos', 'Warzywniak u Basi'], school: ['Szkoła Podstawowa nr 3', 'Liceum im. Kopernika', 'Szkoła Podstawowa nr 7'],
+    church: ['Kościół św. Jana', 'Kościół Mariacki'], pharmacy: ['Apteka Pod Orłem', 'Apteka Centralna'], food: ['Bar Mleczny Pod Kogutem', 'Pizzeria Roma', 'Kawiarnia Kafka', 'Smażalnia Ryb'], hotel: ['Hotel Morski'] };
+  const pois = [], plain = buildings.filter(b => !b.name && b.gk && b.gk !== 'industry' && b.gk !== 'port');
+  for (const cat of ['shop', 'shop', 'shop', 'shop', 'shop', 'shop', 'school', 'school', 'school', 'church', 'church', 'pharmacy', 'pharmacy', 'food', 'food', 'food', 'food', 'hotel']) {
+    if (!plain.length) break;
+    const b = pick(plain), bb = bboxOf(b.pts); pois.push({ cat, name: pick(NAMES[cat]), x: (bb.x0 + bb.x1) / 2, y: (bb.y0 + bb.y1) / 2 });
+  }
+
+  // ---- water: the sea and the river (drawn over the parks and woods they touch)
+  const sea = []; for (let x = -1500; x <= S + 1500; x += 250) sea.push({ x, y: coastY(x) });
+  sea.push({ x: S + 1500, y: S + 1500 }, { x: -1500, y: S + 1500 });
+  water.unshift({ rings: [{ outer: true, pts: sea }] });
+  const lb = [], rb = [];
+  for (let y = -1500; y <= coastY(mouthX) + 600; y += 150) { const x = riverX(y), h = riverW(y) / 2 * Math.hypot(1, (riverX(y + 30) - riverX(y - 30)) / 60); lb.push({ x: x - h, y }); rb.push({ x: x + h, y }); }
+  water.push({ rings: [{ outer: true, pts: lb.concat(rb.reverse()) }] });
+
+  // ---- turn the whole map so the sea can be on any side
+  const turn = ri(0, 3);
+  const rot = p => (turn === 0 ? p : turn === 1 ? { x: S - p.y, y: p.x } : turn === 2 ? { x: S - p.x, y: S - p.y } : { x: p.y, y: S - p.x });
+  const rotAll = list => list.map(rot);
+  const w = { title: LANG === 'en' ? `Town #${seed}` : `Miasto nr ${seed}`, real: false, gen: true, W: S, H: S, start: rot(C) };
+  w.nodes = wNodes.map(n => ({ id: n.id, ...rot(n) }));
+  w.edges = edges.map(e => ({ ...e, pts: rotAll(e.pts) }));
+  w.roads = roads.map(r => ({ ...r, pts: rotAll(r.pts) }));
+  w.buildings = buildings.map(b => ({ h: b.h, pts: rotAll(b.pts), roof: b.roof || undefined, name: b.name, btype: b.btype }));
+  w.green = walk.concat(green).map(g => ({ kind: g.kind, pts: rotAll(g.pts) }));
+  w.water = water.map(wt => ({ rings: wt.rings.map(r => ({ outer: r.outer, pts: rotAll(r.pts) })) }));
+  w.rails = rail ? [{ tram: 0, pts: rotAll(rail.pts) }] : [];
+  w.trees = trees.map(t => ({ ...t, ...rot(t) }));
+  w.landmarks = landmarks.map(l => ({ name: l.name, ...rot(l) }));
+  w.districts = seeds.map(s => ({ name: s.name, ...rot(s) }));
+  w.pois = pois.map(p => ({ ...p, ...rot(p) }));
+  w.helipads = helipads.map(rot);
+  w.military = [];
+  return w;
 }
 // ---------- world model ----------
 // One format for both maps: a drivable street graph (nodes + edges with polylines), draw-only roads,
@@ -543,44 +1002,6 @@ function* loadCityDataG(id, title) {
   yield* prepWorldG(w);
   WORLDS[id] = w;
 }
-// the generated grid town, converted into the shared format
-function gridWorld(c) {
-  const { xs, ys } = c, id = (i, j) => i * (NC + 1) + j;
-  const w = { title: LANG === 'en' ? `Town #${c.seed}` : `Miasto nr ${c.seed}`, real: false, W: c.W, H: c.H };
-  w.nodes = c.nodes.map(n => ({ id: n.id, x: n.x, y: n.y }));
-  w.edges = [];
-  for (let i = 0; i <= NC; i++) for (let j = 0; j < NC; j++) if (c.hseg[i][j]) w.edges.push({ a: id(i, j), b: id(i, j + 1), cls: 3, w: RW * 2, name: c.hNames[i], ow: 0, pts: [{ x: xs[j], y: ys[i] }, { x: xs[j + 1], y: ys[i] }] });
-  for (let i = 0; i < NC; i++) for (let j = 0; j <= NC; j++) if (c.vseg[i][j]) w.edges.push({ a: id(i, j), b: id(i + 1, j), cls: 3, w: RW * 2, name: c.vNames[j], ow: 0, pts: [{ x: xs[j], y: ys[i] }, { x: xs[j], y: ys[i + 1] }] });
-  // drop unused nodes so the graph stays compact
-  const used = new Set(); for (const e of w.edges) { used.add(e.a); used.add(e.b); }
-  const remap = new Map(); w.nodes = w.nodes.filter(n => used.has(n.id)).map((n, k) => { remap.set(n.id, k); return { id: k, x: n.x, y: n.y }; });
-  for (const e of w.edges) { e.a = remap.get(e.a); e.b = remap.get(e.b); }
-  w.roads = [];
-  w.buildings = c.buildings.map(b => ({ h: b.h, pts: rectPts(b.x0, b.y0, b.x1, b.y1), roof: b.roof, name: b.name, details: b.details }));
-  w.green = [];
-  for (const cell of c.cells) w.green.push({ kind: 'walk', pts: rectPts(cell.x0, cell.y0, cell.x1, cell.y1) });
-  for (const l of c.lots) if (l.type === 'park' || l.type === 'parking') w.green.push({ kind: l.type, pts: rectPts(l.x0 + 2, l.y0 + 2, l.x1 - 2, l.y1 - 2), lot: l });
-  const L = c.land;
-  w.water = [{ rings: [{ outer: true, pts: rectPts(-600, -600, c.W + 600, c.H + 600) }, { outer: false, pts: rectPts(L.x0, L.y0, L.x1, L.y1) }] }];
-  w.rails = [];
-  w.trees = c.trees;
-  w.landmarks = c.landmarks.map(l => ({ name: l.name, x: l.x, y: l.y }));
-  w.districts = DISTRICTS.map((D, k) => {
-    const cs = c.cells.filter(cl => cl.di === k);
-    return { name: D.name, x: cs.reduce((s, cl) => s + (cl.x0 + cl.x1) / 2, 0) / cs.length, y: cs.reduce((s, cl) => s + (cl.y0 + cl.y1) / 2, 0) / cs.length };
-  });
-  w.parkSpots = c.parkSpots;
-  // made-up local businesses for the generated town
-  const NAMES = { repair: ['Warsztat u Zbyszka', 'Auto-Serwis Mirek', 'Mechanika Pojazdowa Nowak'], fuel: ['Stacja Paliw Orzeł', 'Stacja Paliw Bałtyk'], shop: ['Sklep spożywczy', 'Delikatesy Pod Lipą', 'Market osiedlowy', 'Piekarnia Kłos'],
-    school: ['Szkoła Podstawowa nr 3', 'Liceum im. Kopernika'], church: ['Kościół św. Jana', 'Kościół Mariacki'], pharmacy: ['Apteka Pod Orłem'], food: ['Bar Mleczny Pod Kogutem', 'Pizzeria Roma', 'Kawiarnia Kafka'], hotel: ['Hotel Pod Różą'] };
-  w.pois = [];
-  for (const cat of ['repair', 'repair', 'repair', 'fuel', 'fuel', 'shop', 'shop', 'shop', 'shop', 'school', 'school', 'church', 'pharmacy', 'food', 'food', 'food', 'hotel']) {
-    const b = mpick(c.buildings); w.pois.push({ cat, name: mpick(NAMES[cat]), x: (b.x0 + b.x1) / 2, y: (b.y0 + b.y1) / 2 });
-  }
-  w.military = []; w.helipads = [];
-  prepWorld(w);
-  return w;
-}
 
 // spatial hashes
 let qStamp = 1;
@@ -652,8 +1073,8 @@ function* prepWorldG(w) {
     if (best && !best.name) { best.name = lm.name.split(',')[0]; best.roof = [352, 42, 44]; }
     lm.b = best;
   }
-  // trees in parks and woods, kept off the streets
-  if (w.real) {
+  // trees in parks and woods, kept off the streets and out of ponds
+  if (w.real || w.gen) {
     let budget = 9000, gi = 0;
     for (const g of w.green) {
       if (++gi % 300 === 0) yield;
@@ -662,7 +1083,7 @@ function* prepWorldG(w) {
       let n = Math.min(120, Math.floor(area / (g.kind === 'wood' ? 30000 : 70000)));
       for (let k = 0; k < n * 3 && n > 0 && budget > 0; k++) {
         const x = mr(g.bb.x0, g.bb.x1), y = mr(g.bb.y0, g.bb.y1);
-        if (!inPoly(x, y, g.pts) || nearestSeg(x, y, 60, null, w)) continue;
+        if (!inPoly(x, y, g.pts) || nearestSeg(x, y, 60, null, w) || waterAt(w, x, y)) continue;
         w.trees.push({ x, y, r: mr(16, 30), col: [mr(85, 120) | 0, mr(28, 45) | 0, mr(22, 34) | 0] }); n--; budget--;
       }
     }
@@ -671,7 +1092,7 @@ function* prepWorldG(w) {
   yield;
   // places, workshops (with the nearest curb to stop at) and military areas
   w.pois = w.pois || []; w.military = w.military || [];
-  if (w.real) w.pois = w.pois.filter(p => p.cat !== 'fuel' && p.cat !== 'repair').concat(gameSpots(w, 'fuel', 20000, 1), gameSpots(w, 'repair', 16000, 2));
+  if (w.real || w.gen) w.pois = w.pois.filter(p => p.cat !== 'fuel' && p.cat !== 'repair').concat(gameSpots(w, 'fuel', w.gen ? 6000 : 20000, 1), gameSpots(w, 'repair', w.gen ? 5000 : 16000, 2));
   for (const p of w.pois) gAdd(w.draw, 1024, { x0: p.x, y0: p.y, x1: p.x, y1: p.y }, { k: 'p', o: p });
   w.stations = w.pois.filter(p => p.cat === 'fuel').map((p, i) => { const r = nearestSeg(p.x, p.y, 800, s => s.e >= 0, w); p.sx = r ? r.qx : p.x; p.sy = r ? r.qy : p.y; p.no = i + 1; p.pk = 0.96 + ((i * 2654435761 >>> 0) % 41) / 1000; return p; });
   w.workshops = w.pois.filter(p => p.cat === 'repair').map((p, i) => { p.no = i + 1; const r = nearestSeg(p.x, p.y, 800, s => s.e >= 0, w); p.sx = r ? r.qx : p.x; p.sy = r ? r.qy : p.y; return p; });
@@ -725,8 +1146,9 @@ function pushOut(px, py, r, s) {
   return d < r ? { nx: (px - qx) / d, ny: (py - qy) / d, pen: r - d } : null;
 }
 function pointBlocked(x, y, r) { return solidsNear(x, y, r + 2).some(s => pushOut(x, y, r, s)); }
-function inWater(x, y) {
-  for (const wt of gQuery(city.wgrid, 512, x, y, x, y)) {
+function inWater(x, y) { return waterAt(city, x, y); }
+function waterAt(w, x, y) {
+  for (const wt of gQuery(w.wgrid, 512, x, y, x, y)) {
     if (x < wt.bb.x0 || x > wt.bb.x1 || y < wt.bb.y0 || y > wt.bb.y1) continue;
     let ins = false; for (const r of wt.rings) if (inPoly(x, y, r.pts)) ins = !ins;
     if (ins) return true;
@@ -802,6 +1224,9 @@ function landmarkSpot(lm) {
 let auxRoutes = [];
 const auxCache = {};
 const AUX_COL = { fuel: '#3b8bff', repair: '#e8833a' }, AUX_RGB = { fuel: '59,139,255', repair: '232,131,58' };
+// colour of the main route line: passenger yellow, drop-off green, garage orange, petrol blue, rental car purple
+const ROUTE_COL = { repair: ['#e8833a', '232,131,58'], fuel: ['#3b8bff', '59,139,255'], rent: ['#b07cff', '176,124,255'] };
+function routeCol(rgb) { const c = route && ROUTE_COL[route.kind] || (job && job.inCar ? ['#6cc070', '108,192,112'] : ['#f2c230', '242,194,48']); return c[rgb ? 1 : 0]; }
 function auxRoute(kind, n) {
   const nd = nearestNode(n.w.sx, n.w.sy);
   if (!auxCache[kind] || auxCache[kind].target !== nd.id || auxCache[kind].city !== city) auxCache[kind] = { target: nd.id, city, dij: dijkstra(nd.id) };
@@ -868,7 +1293,7 @@ function damageCar(c, d) {
   if (c.hp <= 0) {
     c.hp = 0; c.wreck = true;
     for (let k = 0; k < 18; k++) parts.push({ x: c.x + mr(-10, 10), y: c.y + mr(-10, 10), vx: mr(-60, 60), vy: mr(-60, 60), life: mr(1, 2.5), max: 2.5, s: mr(6, 14), col: '40,38,36' });
-    if (c === player.car) { toast(L('Auto rozbite. Wysiądź i weź inne.', 'Car wrecked. Get out and take another one.')); snd('crash', 1); }
+    if (c === player.car) { toast(towable(c) && c.owned && city.workshops.length ? L('Auto rozbite. Wzywam pomoc drogową…', 'Car wrecked. Calling roadside assistance…') : L('Auto rozbite. Wysiądź i poszukaj auta na wynajem.', 'Car wrecked. Get out and find a rental car.')); snd('crash', 1); }
   }
 }
 function physics(c, thr, steer, hb, dt) {
@@ -1049,6 +1474,167 @@ function spawnParked(px, py, minD, maxD) {
     return c;
   }
   return null;
+}
+// rental cars: bays painted along the kerb all over town, in the colour of a (fictional) rental company
+function rentalSpots(w) {
+  if (w.rentals) return w.rentals;
+  const rnd = mulberry32(5521), out = [], minD = w.gen ? 2400 : 3200;
+  const cand = w.edges.filter(e => e.cls >= 2 && e.cls <= 4 && e.len > 160 && e.w >= 70);
+  for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
+  for (const e of cand) {
+    const s = e.len * (0.3 + rnd() * 0.4), side = rnd() < 0.5 ? 1 : -1, p = pointAt(e, s), off = e.w / 2 - 13;
+    const x = p.x - p.dy * side * off, y = p.y + p.dx * side * off;
+    if (out.some(o => Math.abs(o.x - x) < minD && Math.abs(o.y - y) < minD && Math.hypot(o.x - x, o.y - y) < minD)) continue;
+    if (pointBlocked(x, y, 12) || inWater(x, y)) continue;
+    const co = Math.floor(rnd() * RENT_COS.length), C = RENT_COS[co];
+    out.push({ x, y, a: Math.atan2(p.dy, p.dx) + (side < 0 ? Math.PI : 0), co, type: C.cars[Math.floor(rnd() * C.cars.length)], car: null });
+  }
+  return (w.rentals = out);
+}
+// a free rental car waits in every bay near the player; bays far away are emptied again
+let rentT = 0;
+function updateRentals(dt, all) {
+  rentT -= dt; if (rentT > 0 && !all) return; rentT = 0.5;
+  const px = player.x, py = player.y;
+  for (const r of city.rentals || []) {
+    const d = Math.hypot(r.x - px, r.y - py);
+    if (r.car && (r.car.gone || Math.hypot(r.car.x - r.x, r.car.y - r.y) > 80)) { if (!r.car.owned) r.car.keep = false; r.car = null; }   // rented, towed or pushed out of the bay
+    if (r.car && d > 1900 && r.car.rental && !r.car.owned) { r.car.gone = true; r.car = null; continue; }
+    if (!r.car && d < 1400 && (all || d > 750) && !cars.some(o => Math.abs(o.x - r.x) < 40 && Math.abs(o.y - r.y) < 40)) {
+      const C = RENT_COS[r.co], c = makeCar(r.type, r.x, r.y, r.a);
+      c.col = C.col; c.rental = C; c.parked = true; c.keep = true; r.car = c; cars.push(c);
+    }
+  }
+}
+function nearestRental(x, y) {
+  let b = null, bd = Infinity;
+  for (const r of city.rentals || []) { if (r.car && r.car.owned) continue; const d = Math.hypot(r.x - x, r.y - y); if (d < bd) { bd = d; b = r; } }
+  return b && { r: b, d: bd };
+}
+
+// ---------- roadside assistance: a tow truck with flashing beacons takes a wrecked car to a garage ----------
+let towJob = null;
+const towable = c => c && !c.t.heli && !c.t.tracks && c.t.L <= 56 && c.sinking == null;
+function cleanPath(P) { const out = []; for (const p of P) if (!out.length || Math.hypot(p.x - out[out.length - 1].x, p.y - out[out.length - 1].y) > 1) out.push(p); return out; }
+function pathLen(P) { let l = 0; for (let k = 1; k < P.length; k++) l += Math.hypot(P[k].x - P[k - 1].x, P[k].y - P[k - 1].y); return l; }
+function pathAt(P, s) {
+  for (let k = 1; k < P.length; k++) {
+    const a = P[k - 1], b = P[k], l = Math.hypot(b.x - a.x, b.y - a.y);
+    if (s <= l || k === P.length - 1) { const t = clamp(s / l, 0, 1); return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, dx: (b.x - a.x) / l, dy: (b.y - a.y) / l }; }
+    s -= l;
+  }
+  return { x: P[0].x, y: P[0].y, dx: 1, dy: 0 };
+}
+const towRide = () => !!towJob && towJob.phase !== 'idle' && player.mode === 'car' && player.car === towJob.car;
+const insurerFor = c => INSURERS[c.rental ? c.rental.ins : 0];
+function callTow(car) {
+  if (!city.workshops.length) return false;
+  if (towJob) { towJob.tr.gone = true; towJob = null; }
+  const n0 = nearestNode(car.x, car.y), dij = dijkstra(n0.id);
+  let best = n0, bd = Infinity;
+  for (const n of city.nodes) { const D = dij.D[n.id]; if (D < Infinity && Math.abs(D - 3200) < bd) { bd = Math.abs(D - 3200); best = n; } }
+  const P = cleanPath(routeFrom(best.x, best.y, dij, car.x, car.y).pts);
+  if (P.length < 2) return false;
+  const p0 = pathAt(P, 0), tr = makeCar('tow', p0.x, p0.y, Math.atan2(p0.dy, p0.dx));
+  tr.towTruck = true; tr.keep = true; tr.driver = 'tow'; tr.sig = true; cars.push(tr);
+  towJob = { tr, car, phase: 'come', P, s: 0, end: Math.max(0, pathLen(P) - (tr.t.L / 2 + car.t.L / 2 + 14)), v: 0, t: 0 };
+  car.towWait = 0;
+  toast(L(`Wezwano pomoc drogową (${insurerFor(car)}). Laweta będzie za ok. ${Math.max(5, Math.round(towJob.end / 190))} s.`, `Roadside assistance called (${insurerFor(car)}). Tow truck in about ${Math.max(5, Math.round(towJob.end / 190))} s.`));
+  return true;
+}
+function towBed(tr) { return { x: tr.x - Math.cos(tr.a) * tr.t.L * 0.16, y: tr.y - Math.sin(tr.a) * tr.t.L * 0.16, a: tr.a }; }
+function updateTow(dt) {
+  const pc = player.car;
+  // a wrecked car you drove calls for a tow truck after a moment
+  if (state === 'play' && pc && pc.wreck && pc.owned && !pc.towedBy && towable(pc) && city.workshops.length && (!towJob || towJob.phase === 'idle')) {
+    pc.towWait = (pc.towWait || 0) + dt;
+    if (pc.towWait > 1.5) callTow(pc);
+  }
+  const J = towJob; if (!J) return;
+  const tr = J.tr, car = J.car;
+  if (car.gone || tr.gone) { tr.gone = true; car.towedBy = null; towJob = null; return; }
+  J.t += dt;
+  const ride = towRide();
+  const move = vmax => {
+    J.cw = (J.cw || 0) - dt; if (J.cw <= 0) { J.cw = 0.6; clearWay(tr, 450); }
+    const ca = Math.cos(tr.a), sa = Math.sin(tr.a);
+    J.stuck = J.v < 5 ? (J.stuck || 0) + dt : J.v > 60 ? 0 : J.stuck;   // stuck behind something for long: just squeeze past
+    if (J.stuck < 3) for (const o of cars) {
+      if (o === tr || o === car || o.towedBy || Math.abs(o.x - tr.x) > 200 || Math.abs(o.y - tr.y) > 200) continue;
+      const rx = o.x - tr.x, ry = o.y - tr.y, along = rx * ca + ry * sa, lat = -rx * sa + ry * ca;
+      if (along > 0 && Math.abs(lat) < (o.t.W + tr.t.W) / 2 - 2) vmax = Math.min(vmax, Math.max(0, along - (o.t.L + tr.t.L) / 2 - 12) * 2.5);
+    }
+    const left = J.end - J.s, vt = Math.min(vmax, Math.sqrt(Math.max(0, left) * 520) + 8);
+    J.v += clamp(vt - J.v, -600 * dt, 170 * dt); J.s = Math.min(J.end, J.s + J.v * dt);
+    const p = pathAt(J.P, J.s), off = 16 * clamp(Math.min(J.s / 120, (J.end - J.s) / 160), 0, 1), ox = tr.x, oy = tr.y;
+    tr.x = p.x - p.dy * off; tr.y = p.y + p.dx * off;
+    tr.a += wrapA(Math.atan2(p.dy, p.dx) - tr.a) * Math.min(1, dt * 5);
+    tr.vx = (tr.x - ox) / dt; tr.vy = (tr.y - oy) / dt;
+    return J.s >= J.end - 0.5;
+  };
+  const onBed = k => { const b = towBed(tr); car.x = lerp(J.from.x, b.x, k); car.y = lerp(J.from.y, b.y, k); car.a = J.from.a + wrapA(b.a - J.from.a) * k; car.vx = tr.vx; car.vy = tr.vy; car.spin = 0; };
+  if (J.phase === 'come') {
+    if (!car.wreck) { tr.gone = true; towJob = null; return; }   // fixed on the spot at a garage after all
+    if (move(230)) {
+      J.phase = 'load'; J.t = 0; J.from = { x: car.x, y: car.y, a: car.a }; car.towedBy = tr; tr.vx = tr.vy = 0;
+      if (autoOn) setAuto(false);
+      if (ride && job && job.inCar) { say(L('Złapię inną taksówkę. Do widzenia!', 'I\'ll catch another taxi. Bye!')); job = null; routeCache = null; }
+      snd('door', 0.5);
+    }
+  } else if (J.phase === 'load') {
+    const k = Math.min(1, J.t / 1.6); onBed(k * k * (3 - 2 * k));
+    if (k >= 1) {
+      const ws = nearestWorkshop(car.x, car.y).w, dij = dijkstra(nearestNode(ws.sx, ws.sy).id);
+      J.P = cleanPath(routeFrom(tr.x, tr.y, dij, ws.sx, ws.sy).pts); if (J.P.length < 2) J.P = [{ x: tr.x, y: tr.y }, { x: ws.sx, y: ws.sy }];
+      J.ws = ws; J.s = 0; J.v = 0; J.end = pathLen(J.P); J.dist = J.end; J.phase = 'go'; J.from = towBed(tr);
+      toast(ride ? L(`Laweta wiezie cię do: ${poiName(ws)}. E albo „Pomiń” skraca dojazd.`, `The tow truck takes you to ${poiName(ws)}. E or "Skip" skips the ride.`) : L(`Laweta zabrała auto do: ${poiName(ws)}.`, `The tow truck took the car to ${poiName(ws)}.`));
+    }
+  } else if (J.phase === 'go') {
+    const done = move(210); J.from = towBed(tr); onBed(1);
+    if (done) {
+      J.phase = 'drop'; J.t = 0; J.from = towBed(tr);
+      const ca = Math.cos(tr.a), sa = Math.sin(tr.a), back = tr.t.L / 2 + car.t.L / 2 + 12;
+      J.to = { x: tr.x - ca * back, y: tr.y - sa * back, a: tr.a };
+      if (pointBlocked(J.to.x, J.to.y, 10)) J.to = { x: tr.x + ca * back, y: tr.y + sa * back, a: tr.a };
+      tr.vx = tr.vy = 0;
+    }
+  } else if (J.phase === 'drop') {
+    const k = Math.min(1, J.t / 1.2), e = k * k * (3 - 2 * k);
+    car.x = lerp(J.from.x, J.to.x, e); car.y = lerp(J.from.y, J.to.y, e); car.a = J.from.a; car.vx = car.vy = 0;
+    if (k >= 1) {
+      car.towedBy = null; showBill(car, J.ws, J.dist, 1);
+      car.hp = car.t.hp; car.wreck = false; car.warned = false; car.towWait = 0;
+      J.phase = 'idle'; J.t = 0; tr.sig = false; snd('cash', 0.5);
+    }
+  } else if (J.phase === 'idle') {
+    if (J.t > 4 && Math.hypot(tr.x - player.x, tr.y - player.y) > 900) { tr.gone = true; towJob = null; }
+  }
+  if (ride) { player.x = car.x; player.y = car.y; }
+}
+// skip the tow ride straight to the garage
+function towSkip() {
+  const J = towJob;
+  if (J.phase === 'load') { J.t = 99; updateTow(0.016); }
+  if (J.phase === 'go') {
+    const p = pathAt(J.P, J.end); J.tr.a = Math.atan2(p.dy, p.dx); J.s = J.end; updateTow(0.016);
+    J.tr.vx = J.tr.vy = 0; cam.x = player.x; cam.y = player.y;
+  }
+}
+// what the garage did, and who paid for it
+let billT = 0;
+function showBill(car, ws, towDist, dmg) {
+  const base = REPAIR_VAL[car.t.key] || 3000, r10 = v => Math.round(v / 10) * 10;
+  const rep = r10(base * clamp(dmg, 0.08, 1) * mr(0.85, 1.15)), svc = r10(mr(120, 260)), km = towDist ? Math.max(1, towDist / 10000) : 0;
+  const tow = towDist ? r10(250 + km * 9) : 0, sum = rep + svc + tow, ins = insurerFor(car);
+  const row = (a, b) => `<div class="brow"><span>${a}</span><b>${b}</b></div>`;
+  $('bill').innerHTML = `<h3>${poiName(ws)}: ${L('auto naprawione', 'car repaired')}</h3>`
+    + (tow ? row(L(`Holowanie lawetą (${km.toFixed(1).replace('.', LANG === 'en' ? '.' : ',')} km)`, `Towing (${km.toFixed(1)} km)`), zl(tow)) : '')
+    + row(L('Naprawa', 'Repair'), zl(rep)) + row(L('Obsługa: diagnostyka, płyny, przegląd', 'Service: diagnostics, fluids, check-up'), zl(svc))
+    + `<div class="brow sum"><span>${L('Razem', 'Total')}</span><b>${zl(sum)}</b></div>`
+    + `<p>${L(`Naprawę${tow ? ', holowanie' : ''} i obsługę pokrył ubezpieczyciel <b>${ins}</b>${car.rental ? ` (polisa firmy ${car.rental.n})` : ''}. Do zapłaty: <b>0 zł</b>.`, `Repair${tow ? ', towing' : ''} and service were covered by the insurer <b>${ins}</b>${car.rental ? ` (${car.rental.n} policy)` : ''}. You pay: <b>PLN 0</b>.`)}</p>`
+    + `<small>${L('Ubezpieczyciel i warsztat są fikcyjne. Dotknij, aby zamknąć.', 'The insurer and the garage are fictional. Tap to close.')}</small>`;
+  $('bill').hidden = false; billT = 9;
+  popup(car.x, car.y - 30, L('naprawione', 'repaired'), '#e8833a');
 }
 // put a car that wandered off (after a chase) back onto the nearest lane
 function aiReset(c) {
@@ -1256,17 +1842,18 @@ try { best = +localStorage.getItem('kpm-best') || 0; seed = +localStorage.getIte
 if (!seed) seed = 1000 + Math.floor(Math.random() * 9000);
 
 function makeOffer() {
-  const s = randomSpot(player.x, player.y, 250, city.real ? 2200 : 1600); if (!s) return null;
-  const lms = city.landmarks.filter(l => { const d = Math.hypot(l.x - s.x, l.y - s.y); return d > 1500 && d < (city.real ? 14000 : 6000); });
+  const wide = city.real || city.gen;   // big maps: longer trips, fares per real distance
+  const s = randomSpot(player.x, player.y, 250, wide ? 2200 : 1600); if (!s) return null;
+  const lms = city.landmarks.filter(l => { const d = Math.hypot(l.x - s.x, l.y - s.y); return d > 1500 && d < (wide ? 14000 : 6000); });
   let dest = null;
   for (let tries = 0; tries < 20 && !dest; tries++) {
     const air = city.landmarks.find(l => l.name.startsWith('Lotnisko'));
-    const d = air && tries === 0 && Math.random() < 0.12 && Math.hypot(air.x - s.x, air.y - s.y) > 3000 ? landmarkSpot(air) : Math.random() < 0.45 && lms.length ? landmarkSpot(mpick(lms)) : city.real ? randomSpot(s.x, s.y, 2500, 11000) : randomSpot(s.x, s.y, 900, 4000);
-    if (d && Math.hypot(d.x - s.x, d.y - s.y) > (city.real ? 1500 : 900)) dest = d;
+    const d = air && tries === 0 && Math.random() < 0.12 && Math.hypot(air.x - s.x, air.y - s.y) > 3000 ? landmarkSpot(air) : Math.random() < 0.45 && lms.length ? landmarkSpot(mpick(lms)) : wide ? randomSpot(s.x, s.y, 2500, 11000) : randomSpot(s.x, s.y, 900, 4000);
+    if (d && Math.hypot(d.x - s.x, d.y - s.y) > (wide ? 1500 : 900)) dest = d;
   }
   if (!dest) return null;
   const R0 = dijkstra(nearestNode(dest.x, dest.y).id), rt = routeFrom(s.x, s.y, R0, dest.x, dest.y);
-  const fare = Math.round(9 + rt.len / (city.real ? 140 : 75));
+  const fare = Math.round(9 + rt.len / (wide ? 140 : 75));
   return { x: s.x, y: s.y, nx: s.nx, ny: s.ny, addr: s.addr, dest, len: rt.len, fare, limit: Math.round(rt.len / 190 + 18), who: personName(mpick(PEOPLE)), shirt: mpick(SHIRTS), born: T, ph: mr(0, 6) };
 }
 function speedOf(c) { return Math.hypot(c.vx, c.vy); }
@@ -1294,10 +1881,13 @@ function finishJob() {
   snd('cash', 0.7);
   job = null; routeCache = null;
 }
+// no car theft: you drive your taxi, cars you rented, helicopters and the vehicles on military ground
+const canUse = c => c.owned || c.rental || c.t.heli || (!c.ai && !c.driver && ['jeep', 'army', 'tank'].includes(c.t.key));
 function enterExit() {
   if (state !== 'play') return;
   if (player.mode === 'car') {
     const c = player.car;
+    if (towRide() && towJob.phase !== 'come') { if (towJob.phase !== 'drop') towSkip(); return; }
     if (c.t.heli && c.air > 0.05 && !c.onRoof) { toast(L('Najpierw wyląduj: zwolnij i przytrzymaj hamulec. Możesz też usiąść na dachu.', 'Land first: slow down and hold the brake. You can also land on a roof.')); return; }
     if (c.t.heli && c.onRoof) {
       // step out onto the roof
@@ -1324,20 +1914,16 @@ function enterExit() {
     let best2 = null, bd = Infinity;
     for (const c of cars) { if (player.roof && c.onRoof !== player.roof) continue; if (!player.roof && c.onRoof) continue; const d = Math.hypot(c.x - player.x, c.y - player.y) - c.t.L / 2; if (d < 26 && d < bd) { bd = d; best2 = c; } }
     if (!best2) { toast(L('Podejdź bliżej do auta.', 'Walk closer to a car.')); return; }
+    if (best2.towTruck) { toast(L('To laweta pomocy drogowej.', 'This is the roadside tow truck.')); return; }
+    if (best2.towedBy) { toast(L('Auto jest na lawecie.', 'The car is on the tow truck.')); return; }
     if (best2.wreck) { toast(L('To auto jest rozbite.', 'This car is wrecked.')); return; }
-    if (best2.ai) {
-      // the driver hops out and runs off
-      const ca = Math.cos(best2.a), sa = Math.sin(best2.a);
-      peds.push({ ring: null, x: best2.x + sa * 16, y: best2.y - ca * 16, a: 0, state: 'free', t: 5, vx: sa * 110 + mr(-30, 30), vy: -ca * 110 + mr(-30, 30), ph: 0, shirt: mpick(SHIRTS), sp: 0, p: 0 });
-      best2.ai = null;
-      if (best2.t.key === 'police') { best2.driver = null; offence('cop', 3, 500, L('kradzież radiowozu', 'stealing a police car'), 400); best2.pol.chase = false; }
-      else offence('jack', 1, 150, L('kradzież auta', 'car theft'), 400);
-    }
-    best2.driver = 'player'; best2.keep = true;
+    if (!canUse(best2)) { toast(L('To nie twoje auto. Auta na wynajem stoją w kolorowych kopertach (fioletowa linia).', 'Not your car. Rental cars stand in coloured bays (purple line).')); return; }
+    const newRent = best2.rental && !best2.owned;
+    best2.driver = 'player'; best2.keep = true; best2.owned = true;
     player.mode = 'car'; player.car = best2; player.roof = null;
-    initFuel(best2);
+    initFuel(best2, best2.rental ? mr(0.6, 0.95) : undefined);   // rental cars come with a decent tank
     const fl = best2.t.fuel ? ` · ${FUEL[best2.t.fuel].n}: ${best2.fuel.toFixed(0)} / ${best2.t.tank} l` : '';
-    toast(`${tName(best2.t)}${best2.t.key === 'taxi' ? L(': pasażerowie płacą 20% więcej', ': passengers pay 20% more') : ''}${fl}`);
+    toast(newRent ? L(`Wypożyczone z ${best2.rental.n}: ${tName(best2.t)}`, `Rented from ${best2.rental.n}: ${tName(best2.t)}`) + fl : `${tName(best2.t)}${best2.t.key === 'taxi' ? L(': pasażerowie płacą 20% więcej', ': passengers pay 20% more') : ''}${fl}`);
     snd('door', 0.6);
   }
 }
@@ -1487,25 +2073,28 @@ function setT(id, v) { if (cache[id] !== v) { cache[id] = v; $(id).textContent =
 let cityKind = 'poznan';
 function newWorld(kind, sd) {
   cityKind = kind;
-  if (kind === 'random') { seed = sd || seed; city = gridWorld(genCity(seed)); } else city = CITIES.find(c => c.id === kind).load();
+  if (kind === 'random') { seed = sd || seed; city = GEN_READY.get(seed) || genWorld(seed); GEN_READY.clear(); } else city = CITIES.find(c => c.id === kind).load();
   prepTransit(city); transitVeh.clear(); transitT = 0; player.roof = null;
+  // OSM credit (driving view, minimap, big map) only for real cities; a generated town uses no OSM data
+  for (const id of ['osmLbl', 'mmLbl', 'mapNote']) $(id).hidden = !city.real;
   try { localStorage.setItem('kpm-seed', String(seed)); } catch (e) { /* storage unavailable */ }
   cars = []; peds = []; parts = []; skids = []; pops = []; offers = []; job = null; routeCache = null; route = null; auxRoutes = [];
-  if (city.parkSpots) for (const s of city.parkSpots) if (s.take) { const c = makeCar(randType(mulberry32(Math.round(s.x * 7 + s.y))), s.x, s.y, s.a); c.keep = true; cars.push(c); }
-  // start in a taxi: Plac Wolności in Poznań, the middle of a generated town
+  // start in a taxi: at the city's start landmark, or the old town of a generated one
   const startLm = (CITIES.find(c => c.id === kind) || {}).startLm, lm = city.real && startLm && city.landmarks.find(l => l.name.startsWith(startLm));
-  let sx = lm ? lm.x : city.W / 2, sy = lm ? lm.y : city.H / 2;
+  let sx = lm ? lm.x : city.start ? city.start.x : city.W / 2, sy = lm ? lm.y : city.start ? city.start.y : city.H / 2;
   if (city.real) { try { const st = JSON.parse(localStorage.getItem(kind === 'poznan' ? 'kpm-start' : 'kpm-start-' + kind) || 'null'); if (st && st.x > 0 && st.x < city.W && st.y > 0 && st.y < city.H) { sx = st.x; sy = st.y; } } catch (e) { /* storage unavailable */ } }
   const r = nearestSeg(sx, sy, 4000, s => s.e >= 0 && city.edges[s.e].cls <= 4 && city.edges[s.e].len > 80);
   const e = city.edges[r.s.e], s0 = r.s.s0 + r.t * r.s.len, p = lanePt(e, true, clamp(s0, 30, e.len - 30), laneOff(e));
   const taxi = makeCar('taxi', p.x, p.y, Math.atan2(p.dy, p.dx));
-  taxi.driver = 'player'; taxi.keep = true; cars.push(taxi); initFuel(taxi, 0.4);
+  taxi.driver = 'player'; taxi.keep = true; taxi.owned = true; cars.push(taxi); initFuel(taxi, 0.4);
   player.mode = 'car'; player.car = taxi; player.x = taxi.x; player.y = taxi.y;
   cam.x = taxi.x; cam.y = taxi.y;
   for (let k = 0; k < 24; k++) spawnTraffic(taxi.x, taxi.y, 120, 1100);
   for (let k = 0; k < 30; k++) spawnPed(taxi.x, taxi.y, 0, 1000);
-  if (city.real) for (let k = 0; k < 26; k++) spawnParked(taxi.x, taxi.y, 90, 1200);
+  if (city.real || city.gen) for (let k = 0; k < 26; k++) spawnParked(taxi.x, taxi.y, 90, 1200);
   spawnMilitary(); spawnHelis(); setupPlanes();
+  towJob = null; billT = 0; $('bill').hidden = true;
+  rentalSpots(city); updateRentals(0, true);
   money = START_MONEY; trips = 0; T = 0; wanted = 0; fines = 0; reasons = []; bustT = 0; escapeT = 0;
   buildMinimap();
 }
@@ -1668,7 +2257,7 @@ function spawnHelis() {
   const air = city.landmarks.find(l => l.name.startsWith('Lotnisko'));
   if (city.helipads) for (const h of city.helipads) spots.push(h);
   if (air) spots.push({ x: air.x + 260, y: air.y - 260 });
-  if (!city.real) spots.push({ x: city.W / 2 + 120, y: city.H / 2 + 120 });
+  if (!city.real && !city.gen) spots.push({ x: city.W / 2 + 120, y: city.H / 2 + 120 });
   const cols = ['#c8102e', '#f2c230', '#2f5fa8', '#e8e4da'];
   spots.forEach((h, i) => {
     // find a clear spot near the pad
@@ -1708,7 +2297,7 @@ function militaryFill() {
 let planes = [], flight = null, flightT = 20;
 function setupPlanes() {
   planes = []; flight = null; flightT = mr(15, 30);
-  if (!city.real) return;
+  if (!city.real && !city.gen) return;
   const aprons = city.green.filter(g => g.kind === 'apron').map(g => ({ g, A: (g.bb.x1 - g.bb.x0) * (g.bb.y1 - g.bb.y0) })).sort((a, b) => b.A - a.A);
   if (!aprons.length) return;
   const ap = aprons[0].g;
@@ -1798,7 +2387,7 @@ function drawPlaces(q) {
       const label = (z > 0.55 && d < 650) || ws || d < 160;
       if (label && !placed.some(o => Math.hypot(o.x - p.x, o.y - p.y) < 90 / z)) {
         placed.push(p);
-        const t = poiName(p) + (p.cat === 'repair' ? L(' · naprawa za darmo', ' · free repair') : p.cat === 'fuel' ? ' · ' + fuelPriceTxt(p) : '');
+        const t = poiName(p) + (p.cat === 'repair' ? L(' · naprawa z ubezpieczenia', ' · insurance repairs') : p.cat === 'fuel' ? ' · ' + fuelPriceTxt(p) : '');
         ctx.font = '600 12px "Barlow Semi Condensed", sans-serif'; const w = ctx.measureText(t).width + 10;
         ctx.fillStyle = 'rgba(18,20,24,.82)'; ctx.fillRect(-w / 2, 13, w, 17);
         ctx.fillStyle = p.cat === 'repair' ? '#ffb27a' : p.cat === 'fuel' ? '#ffe08a' : '#f3eee2'; ctx.textBaseline = 'middle'; ctx.fillText(t, 0, 22);
@@ -2038,7 +2627,7 @@ function sigStopDist(c, cur) {
 }
 
 // ---------- night ----------
-// darkness follows the real sunset and sunrise in Poznań, or a fixed choice in the settings
+// darkness follows the real sunset and sunrise in the current city, or a fixed choice in the settings
 let nightK = 0, maskC = null, maskG = null;
 function sunDarkness() {
   const d = new Date(), doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
@@ -2117,20 +2706,24 @@ function honk() {
   if (state !== 'play' || player.mode !== 'car' || hornT > 0) return;
   const c = player.car; hornT = 0.5; c.flashT = 0.45;
   hornSound();
+  const n = clearWay(c, 650);
+  if (n && !honk.told) { honk.told = true; toast(L('Klakson: auta przed tobą zjeżdżają do prawej i przepuszczają cię.', 'Horn: cars ahead pull over to the right and let you pass.')); }
+  for (const p of peds) { const dx = p.x - c.x, dy = p.y - c.y, d = Math.hypot(dx, dy); if (d < 220 && d > 1) { p.ox = (p.ox || 0) + dx / d * 14; p.oy = (p.oy || 0) + dy / d * 14; } }
+}
+// every car ahead (same lane or oncoming) pulls over to its right-hand curb, stops and lets the car through (horn, tow truck beacons)
+function clearWay(c, reach) {
   const ca = Math.cos(c.a), sa = Math.sin(c.a);
-  // every car ahead (same lane or oncoming) pulls over to its right-hand curb, stops and lets you through; people step back
   let n = 0;
   for (const o of cars) {
     if (o === c || !o.ai || o.wreck || (o.pol && o.pol.chase)) continue;
     const rx = o.x - c.x, ry = o.y - c.y, along = rx * ca + ry * sa, lat = -rx * sa + ry * ca;
-    if (along > -10 && along < 650 && Math.abs(lat) < 110) {
+    if (along > -10 && along < reach && Math.abs(lat) < 110) {
       const e = city.edges[o.ai.e];
       o.ai.yieldMax = e ? clamp(e.w / 2 - laneOff(e) - o.t.W / 2 + 7, 10, 30) : 14;
       o.ai.yieldT = 4 + along / 200; o.ai.ignore = 0; o.ai.blocked = 0; n++;
     }
   }
-  if (n && !honk.told) { honk.told = true; toast(L('Klakson: auta przed tobą zjeżdżają do prawej i przepuszczają cię.', 'Horn: cars ahead pull over to the right and let you pass.')); }
-  for (const p of peds) { const dx = p.x - c.x, dy = p.y - c.y, d = Math.hypot(dx, dy); if (d < 220 && d > 1) { p.ox = (p.ox || 0) + dx / d * 14; p.oy = (p.oy || 0) + dy / d * 14; } }
+  return n;
 }
 function hornSound() {
   const ac = SND.ac; if (!ac || !SND.on) return;
@@ -2265,14 +2858,15 @@ function step(dt) {
   }
   // traffic
   for (const c of cars) {
-    if (c === player.car && player.mode === 'car') continue;
+    if (c === player.car && player.mode === 'car' || c.towTruck || c.towedBy) continue;
     if (c.pol && c.pol.chase && c.driver === 'ai' && !c.wreck) { const u = policeDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
     else if (c.ai && !c.wreck) { const u = aiDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
     else if (c.t.heli) heliPhysics(c, { thr: 0, steer: 0, hb: false }, dt);
     else physics(c, 0, 0, false, dt);
   }
   // collisions only matter near the player; far-away cars just drive
-  const near = cars.filter(c => Math.abs(c.x - player.x) < 1100 && Math.abs(c.y - player.y) < 1100);
+  updateTow(dt);
+  const near = cars.filter(c => !c.towTruck && !c.towedBy && Math.abs(c.x - player.x) < 1100 && Math.abs(c.y - player.y) < 1100);
   for (const c of near) if ((c.air || 0) < 0.2 && !c.onRoof && (speedOf(c) > 1 || c === player.car)) collideStatic(c);
   for (let a = 0; a < near.length; a++) for (let b = a + 1; b < near.length; b++) collideCars(near[a], near[b]);
   // cars that leave the road into the Warta (or the sea around a generated town) sink
@@ -2304,7 +2898,8 @@ function step(dt) {
   const pedWant = Math.round(34 * (1 - 0.6 * nightK));
   if (peds.length > pedWant + 4) { const far = peds.find(p => Math.hypot(p.x - px, p.y - py) > 900); if (far) far.gone = true; }
   if (peds.length < pedWant && Math.random() < 0.3) spawnPed(px, py, 600, 1100);
-  if (city.real && Math.random() < 0.15 && cars.filter(c => c.parked && !c.driver).length < 26) spawnParked(px, py, 700, 1200);
+  if ((city.real || city.gen) && Math.random() < 0.15 && cars.filter(c => c.parked && !c.driver).length < 26) spawnParked(px, py, 700, 1200);
+  updateRentals(dt);
   updatePeds(dt);
   updatePolice(dt);
   updateTransit(dt);
@@ -2324,16 +2919,16 @@ function step(dt) {
     }
   }
   updateFlight(dt);
-  // a smoking car gets a free repair at any workshop
-  if (state === 'play' && player.mode === 'car' && city.workshops.length && !player.car.t.heli) {
+  // a smoking car is repaired at any workshop, paid for by the insurer
+  if (state === 'play' && player.mode === 'car' && city.workshops.length && !player.car.t.heli && !player.car.towedBy) {
     const c = player.car, bad = c.hp < c.t.hp * 0.45;
-    if (bad && !c.warned) { c.warned = true; toast(L('Auto dymi! Pomarańczowa linia prowadzi do warsztatu (W). Naprawa jest darmowa.', 'The car is smoking! The orange line leads to a garage (G). Repairs are free.')); }
+    if (bad && !c.wreck && !c.warned) { c.warned = true; toast(L('Auto dymi! Pomarańczowa linia prowadzi do warsztatu (W). Naprawę pokryje ubezpieczenie.', 'The car is smoking! The orange line leads to a garage (G). Insurance covers the repair.')); }
     if (!bad) c.warned = false;
     if (c.hp < c.t.hp && speedOf(c) < 70) {
       const n = nearestWorkshop(c.x, c.y);
       if (n && (n.d < 110 || Math.hypot(n.w.x - c.x, n.w.y - c.y) < 150)) {
-        c.hp = c.t.hp; c.wreck = false; c.warned = false;
-        toast(`${poiName(n.w)}: ${L('auto naprawione za darmo.', 'car repaired for free.')}`); popup(c.x, c.y - 30, L('naprawione', 'repaired'), '#e8833a'); snd('cash', 0.5);
+        showBill(c, n.w, 0, 1 - c.hp / c.t.hp);
+        c.hp = c.t.hp; c.wreck = false; c.warned = false; snd('cash', 0.5);
       }
     }
   }
@@ -2345,6 +2940,14 @@ function step(dt) {
     let tgt = null;
     let kind = job ? 'job' : 'offer';
     if (job) tgt = job.inCar ? job.dest : job.waitAt;
+    else if (player.mode === 'foot' && !player.roof) {
+      // on foot: back to your own car if it is close, otherwise to the nearest rental bay
+      const n = nearestRental(px, py);
+      let own = null, od = Infinity;
+      for (const c of cars) if (c.owned && !c.wreck && !c.towedBy && !c.t.heli) { const d = Math.hypot(c.x - px, c.y - py); if (d < od) { od = d; own = c; } }
+      if (own && (!n || od < Math.min(n.d, 1500))) { tgt = { x: own.x, y: own.y, own }; kind = 'rent'; }
+      else if (n) { tgt = { x: n.r.x, y: n.r.y, rent: n.r }; kind = 'rent'; }
+    }
     else if (player.mode === 'car' && player.car.hp < player.car.t.hp * 0.45 && city.workshops.length && !player.car.t.heli) { const n = nearestWorkshop(px, py); tgt = { x: n.w.sx, y: n.w.sy, ws: n.w }; kind = 'repair'; }
     else if (lowFuel() && city.stations.length) { const n = nearestStation(px, py); tgt = { x: n.w.sx, y: n.w.sy, ws: n.w }; kind = 'fuel'; }
     else if (offers.length) tgt = offers.reduce((m, o) => (Math.hypot(o.x - px, o.y - py) < Math.hypot(m.x - px, m.y - py) ? o : m));
@@ -2386,7 +2989,7 @@ function resize() {
 }
 addEventListener('resize', resize);
 const COLORS = { water: '#2c6a86', shore: '#3f819c', asphalt: '#3c4048', casing: '#8a8478', mark: 'rgba(240,236,224,.7)', walk: '#a8a194', ground: '#9d978a', grass: '#6b8a3e', grass2: '#5f7d36', parking: '#4a4d54', plaza: '#b6ae9f' };
-const GREEN_COL = { apron: '#7b7e84', park: '#6f8f45', wood: '#55793a', cemetery: '#71885a', pitch: '#5f9548', plaza: '#b6ae9f', walk: '#a8a194', parking: '#4a4d54' };
+const GREEN_COL = { beach: '#cdbb8a', apron: '#7b7e84', park: '#6f8f45', wood: '#55793a', cemetery: '#71885a', pitch: '#5f9548', plaza: '#b6ae9f', walk: '#a8a194', parking: '#4a4d54' };
 function queryDraw(v) {
   const q = { r: [], g: [], w: [], l: [], b: [], t: [], p: [], m: [] };
   for (const it of gQuery(city.draw, 1024, v.x0 - 200, v.y0 - 200, v.x1 + 200, v.y1 + 200)) {
@@ -2502,6 +3105,18 @@ function drawTank(c) {
   ctx.fillStyle = '#e8e2a0'; ctx.fillRect(-L / 2 + 6, -2, 6, 4);
   ctx.restore();
 }
+// rental bays: an outlined "envelope" in the company's colour
+function drawRentBays(v) {
+  for (const r of city.rentals || []) {
+    if (r.x < v.x0 - 60 || r.x > v.x1 + 60 || r.y < v.y0 - 60 || r.y > v.y1 + 60) continue;
+    const C = RENT_COS[r.co], t = TYPES[r.type], hl = t.L / 2 + 7, hw = t.W / 2 + 6;
+    ctx.save(); ctx.translate(r.x, r.y); ctx.rotate(r.a);
+    ctx.fillStyle = C.col; ctx.globalAlpha = 0.14; ctx.fillRect(-hl, -hw, 2 * hl, 2 * hw);
+    ctx.strokeStyle = C.col; ctx.lineWidth = 3; ctx.globalAlpha = 0.95; ctx.strokeRect(-hl, -hw, 2 * hl, 2 * hw);
+    ctx.lineWidth = 2; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(-hl, -hw); ctx.lineTo(hl, hw); ctx.moveTo(-hl, hw); ctx.lineTo(hl, -hw); ctx.stroke();
+    ctx.restore();
+  }
+}
 function drawCar(c) {
   if (c.t.heli) return drawHeli(c);
   if (c.t.tracks) return drawTank(c);
@@ -2532,6 +3147,15 @@ function drawCar(c) {
     ctx.fillStyle = '#d6d2c8'; ctx.fillRect(-L / 2 + 1, -W / 2 + 1, L * 0.68, W - 2);
     ctx.strokeStyle = 'rgba(0,0,0,.18)'; for (let x = -L / 2 + 8; x < -L / 2 + L * 0.68; x += 8) { ctx.beginPath(); ctx.moveTo(x, -W / 2 + 2); ctx.lineTo(x, W / 2 - 2); ctx.stroke(); }
     ctx.fillStyle = glass; ctx.fillRect(L / 2 - 9, -W / 2 + 3, 5, W - 6);
+  } else if (t.key === 'tow') {
+    // flatbed behind the cab, beacons on the cab roof
+    ctx.fillStyle = '#5d6168'; ctx.fillRect(-L / 2 + 1, -W / 2 + 1, L - 24, W - 2);
+    ctx.strokeStyle = 'rgba(0,0,0,.3)'; for (let x = -L / 2 + 7; x < L / 2 - 24; x += 7) { ctx.beginPath(); ctx.moveTo(x, -W / 2 + 2); ctx.lineTo(x, W / 2 - 2); ctx.stroke(); }
+    ctx.fillStyle = '#f3eee2'; ctx.fillRect(-L / 2, -W / 2, 3, W); ctx.fillStyle = '#d2342a'; for (let y = -W / 2; y < W / 2; y += 6) ctx.fillRect(-L / 2, y, 3, 3);
+    ctx.fillStyle = glass; ctx.fillRect(L / 2 - 8, -W / 2 + 3, 5, W - 6);
+    const on = c.sig, ph = Math.floor(T * 6) % 2;
+    ctx.fillStyle = on && ph ? '#ffc21a' : '#7a5a10'; ctx.fillRect(L / 2 - 19, -W / 2 + 2, 5, W / 2 - 2);
+    ctx.fillStyle = on && !ph ? '#ffc21a' : '#7a5a10'; ctx.fillRect(L / 2 - 19, 0, 5, W / 2 - 2);
   } else if (t.key === 'van') {
     ctx.fillStyle = glass; ctx.fillRect(L / 2 - 12, -W / 2 + 3, 6, W - 6);
     ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(-L / 2 + 4, -W / 2 + 3, L - 18, W - 6);
@@ -2602,6 +3226,7 @@ function draw() {
   const q = queryDraw(v);
   drawGround(v, q);
   drawAuxLines();
+  drawRentBays(v);
   drawRouteLine();
   // markers on the ground
   if (!job) for (const o of offers) if (o.x > v.x0 - 60 && o.x < v.x1 + 60 && o.y > v.y0 - 60 && o.y < v.y1 + 60) marker(o.x, o.y, '#f2c230', null, o.ph);
@@ -2618,12 +3243,20 @@ function draw() {
   // cars
   for (const tv of transitVeh.values()) if (Math.abs(tv.x - cam.x) < (v.x1 - v.x0) / 2 + 200 && Math.abs(tv.y - cam.y) < (v.y1 - v.y0) / 2 + 200) drawTransit(tv);
   for (const p of planes) if (p.x > v.x0 - 400 && p.x < v.x1 + 400 && p.y > v.y0 - 400 && p.y < v.y1 + 400) drawPlane(p.x, p.y, p.a, 0);
-  for (const c of cars) if (c.x > v.x0 - 60 && c.x < v.x1 + 60 && c.y > v.y0 - 60 && c.y < v.y1 + 60) { if ((c.air || 0) > 0.15 || c.onRoof) drawHeli(c, true); else drawCar(c); }
+  for (const c of cars) if (!c.towedBy && c.x > v.x0 - 90 && c.x < v.x1 + 90 && c.y > v.y0 - 90 && c.y < v.y1 + 90) {
+    if ((c.air || 0) > 0.15 || c.onRoof) drawHeli(c, true); else drawCar(c);
+    if (c.towTruck && towJob && towJob.car.towedBy === c) drawCar(towJob.car);
+  }
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const c of cars) if (c.pol && c.pol.chase && c.driver === 'ai' && c.x > v.x0 && c.x < v.x1 && c.y > v.y0 && c.y < v.y1) {
     const ph = Math.floor(T * 8) % 2, g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, 46);
     g.addColorStop(0, ph ? 'rgba(255,60,48,.55)' : 'rgba(60,120,255,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, 46, 0, 7); ctx.fill();
+  }
+  if (towJob && towJob.tr.sig) {
+    const c = towJob.tr, k = 0.35 + 0.35 * Math.abs(Math.sin(T * 9)), g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, 54);
+    g.addColorStop(0, `rgba(255,170,20,${k})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, 54, 0, 7); ctx.fill();
   }
   ctx.restore();
   if (player.mode === 'foot' && !player.roof) {
@@ -2660,6 +3293,16 @@ function draw() {
   if (job && job.inCar) {
     const d = job.dest; if (d.x > v.x0 - 60 && d.x < v.x1 + 60 && d.y > v.y0 - 60 && d.y < v.y1 + 60) marker(d.x, d.y, '#6cc070', L('Cel: ', 'Drop-off: ') + (d.lm || d.addr.split(',')[0]), 0);
   }
+  for (const r of city.rentals || []) {
+    if (Math.abs(r.x - player.x) > 320 || Math.abs(r.y - player.y) > 320 || (r.car && r.car.owned)) continue;
+    const C = RENT_COS[r.co], t = r.car ? tName(r.car.t) : '';
+    upright(r.x, r.y, () => {
+      ctx.font = '600 12px "Barlow Semi Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const txt = C.n + (t ? ' · ' + t : '') + L(' · wynajem', ' · rental'), w = ctx.measureText(txt).width + 12;
+      ctx.fillStyle = 'rgba(18,20,24,.82)'; rr2(-w / 2, -42, w, 18, 4); ctx.fill(); ctx.fillStyle = C.col; ctx.fillRect(-w / 2, -42, 4, 18);
+      ctx.fillStyle = '#f3eee2'; ctx.fillText(txt, 2, -33);
+    });
+  }
   for (const p of pops) upright(p.x, p.y, () => { ctx.globalAlpha = clamp(p.t, 0, 1); ctx.font = '18px Bungee, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#121418'; ctx.fillText(p.text, 1.5, 1.5); ctx.fillStyle = p.col; ctx.fillText(p.text, 0, 0); ctx.globalAlpha = 1; });
   // guidance arrow orbiting the player
   if (route && route.pts.length > 1 && state === 'play') {
@@ -2667,7 +3310,7 @@ function draw() {
     let tp = route.pts[1];
     for (let k = 1; k < route.pts.length; k++) { tp = route.pts[k]; if (Math.hypot(tp.x - a0.x, tp.y - a0.y) > 70) break; }
     const ang = Math.atan2(tp.y - player.y, tp.x - player.x), R0 = player.mode === 'car' ? 40 : 22;
-    const col = route.kind === 'repair' ? '#e8833a' : route.kind === 'fuel' ? '#3b8bff' : job && job.inCar ? '#6cc070' : '#f2c230';
+    const col = routeCol();
     ctx.save(); ctx.translate(player.x + Math.cos(ang) * R0, player.y + Math.sin(ang) * R0); ctx.rotate(ang);
     ctx.fillStyle = col; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-6, -8); ctx.lineTo(-2, 0); ctx.lineTo(-6, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -2688,7 +3331,7 @@ function draw() {
   if (player.mode === 'foot' && state === 'play') {
     let near = null, bd = Infinity;
     for (const c of cars) { const d = Math.hypot(c.x - player.x, c.y - player.y) - c.t.L / 2; if (d < 26 && d < bd) { bd = d; near = c; } }
-    if (near) { ctx.strokeStyle = near.wreck ? 'rgba(229,83,61,.8)' : 'rgba(242,194,48,.9)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2; ctx.save(); ctx.translate(near.x, near.y); ctx.rotate(near.a); rr2(-near.t.L / 2 - 4, -near.t.W / 2 - 4, near.t.L + 8, near.t.W + 8, 6); ctx.stroke(); ctx.restore(); ctx.setLineDash([]); }
+    if (near) { ctx.strokeStyle = near.wreck ? 'rgba(229,83,61,.8)' : canUse(near) && !near.towTruck && !near.towedBy ? 'rgba(242,194,48,.9)' : 'rgba(160,160,160,.6)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2; ctx.save(); ctx.translate(near.x, near.y); ctx.rotate(near.a); rr2(-near.t.L / 2 - 4, -near.t.W / 2 - 4, near.t.L + 8, near.t.W + 8, 6); ctx.stroke(); ctx.restore(); ctx.setLineDash([]); }
     nearCar = near;
   } else nearCar = null;
   // edge pointer to an off-screen target
@@ -2699,7 +3342,7 @@ function draw() {
       const a = Math.atan2(sy - cam.cy, sx - cam.cx), m = 40;
       const ex = clamp(cam.cx + Math.cos(a) * vw, m, vw - m), ey = clamp(cam.cy + Math.sin(a) * vh, m + 120, vh - m - 60);
       ctx.save(); ctx.translate(ex, ey); ctx.rotate(a);
-      ctx.fillStyle = job && job.inCar ? '#6cc070' : '#f2c230';
+      ctx.fillStyle = routeCol();
       ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -10); ctx.lineTo(-8, 10); ctx.closePath(); ctx.fill();
       ctx.restore();
     }
@@ -2727,7 +3370,7 @@ function buildMinimap() {
 // drawn in batches: thousands of polygons in one path stall Chromium/Edge, and the loader can yield between batches
 function* buildMinimapG(w) {
   if (w.mapC) return;
-  const size = w.real ? 2560 : 2048, s = size / Math.max(w.W, w.H);
+  const size = w.real || w.gen ? 2560 : 2048, s = size / Math.max(w.W, w.H);
   const C = document.createElement('canvas'); C.width = Math.ceil(w.W * s); C.height = Math.ceil(w.H * s);
   const g = C.getContext('2d');
   g.fillStyle = w.real ? '#8e897d' : '#5f7d36'; g.fillRect(0, 0, C.width, C.height);
@@ -2740,7 +3383,8 @@ function* buildMinimapG(w) {
     }
   }
   yield* many(w.green.filter(gr => gr.kind === 'walk'), '#a8a194'); yield* many(w.green.filter(gr => gr.kind === 'parking' || gr.kind === 'apron'), '#55585e');
-  yield* many(w.green.filter(gr => !['walk', 'parking', 'apron'].includes(gr.kind)), '#6b8a3e');
+  yield* many(w.green.filter(gr => gr.kind === 'beach'), '#cdbb8a');
+  yield* many(w.green.filter(gr => !['walk', 'parking', 'apron', 'beach'].includes(gr.kind)), '#6b8a3e');
   for (const wt of w.water) { g.beginPath(); for (const r of wt.rings) trace(r.pts, true); g.fillStyle = '#2c6a86'; g.fill('evenodd'); }
   yield;
   yield* many(w.buildings, '#a49c90');
@@ -2756,10 +3400,12 @@ function* buildMinimapG(w) {
 }
 function drawOverlay(g, M, big) {
   if (route) {
-    g.strokeStyle = route.kind === 'repair' ? '#e8833a' : route.kind === 'fuel' ? '#3b8bff' : job && job.inCar ? '#6cc070' : '#f2c230'; g.lineWidth = big ? 4 : 3; g.lineJoin = 'round'; g.beginPath();
+    g.strokeStyle = routeCol(); g.lineWidth = big ? 4 : 3; g.lineJoin = 'round'; g.beginPath();
     route.pts.forEach((p, k) => { const [x, y] = M(p.x, p.y); k ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
   }
   const dot = (x, y, r, col) => { const [sx, sy] = M(x, y); g.fillStyle = '#121418'; g.beginPath(); g.arc(sx, sy, r + 1.5, 0, 7); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); };
+  for (const r of city.rentals || []) if (!(r.car && r.car.owned)) { const [sx, sy] = M(r.x, r.y); g.fillStyle = '#121418'; g.fillRect(sx - (big ? 4 : 3), sy - (big ? 4 : 3), big ? 8 : 6, big ? 8 : 6); g.fillStyle = RENT_COS[r.co].col; g.fillRect(sx - (big ? 3 : 2), sy - (big ? 3 : 2), big ? 6 : 4, big ? 6 : 4); }
+  if (towJob && towJob.tr.sig) dot(towJob.tr.x, towJob.tr.y, big ? 6 : 4, Math.floor(T * 4) % 2 ? '#ffc21a' : '#7a5a10');
   if (!job) for (const o of offers) dot(o.x, o.y, big ? 6 : 4, '#f2c230');
   if (job) { if (job.inCar) dot(job.dest.x, job.dest.y, big ? 7 : 4.5, '#6cc070'); else dot(job.waitAt.x, job.waitAt.y, big ? 6 : 4, '#f2c230'); }
   for (const c of cars) if (isCop(c)) dot(c.x, c.y, big ? 5 : 3, c.pol.chase ? (Math.floor(T * 6) % 2 ? '#ff3b30' : '#3b7bff') : '#9fb8ff');
@@ -2795,7 +3441,7 @@ function drawMinimap() {
     if (Math.abs(dx) > MM_R * 0.95 || Math.abs(dy) > MM_R * 0.95) {
       const a = Math.atan2(dy, dx), m = Math.max(Math.abs(Math.cos(a)), Math.abs(Math.sin(a))), rr = W / 2 - 9;
       mctx.save(); mctx.translate(W / 2 + Math.cos(a) / m * rr, W / 2 + Math.sin(a) / m * rr); mctx.rotate(a);
-      mctx.fillStyle = job && job.inCar ? '#6cc070' : '#f2c230'; mctx.beginPath(); mctx.moveTo(8, 0); mctx.lineTo(-6, -7); mctx.lineTo(-6, 7); mctx.closePath(); mctx.fill();
+      mctx.fillStyle = routeCol(); mctx.beginPath(); mctx.moveTo(8, 0); mctx.lineTo(-6, -7); mctx.lineTo(-6, 7); mctx.closePath(); mctx.fill();
       mctx.restore();
     }
   }
@@ -2829,7 +3475,7 @@ function renderBigMap() {
     g.save(); g.scale(z, z); g.translate(-x0, -y0);
     g.fillStyle = city.real ? '#8e897d' : '#5f7d36'; g.fillRect(Math.max(0, x0), Math.max(0, y0), Math.min(city.W, x1) - Math.max(0, x0), Math.min(city.H, y1) - Math.max(0, y0));
     const path = pts => { g.beginPath(); pts.forEach((p, k) => (k ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); };
-    for (const gr of q.g) { g.fillStyle = gr.kind === 'walk' ? '#a8a194' : gr.kind === 'parking' || gr.kind === 'apron' ? '#6a6d72' : '#6b8a3e'; path(gr.pts); g.closePath(); g.fill(); }
+    for (const gr of q.g) { g.fillStyle = gr.kind === 'walk' ? '#a8a194' : gr.kind === 'parking' || gr.kind === 'apron' ? '#6a6d72' : gr.kind === 'beach' ? '#cdbb8a' : '#6b8a3e'; path(gr.pts); g.closePath(); g.fill(); }
     for (const wt of q.w) { g.beginPath(); for (const r of wt.rings) { r.pts.forEach((p, k) => (k ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); } g.fillStyle = '#2c6a86'; g.fill('evenodd'); }
     for (const m of q.m) { g.fillStyle = '#5a6440'; path(m.pts); g.closePath(); g.fill(); }
     g.fillStyle = '#a49c90'; for (const b of q.b) { path(b.pts); g.closePath(); g.fill(); }
@@ -3012,7 +3658,7 @@ function drawAuxLines() {
 }
 function drawRouteLine() {
   if (!route || route.pts.length < 2 || state !== 'play') return;
-  const col = route.kind === 'repair' ? '232,131,58' : route.kind === 'fuel' ? '59,139,255' : job && job.inCar ? '108,192,112' : '242,194,48';
+  const col = routeCol(true);
   ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   ctx.beginPath(); ctx.moveTo(player.x, player.y);
   let acc = 0, px = player.x, py = player.y;
@@ -3046,16 +3692,29 @@ function hud(dt) {
     jb.classList.remove('on');
     const dmg = player.mode === 'car' && player.car.hp < player.car.t.hp * 0.45 && route && route.kind === 'repair';
     const dist = route && route.tgt ? Math.round(Math.hypot(route.tgt.x - player.x, route.tgt.y - player.y) / 10) : 0;
-    if (dmg) { setT('jobWho', L('Auto dymi', 'Car is smoking')); setT('jobFare', ''); setT('jobWhere', L(`Najbliższy warsztat: ${poiName(route.tgt.ws)}, ${dist} m. Naprawa jest darmowa.`, `Nearest garage: ${dist} m away. Repairs are free.`)); $('jobBarW').hidden = true; }
+    const tj = towJob && towJob.phase !== 'idle' && player.car === towJob.car ? towJob : null;
+    if (tj) {
+      const m = Math.round(Math.max(0, tj.end - tj.s) / 10);
+      setT('jobWho', L('Pomoc drogowa', 'Roadside assistance')); setT('jobFare', '');
+      setT('jobWhere', tj.phase === 'come' ? L(`Laweta jedzie na sygnale, ${m} m. Koszty pokrywa ${insurerFor(tj.car)}.`, `The tow truck is on its way with beacons on, ${m} m. ${insurerFor(tj.car)} pays.`)
+        : tj.phase === 'load' ? L('Laweta wciąga auto na platformę…', 'Loading the car onto the tow truck…')
+        : tj.phase === 'go' ? L(`Holowanie do: ${poiName(tj.ws)}, ${m} m. E albo „Pomiń” skraca dojazd.`, `Towing to ${poiName(tj.ws)}, ${m} m. E or "Skip" skips the ride.`)
+        : L('Mechanik zdejmuje auto z lawety…', 'The mechanic unloads the car…'));
+      $('jobBarW').hidden = true;
+    }
+    else if (dmg) { setT('jobWho', L('Auto dymi', 'Car is smoking')); setT('jobFare', ''); setT('jobWhere', L(`Najbliższy warsztat: ${poiName(route.tgt.ws)}, ${dist} m. Naprawę pokryje ubezpieczenie.`, `Nearest garage: ${dist} m away. Insurance covers the repair.`)); $('jobBarW').hidden = true; }
     else if (route && route.kind === 'fuel' && player.mode === 'car') { setT('jobWho', player.car.fuel <= 0 ? L('Brak paliwa', 'Out of fuel') : L('Mało paliwa', 'Low fuel')); setT('jobFare', ''); setT('jobWhere', L(`Najbliższa stacja: ${dist} m, ${fuelPriceTxt(route.tgt.ws)}. Zatrzymaj się przy dystrybutorze i naciśnij T (Tankuj).`, `Nearest petrol station: ${dist} m, ${fuelPriceTxt(route.tgt.ws)}. Stop at the pump and press T (Refuel).`)); $('jobBarW').hidden = true; }
     else {
     setT('jobWho', player.mode === 'foot' ? L('Pieszo', 'On foot') : L('Szukaj pasażera', 'Find a passenger')); setT('jobFare', '');
-    setT('jobWhere', player.mode === 'foot' ? L('Podejdź do dowolnego auta i wsiądź (E albo przycisk Wsiądź).', 'Walk up to any car and get in (E or the Get in button).') : offers.length ? L(`Najbliżej: ${offers[0].who}, ${offers[0].addr}. Zatrzymaj się przy żółtym znaczniku.`, `Closest: ${offers[0].who}, ${offers[0].addr}. Stop by the yellow marker.`) : L('Szukam klientów…', 'Looking for customers…'));
+    setT('jobWhere', player.mode === 'foot' ? (route && route.tgt && route.tgt.own ? L(`Twoje auto: ${dist} m (fioletowa linia). Wsiądź: E albo przycisk Wsiądź.`, `Your car: ${dist} m (purple line). Get in: E or the Get in button.`)
+      : route && route.tgt && route.tgt.rent ? L(`Auto na wynajem: ${RENT_COS[route.tgt.rent.co].n}, ${dist} m. Fioletowa linia prowadzi do koperty.`, `Rental car: ${RENT_COS[route.tgt.rent.co].n}, ${dist} m. The purple line leads to the bay.`)
+      : L('Auta na wynajem stoją w kolorowych kopertach.', 'Rental cars stand in coloured bays.')) : offers.length ? L(`Najbliżej: ${offers[0].who}, ${offers[0].addr}. Zatrzymaj się przy żółtym znaczniku.`, `Closest: ${offers[0].who}, ${offers[0].addr}. Stop by the yellow marker.`) : L('Szukam klientów…', 'Looking for customers…'));
     $('jobBarW').hidden = true;
     }
   }
   if (sayT > 0) { sayT -= dt; if (sayT <= 0) $('jobSay').textContent = ''; }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.add('hide'); }
+  if (billT > 0) { billT -= dt; if (billT <= 0) $('bill').hidden = true; }
   const c = player.mode === 'car' ? player.car : null;
   setT('spd', String(c ? Math.round(speedOf(c) * 0.36) : Math.round(Math.hypot(player.vx, player.vy) * 0.36)));
   setT('street', (autoOn ? 'AUTOPILOT · ' : '') + streetAt(player.x, player.y));
@@ -3067,9 +3726,9 @@ function hud(dt) {
   $('hp').style.width = (c ? c.hp / c.t.hp * 100 : 0) + '%';
   $('hp').style.background = c && c.hp / c.t.hp < 0.35 ? '#e5533d' : '#6cc070';
   const eb = $('enterBtn');
-  setT('enterBtn', player.mode === 'car' ? L('Wysiądź', 'Get out') : L('Wsiądź', 'Get in'));
+  setT('enterBtn', towRide() && towJob.phase !== 'come' ? L('Pomiń', 'Skip') : player.mode === 'car' ? L('Wysiądź', 'Get out') : L('Wsiądź', 'Get in'));
   setT('hbBtn', L('Ręczny', 'Handbrake'));
-  eb.classList.toggle('glow', player.mode === 'foot' && !!nearCar && !nearCar.wreck);
+  eb.classList.toggle('glow', player.mode === 'foot' && !!nearCar && !nearCar.wreck && canUse(nearCar) && !nearCar.towTruck && !nearCar.towedBy);
 }
 
 // ---------- fuel ----------
@@ -3187,11 +3846,9 @@ function refuelClose(msg) {
   document.activeElement && document.activeElement.blur && document.activeElement.blur();
 }
 
-// ---------- cities ----------
-// To add a city: embed its data as <script id="<id>-meta"> and <script id="<id>-bin"> (same format as Poznań),
-// then flip `ready` on its entry below. Everything else (traffic, jobs, map, fuel) works from the data.
 // ---------- cities: listed in data/cities.json, each with its own data files and legal notes ----------
-// Adding a city = data/<id>.json + data/<id>.bin (or .b64.txt) + an entry in data/cities.json. This file does not change.
+// Adding a city = data/<id>.json + data/<id>.bin + an entry in data/cities.json. This file does not change.
+// data/<id>.b64.txt is only a fallback for hosts that cannot serve .bin (see fetchCityData).
 let CITIES = [], CITY_DEFAULT = '', indexErr = false;
 async function loadCityIndex() {
   const res = await fetch('data/cities.json', { cache: 'no-cache' });
@@ -3250,7 +3907,7 @@ function applyStatic() {
 }
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
 function noticeSeen() { try { return localStorage.getItem('kpm-notice') === '1'; } catch (e) { return false; } }
-// cities other than Poznań are downloaded and prepared only when chosen
+// city data is downloaded and prepared only when chosen
 let cityBusy = false;
 async function ensureCity(id) {
   if (WORLDS[id] && WORLDS[id].mapC) return true;
@@ -3269,6 +3926,14 @@ async function ensureCity(id) {
     return false;
   } finally { cityBusy = false; btns.forEach(b => { b.disabled = false; }); }
 }
+// a generated town is built in slices before the game switches to it
+async function prepareRandom(sd) {
+  if (cityBusy) return false;
+  cityBusy = true;
+  const btns = ['startBtn', 'pickBtn'].map($).filter(Boolean);
+  btns.forEach(b => { b.disabled = true; });
+  try { await runSliced(genWorldG(sd), 0, 99); return true; } catch (err) { console.error(err); return false; } finally { cityBusy = false; btns.forEach(b => { b.disabled = false; }); }
+}
 function showStart() {
   if (state === 'play' || state === 'paused') state = 'menu';
   const cityCard = c => {
@@ -3282,10 +3947,10 @@ function showStart() {
     <div class="toprow"><h1>Kurs przez Miasto</h1>
       <div class="langs" role="group" aria-label="${L('Język', 'Language')}"><button type="button" class="ghost${LANG === 'pl' ? ' on' : ''}" data-lang="pl" lang="pl">PL</button><button type="button" class="ghost${LANG === 'en' ? ' on' : ''}" data-lang="en" lang="en">EN</button></div></div>
     ${noticeSeen() ? '' : `<div class="notice" role="note"><p>${L('Bez ciasteczek i śledzenia. Gra zapisuje tylko ustawienia i rekord w pamięci Twojej przeglądarki (localStorage); nic nie jest wysyłane do autora. Czcionki są pobierane z Google Fonts.', 'No cookies, no tracking. The game only keeps your settings and best score in your browser (localStorage); nothing is sent to the author. Fonts are loaded from Google Fonts.')}</p><div class="row"><button class="ghost" type="button" id="noticeMore">${L('Szczegóły', 'Details')}</button><button class="btn small" type="button" id="noticeOk">${L('Rozumiem', 'Got it')}</button></div></div>`}
-    <p>${L('Gra taksówkarska z widokiem z góry. Wozisz pasażerów z punktu A do B, tankujesz na stacjach, omijasz korki klaksonem i masz klucze do każdego auta w mieście.', 'A top-down taxi game. Drive passengers from A to B, refuel at petrol stations, clear traffic with your horn, and borrow any car in town.')}</p>
+    <p>${L('Gra taksówkarska z widokiem z góry. Wozisz pasażerów z punktu A do B, tankujesz na stacjach, omijasz korki klaksonem, a gdy trzeba, wypożyczasz auto z jednej z miejskich wypożyczalni.', 'A top-down taxi game. Drive passengers from A to B, refuel at petrol stations, clear traffic with your horn, and rent a car from one of the city rental companies when you need one.')}</p>
     <h2 class="sub">${L('Wybierz miasto', 'Choose a city')}</h2>
     <div class="cities">${CITIES.filter(c => c.ready).map(cityCard).join('')}
-      <button class="city${pickCity === 'random' ? ' on' : ''}" type="button" data-city="random" aria-pressed="${pickCity === 'random'}"><b>${L('Losowe miasto', 'Random town')}</b><span>${L('Wygenerowane miasteczko nad morzem, za każdym razem inne.', 'A generated seaside town, different every time.')}</span></button>
+      <button class="city${pickCity === 'random' ? ' on' : ''}" type="button" data-city="random" aria-pressed="${pickCity === 'random'}"><b>${L('Losowe miasto', 'Random town')}</b><span>${L('Wygenerowane miasto nad morzem: rzeka z mostami, starówka, osiedla, port i lotnisko. Za każdym razem inne.', 'A generated seaside city with a river and bridges, an old town, estates, a port and an airport. Different every time.')}</span></button>
 </div>
     ${CITIES.some(c => !c.ready) ? `<p class="soonrow">${L('Wkrótce:', 'Coming soon:')} ${CITIES.filter(c => !c.ready).map(c => `<span>${esc(L(c.name, c.en || c.name))}</span>`).join('')}</p>` : ''}
     <div class="row"><button class="btn" id="startBtn" type="button" ${worldReady ? '' : 'disabled'}>${esc(goLbl)}</button>${pickCity !== 'random' ? `<button class="ghost" id="pickBtn" type="button" ${worldReady ? '' : 'disabled'}>${L('Wybierz start na mapie', 'Pick a start on the map')}</button>` : ''}<button class="ghost" id="setBtnM" type="button">${L('Ustawienia', 'Settings')}</button><span class="seed" id="loadStatus">${esc(status)}</span></div>
@@ -3295,7 +3960,7 @@ function showStart() {
   for (const b of $('card').querySelectorAll('[data-city]')) b.onclick = () => { pickCity = b.dataset.city; try { localStorage.setItem('kpm-city', pickCity); } catch (e) { /* storage unavailable */ } showStart(); };
   $('startBtn').onclick = async () => {
     if (!worldReady) return;
-    if (pickCity === 'random') newWorld('random', 1000 + Math.floor(Math.random() * 9000));
+    if (pickCity === 'random') { const sd = 1000 + Math.floor(Math.random() * 9000); if (!await prepareRandom(sd)) return; newWorld('random', sd); }
     else { if (!await ensureCity(pickCity)) return; if (cityKind !== pickCity || T > 0.5) newWorld(pickCity); }
     start();
   };
@@ -3311,22 +3976,26 @@ const HOWTO_PL = `
   <li><b>Zapłata:</b> stawka za kurs plus napiwek za szybki przyjazd. Stłuczki obniżają napiwek, w taksówce pasażer płaci 20% więcej. Na start masz ${START_MONEY} zł.</li>
   <li><b>Paliwo:</b> każde auto ma swój bak i realne spalanie w mieście (np. sedan ok. 7,5 l/100 km, ciężarówka ok. 32 l). Zatrzymaj się na stacji (żółte P) i naciśnij T albo „Tankuj”. Ceny według średnich cen z ${PRICE_DATE}.</li>
   <li><b>Klakson (H):</b> auta przed tobą włączają kierunkowskaz, zjeżdżają do prawej krawędzi, zatrzymują się i przepuszczają cię. Piesi się odsuwają.</li>
-  <li><b>Auta:</b> supersamochód i kabriolet są najszybsze, ciężarówka wytrzymała, maluch zwrotny i oszczędny. Na terenach wojskowych stoją terenówki, ciężarówki i czołgi (tylko do jazdy). Gdy auto dymi, warsztat (pomarańczowe W, fikcyjny) naprawi je za darmo.</li>
+  <li><b>Auta:</b> supersamochód i kabriolet są najszybsze, ciężarówka wytrzymała, maluch zwrotny i oszczędny. Na terenach wojskowych stoją terenówki, ciężarówki i czołgi (tylko do jazdy). Gdy auto dymi, warsztat (pomarańczowe W, fikcyjny) je naprawi, a koszty pokryje ubezpieczyciel.</li>
+  <li><b>Wynajem:</b> cudzych aut nie da się ukraść. Auta na wynajem stoją w całym mieście w kopertach w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia.</li>
+  <li><b>Laweta:</b> gdy auto się rozbije, przyjeżdża laweta na sygnale i odholowuje je do warsztatu. Holowanie, naprawę i obsługę pokrywa ubezpieczyciel (fikcyjny), a rachunek pojawia się na ekranie.</li>
   <li><b>Helikopter:</b> stoi na lotnisku i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku.</li>
   <li><b>Autopilot (O):</b> sam jedzie do pasażera, do celu albo na stację. Dotknięcie sterowania go wyłącza.</li>
   <li><b>Komunikacja:</b> autobusy i tramwaje jeżdżą według rozkładu na aktualną godzinę, z numerami linii na dachach.</li>
-  <li><b>Policja:</b> reaguje, gdy widzi kradzież auta albo taranowanie radiowozu. Zatrzymaj się przy radiowozie i zapłać mandat albo uciekaj.</li>
+  <li><b>Policja:</b> reaguje, gdy widzi taranowanie radiowozu. Zatrzymaj się przy radiowozie i zapłać mandat albo uciekaj.</li>
   <li><b>Telefon:</b> joystick do góry to gaz, w dół hamowanie i wsteczny, na boki skręt.</li>`;
 const HOWTO_EN = `
   <li><b>Passengers:</b> a yellow marker by the kerb. Stop next to it and they get in. The arrow and the map lead to the drop-off.</li>
   <li><b>Pay:</b> a fare plus a tip for arriving quickly. Bumps cut the tip, and in a taxi passengers pay 20% more. You start with PLN ${START_MONEY}.</li>
   <li><b>Fuel:</b> every car has its own tank and realistic city consumption (e.g. a sedan about 7.5 l/100 km, a truck about 32 l). Stop at a petrol station (yellow F) and press T or "Refuel". Prices follow Polish averages of ${PRICE_DATE}.</li>
   <li><b>Horn (H):</b> cars ahead switch on their indicator, pull over to the right-hand kerb, stop and let you through. Pedestrians step aside.</li>
-  <li><b>Cars:</b> the supercar and convertible are fastest, the truck is tough, the mini car is nimble and frugal. Military areas hold jeeps, trucks and tanks (driving only). When your car smokes, a garage (orange G, fictional) fixes it for free.</li>
+  <li><b>Cars:</b> the supercar and convertible are fastest, the truck is tough, the mini car is nimble and frugal. Military areas hold jeeps, trucks and tanks (driving only). When your car smokes, a garage (orange G, fictional) fixes it and the insurer pays.</li>
+  <li><b>Rentals:</b> other people's cars can't be stolen. Rental cars stand all over town in bays painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them.</li>
+  <li><b>Tow truck:</b> when your car is wrecked, a tow truck arrives with beacons flashing and takes it to a garage. Towing, repair and service are paid by a (fictional) insurer, and the bill shows on screen.</li>
   <li><b>Helicopter:</b> parked at the airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included.</li>
   <li><b>Autopilot (O):</b> drives to the passenger, the drop-off or a petrol station by itself. Touch the controls to take over.</li>
   <li><b>Public transport:</b> buses and trams run to the timetable for the current time, with line numbers on their roofs.</li>
-  <li><b>Police:</b> react when they see a car theft or a rammed patrol car. Stop next to the police car and pay the fine, or get away.</li>
+  <li><b>Police:</b> react when they see a rammed patrol car. Stop next to the police car and pay the fine, or get away.</li>
   <li><b>Phone:</b> joystick up is throttle, down is brake and reverse, sideways steers.</li>`;
 
 // ---------- legal notice, privacy, cookies ----------
@@ -3342,12 +4011,12 @@ function showLegal(back, focus) {
 }
 const LEGAL_PL = () => `
   <h2>Czym jest ta gra</h2>
-  <p>„Kurs przez Miasto” to darmowa, niekomercyjna gra przeglądarkowa i fikcja. Postacie, pojazdy, stacje paliw, ceny kursów, zachowanie policji i ruchu drogowego są wymyślone. Kradzież aut, ucieczki przed policją czy wjazdy w tramwaj są elementami zabawy i nie zachęcają do łamania przepisów. Gra nie jest nawigacją ani symulatorem nauki jazdy. Sugerowany wiek: 12+ (to nie jest oficjalna klasyfikacja PEGI).</p>
+  <p>„Kurs przez Miasto” to darmowa, niekomercyjna gra przeglądarkowa i fikcja. Postacie, pojazdy, stacje paliw, ceny kursów, zachowanie policji i ruchu drogowego są wymyślone. Ucieczki przed policją czy wjazdy w tramwaj są elementami zabawy i nie zachęcają do łamania przepisów. Gra nie jest nawigacją ani symulatorem nauki jazdy. Sugerowany wiek: 12+ (to nie jest oficjalna klasyfikacja PEGI).</p>
   <h2>Mapa</h2>
   <p>Ulice, budynki, wody i nazwy miejsc pochodzą z <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © autorzy OpenStreetMap, na licencji <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. Dane zostały uproszczone i mogą być nieaktualne. Uproszczone bazy zapisane w tej stronie i w plikach danych miast (folder <code>data</code>) są bazami pochodnymi OSM i są udostępniane na tej samej licencji ODbL; można je pobrać razem ze stroną.</p>
 ${cityLegal()}  <h2>Nazwy i znaki towarowe</h2>
-  <p>Gra nie pokazuje żadnych firm. Sklepy, centra handlowe, restauracje, hotele, apteki, prywatne gabinety, kluby i siłownie nie są zaznaczone na mapie. Warsztaty i stacje paliw w grze są fikcyjne: stoją w wybranych przez grę punktach przy głównych ulicach, a nie w miejscach prawdziwych warsztatów i stacji, więc ich ceny i usługi nie dotyczą żadnej istniejącej firmy. Gra nie wyświetla nazw budynków ani nazw jednostek wojskowych.</p>
-  <p>Zaznaczone są tylko miejsca publiczne (szkoły, przedszkola, uczelnie, szpitale, komisariaty, straż pożarna, biblioteki, muzea, teatry, miejskie obiekty sportowe, miejsca kultu), zawsze pod nazwą ogólną. Centra handlowe występujące jako cele kursów mają opisy ogólne (np. „Centrum handlowe na Ratajach”, „Centrum handlowe przy Fordońskiej”), a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi. Nazwy ulic, dzielnic i znanych miejsc publicznych (np. Stary Rynek, Dworzec Poznań Główny) służą wyłącznie do opisania położenia. Gra nie jest powiązana z władzami żadnego miasta, żadną firmą ani instytucją i nie jest przez nie sponsorowana ani zatwierdzona. Jeśli uważasz, że jakieś oznaczenie narusza Twoje prawa, napisz do nas, a usuniemy je.</p>
+  <p>Gra nie pokazuje żadnych firm. Sklepy, centra handlowe, restauracje, hotele, apteki, prywatne gabinety, kluby i siłownie nie są zaznaczone na mapie. Warsztaty i stacje paliw w grze są fikcyjne: stoją w wybranych przez grę punktach przy głównych ulicach, a nie w miejscach prawdziwych warsztatów i stacji, więc ich ceny i usługi nie dotyczą żadnej istniejącej firmy. Wypożyczalnie aut (Zielony Kluczyk, Fioletowa Fura, Pomarańczowe Koła, Błękitny Bak) i ubezpieczyciele (${INSURERS.join(', ')}) są wymyślone i nie mają związku z prawdziwymi firmami o podobnych nazwach. Gra nie wyświetla nazw budynków ani nazw jednostek wojskowych.</p>
+  <p>Zaznaczone są tylko miejsca publiczne (szkoły, przedszkola, uczelnie, szpitale, komisariaty, straż pożarna, biblioteki, muzea, teatry, miejskie obiekty sportowe, miejsca kultu), zawsze pod nazwą ogólną. Centra handlowe występujące jako cele kursów mają opisy ogólne (tylko z nazwą dzielnicy lub ulicy), a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi. Nazwy ulic, dzielnic i znanych miejsc publicznych (np. rynków i dworców) służą wyłącznie do opisania położenia. Gra nie jest powiązana z władzami żadnego miasta, żadną firmą ani instytucją i nie jest przez nie sponsorowana ani zatwierdzona. Jeśli uważasz, że jakieś oznaczenie narusza Twoje prawa, napisz do nas, a usuniemy je.</p>
   <h2>Ceny paliw i spalanie</h2>
   <p>Ceny są orientacyjne: średnie ceny maksymalne ogłoszone na ${PRICE_DATE} (Pb95 ${money2(FUEL.pb95.p)} zł/l, Pb98 ${money2(FUEL.pb98.p)} zł/l, ON ${money2(FUEL.on.p)} zł/l, LPG ${money2(FUEL.lpg.p)} zł/l). Stacje w grze są fikcyjne (nie stoją w miejscach prawdziwych stacji) i liczą 0–4% mniej. Spalanie jest przybliżonym spalaniem miejskim dla danego typu pojazdu. Nie jest to oferta handlowa ani porada.</p>
   <h2 id="legal-privacy">Prywatność i ciasteczka</h2>
@@ -3371,12 +4040,12 @@ ${cityLegal()}  <h2>Nazwy i znaki towarowe</h2>
   <p>© 2026 Witek, Jaś i Maks. Kod, grafika i teksty gry są chronione prawem autorskim. Dane map, rozkładów i czcionek należą do ich autorów i są wykorzystywane na licencjach opisanych powyżej.</p>`;
 const LEGAL_EN = () => `
   <h2>What this game is</h2>
-  <p>"Kurs przez Miasto" is a free, non-commercial browser game and a work of fiction. Characters, vehicles, petrol stations, fares, police and traffic behaviour are made up. Stealing cars, escaping the police or bumping into trams are part of the game and do not encourage breaking the law. The game is not a navigation tool or a driving-school simulator. Suggested age: 12+ (not an official PEGI rating).</p>
+  <p>"Kurs przez Miasto" is a free, non-commercial browser game and a work of fiction. Characters, vehicles, petrol stations, fares, police and traffic behaviour are made up. Escaping the police or bumping into trams are part of the game and do not encourage breaking the law. The game is not a navigation tool or a driving-school simulator. Suggested age: 12+ (not an official PEGI rating).</p>
   <h2>Map</h2>
   <p>Streets, buildings, water and place names come from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © OpenStreetMap contributors, under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. The data is simplified and may be out of date. The simplified databases embedded in this page and in the city data files (the <code>data</code> folder) are derivatives of OSM and are made available under the same ODbL licence; they can be downloaded together with the page.</p>
 ${cityLegal()}  <h2>Names and trademarks</h2>
-  <p>The game shows no businesses. Shops, shopping centres, restaurants, hotels, pharmacies, private practices, clubs and gyms are not marked on the map. Garages and petrol stations in the game are fictional: they stand at points chosen by the game along main streets, not where real garages and stations are, so their prices and services do not relate to any real business. The game shows no building names and no names of military units.</p>
-  <p>Only public places are marked (schools, kindergartens, universities, hospitals, police and fire stations, libraries, museums, theatres, municipal sports grounds, places of worship), always under a generic label. Shopping centres used as trip destinations have generic descriptions (e.g. "Centrum handlowe na Ratajach"), and company names in a few stop names were replaced with generic words. Street, district and well-known public place names (e.g. Stary Rynek, Poznań Główny station) are used only to describe locations. The game is not affiliated with, sponsored or endorsed by any city authority or any company or institution. If you believe a marking infringes your rights, write to us and we will remove it.</p>
+  <p>The game shows no businesses. Shops, shopping centres, restaurants, hotels, pharmacies, private practices, clubs and gyms are not marked on the map. Garages and petrol stations in the game are fictional: they stand at points chosen by the game along main streets, not where real garages and stations are, so their prices and services do not relate to any real business. The car-rental companies (Zielony Kluczyk, Fioletowa Fura, Pomarańczowe Koła, Błękitny Bak) and insurers (${INSURERS.join(', ')}) are made up and unrelated to any real business with a similar name. The game shows no building names and no names of military units.</p>
+  <p>Only public places are marked (schools, kindergartens, universities, hospitals, police and fire stations, libraries, museums, theatres, municipal sports grounds, places of worship), always under a generic label. Shopping centres used as trip destinations have generic descriptions (only with the district or street name), and company names in a few stop names were replaced with generic words. Street, district and well-known public place names (e.g. market squares and stations) are used only to describe locations. The game is not affiliated with, sponsored or endorsed by any city authority or any company or institution. If you believe a marking infringes your rights, write to us and we will remove it.</p>
   <h2>Fuel prices and consumption</h2>
   <p>Prices are approximate: Polish average maximum pump prices announced for ${PRICE_DATE} (Petrol 95 PLN ${money2(FUEL.pb95.p)}/l, Petrol 98 PLN ${money2(FUEL.pb98.p)}/l, Diesel PLN ${money2(FUEL.on.p)}/l, LPG PLN ${money2(FUEL.lpg.p)}/l). Stations in the game are fictional (not located where real stations are) and charge 0–4% less. Consumption is an approximate city figure for each vehicle type. This is not a commercial offer or advice.</p>
   <h2 id="legal-privacy">Privacy and cookies</h2>
@@ -3426,6 +4095,7 @@ function toggleAuto() {
 $('autoBtn').onclick = toggleAuto;
 $('pauseBtn').onclick = () => { if (state === 'play' || state === 'paused') togglePause(); };
 $('setBtn').onclick = () => { if (state === 'play' || state === 'paused') showSettings('play'); };
+$('bill').onclick = () => { $('bill').hidden = true; billT = 0; };
 $('muteBtn').onclick = () => { SND.on = !SND.on; $('muteBtn').textContent = SND.on ? L('Dźwięk', 'Sound') : L('Cisza', 'Muted'); };
 
 resize();
@@ -3452,7 +4122,7 @@ async function runSliced(gen, p0, p1) {
   pickCity = savedCity === 'random' || ready.includes(savedCity) ? savedCity : ready.includes(CITY_DEFAULT) ? CITY_DEFAULT : ready[0] || 'random';
   showStart();
   try {
-    if (pickCity === 'random') newWorld('random');
+    if (pickCity === 'random') { await prepareRandom(seed); newWorld('random'); }
     else if (await ensureCity(pickCity)) newWorld(pickCity);
     else { loadErr = true; newWorld('random'); }
   } catch (err) { console.error(err); loadErr = true; newWorld('random'); }
