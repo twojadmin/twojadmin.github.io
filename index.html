@@ -43,6 +43,7 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .tl{position:absolute;top:12px;left:16px;right:calc(16px + var(--mm) + 10px);display:grid;gap:6px;justify-items:start}
 :root{--mm:112px}
 @media (min-width:760px){:root{--mm:168px}}
+@media (pointer:coarse) and (max-height:500px){:root{--mm:112px}}
 .cash{display:flex;align-items:baseline;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px}
 .cash b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--cab);font-variant-numeric:tabular-nums;line-height:1.1}
 .cash span{font-size:13px;color:var(--dim)}
@@ -60,7 +61,7 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .wanted span{font-size:13px;color:var(--paper);font-variant-numeric:tabular-nums}
 .wanted.flash{border-color:#3b7bff}
 .wanted.flash b{color:#3b7bff}
-.job{width:100%;max-width:380px;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--cab);border-radius:6px;padding:6px 10px;display:grid;gap:3px}
+.job{width:100%;max-width:380px;box-sizing:border-box;background:rgba(18,20,24,.4);text-shadow:0 1px 2px #000,0 0 4px rgba(0,0,0,.8);border:1px solid var(--line);border-left:4px solid var(--cab);border-radius:6px;padding:6px 10px;display:grid;gap:3px}
 .job.on{border-left-color:var(--go)}
 .job .who{display:flex;justify-content:space-between;gap:8px;font-weight:700;font-size:15px}
 .job .who em{font-style:normal;color:var(--cab);font-variant-numeric:tabular-nums}
@@ -73,7 +74,7 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .mmw canvas{width:100%;height:100%;display:block}
 .app.nomm .tools{top:12px}
 .mmw small{position:absolute;right:4px;bottom:2px;font-size:11px;color:var(--paper);text-shadow:0 1px 2px #000}
-.osm{position:absolute;right:4px;bottom:calc(2px + env(safe-area-inset-bottom,0px));font-size:11px;line-height:1.2;color:var(--paper);background:var(--panel);padding:1px 5px;border-radius:3px}
+.osm{position:absolute;right:0;bottom:env(safe-area-inset-bottom,0px);font-size:10px;line-height:12px;color:var(--paper);background:var(--panel);padding:0 4px;border-radius:3px 0 0 0}
 .dash{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 12px;white-space:nowrap;max-width:calc(100% - 32px);box-sizing:border-box}
 .dash .spd{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums;color:var(--paper);min-width:3.2ch;text-align:right}
 .dash .spd small{font-family:var(--ui);font-size:12px;color:var(--dim);margin-left:3px}
@@ -115,8 +116,8 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
 @media (pointer:coarse){
   .pads{display:flex}
   .keys{display:none}
-  .pads{padding-block-end:calc(54px + env(safe-area-inset-bottom,0px))}
-  .dash{bottom:calc(6px + env(safe-area-inset-bottom,0px));left:8px;right:8px;transform:none;max-width:none;justify-content:space-between;gap:10px;padding:4px 10px}
+  .pads{padding-block-end:calc(60px + env(safe-area-inset-bottom,0px));padding-inline-end:46px}
+  .dash{bottom:calc(14px + env(safe-area-inset-bottom,0px));left:8px;right:8px;transform:none;max-width:none;justify-content:space-between;gap:10px;padding:4px 10px}
   .dash .st{flex:1 1 0}
   .dash .st:first-of-type{flex:2 1 0}
   .dash .st b{font-size:13px;white-space:nowrap}
@@ -189,7 +190,8 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
 /* small screens: the buttons under the minimap shrink to one row of icons (the label stays for screen readers); on touch phones
    the rental navigation moves to a see-through tile next to Auto */
 @media (max-width:600px){
-  .tools{flex-wrap:nowrap;gap:4px;max-width:none}
+  .tools{flex-wrap:nowrap;gap:4px;max-width:none;right:10px}
+  .mmw{right:10px}
   .tools .ghost{font-size:0;width:30px;height:30px;padding:0;display:grid;place-items:center;line-height:1}
   .tools .ghost::before{font-size:14px;font-weight:700}
   #pauseBtn::before{content:'\275A\275A';font-size:9px;letter-spacing:1px}
@@ -201,6 +203,12 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
   #mapBtn::before{content:'\25A6';font-size:16px}
 }
 @media (max-width:600px) and (pointer:coarse){#rentBtn{display:none}}
+.billmini{display:none}
+@media (max-width:600px){
+  .bill:not(.ledger){display:none}
+  .billmini:not([hidden]){display:flex;justify-content:space-between;gap:8px;width:100%;max-width:380px;box-sizing:border-box;background:var(--panel);border:1px solid #e8833a;border-radius:6px;padding:4px 10px;font-size:13px;line-height:1.25;pointer-events:auto;cursor:pointer}
+  .billmini b{color:#ffb27a;white-space:nowrap}
+}
 .pads .rent{background:rgba(176,124,255,.14);border-color:rgba(176,124,255,.55);color:#e5d6ff}
 .pads .rent.on{background:rgba(176,124,255,.5);color:#fff}
 @media (min-width:601px){.pads .rent{display:none}}
@@ -218,6 +226,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
         <div class="bar" id="jobBarW" hidden><i id="jobBar"></i></div>
         <div class="say" id="jobSay"></div>
       </div>
+      <div class="billmini" id="billMini" hidden></div>
     </div>
     <div class="mmw" id="mmw" title="Pokaż mapę miasta"><canvas id="mm" width="224" height="224"></canvas><small id="mmLbl">© OpenStreetMap</small></div>
     <small class="osm" id="osmLbl">© OpenStreetMap</small>
@@ -298,6 +307,13 @@ const TYPES = {
   jeep:     { name: 'Terenówka wojskowa', en: 'Military jeep', fuel: 'on', tank: 60, cons: 13, L: 42, W: 21, max: 360, acc: 320, brake: 620, grip: 7.5, steer: 2.6, hp: 220, mass: 1.8, cols: ['#4f5d2f'] },
   army:     { name: 'Ciężarówka wojskowa', en: 'Army truck', fuel: 'on', tank: 150, cons: 32, L: 70, W: 25, max: 270, acc: 160, brake: 450, grip: 6, steer: 1.7, hp: 320, mass: 3.5, cols: ['#4b5530'] },
   tank:     { name: 'Czołg', en: 'Tank', fuel: 'on', tank: 1200, cons: 300, L: 92, W: 44, max: 190, acc: 170, brake: 520, grip: 14, steer: 1.5, hp: 900, mass: 9, cols: ['#55603a'], tracks: 1 },
+  hatch:    { name: 'Kompakt', en: 'Hatchback', fuel: 'pb95', tank: 45, cons: 6.2, L: 34, W: 18, max: 380, acc: 300, brake: 600, grip: 7, steer: 2.9, hp: 90, mass: 1.0, cols: ['#e8e4da', '#c8312a', '#2a6fb0', '#f2a33a', '#58606a'] },
+  suv:      { name: 'SUV', en: 'SUV', fuel: 'on', tank: 65, cons: 9, L: 44, W: 21, max: 400, acc: 310, brake: 600, grip: 6.8, steer: 2.4, hp: 140, mass: 1.7, cols: ['#1f2328', '#d9d6cf', '#5c6b58', '#7a1f24', '#3a4f6e'] },
+  pickup:   { name: 'Pikap', en: 'Pickup', fuel: 'on', tank: 80, cons: 11, L: 50, W: 21, max: 370, acc: 280, brake: 560, grip: 6.4, steer: 2.2, hp: 160, mass: 1.9, cols: ['#b5462b', '#e9e6dd', '#2e3d52', '#6b6f3a'] },
+  eco:      { name: 'Elektryk', en: 'Electric car', L: 40, W: 19, max: 440, acc: 430, brake: 640, grip: 7.4, steer: 2.8, hp: 100, mass: 1.4, cols: ['#e9eef0', '#2bb3a3', '#3d4a5c', '#b8d4e8'] },
+  limo:     { name: 'Limuzyna', en: 'Limousine', fuel: 'pb98', tank: 80, cons: 13, L: 54, W: 20, max: 420, acc: 280, brake: 600, grip: 6.5, steer: 2.0, hp: 140, mass: 2.0, cols: ['#15171a', '#e6e2d8', '#3a3f47'] },
+  retro:    { name: 'Klasyk', en: 'Classic car', fuel: 'pb98', tank: 50, cons: 12, L: 42, W: 18, max: 330, acc: 230, brake: 480, grip: 5.8, steer: 2.5, hp: 100, mass: 1.3, cols: ['#efe2bd', '#8fcfbf', '#7d2230', '#4f7fb0'] },
+  minibus:  { name: 'Minibus', en: 'Minibus', fuel: 'on', tank: 75, cons: 11, L: 56, W: 22, max: 340, acc: 220, brake: 520, grip: 5.6, steer: 2.0, hp: 170, mass: 2.2, cols: ['#f3f1ea', '#d6a419', '#2f6a9c'] },
   heli:     { name: 'Helikopter', en: 'Helicopter', L: 54, W: 14, max: 1000, acc: 560, brake: 650, grip: 2, steer: 2.3, hp: 150, mass: 2, cols: ['#c8102e'], heli: 1 },
   truck: { name: 'Ciężarówka', en: 'Truck', fuel: 'on', tank: 300, cons: 32, L: 72, W: 24, max: 280, acc: 150, brake: 430, grip: 5,   steer: 1.7, hp: 240, mass: 3.2, cols: ['#c9532d', '#2c6a8a', '#4c7a3a'] },
   fire:  { name: 'Wóz strażacki', en: 'Fire engine', L: 76, W: 25, max: 340, acc: 220, brake: 520, grip: 6, steer: 1.8, hp: 500, mass: 4, cols: ['#c8231b'] },
@@ -309,19 +325,19 @@ for (const k in TYPES) {
   t.offs = Array.from({ length: n }, (_, i) => -t.L / 2 + t.r + i * (t.L - 2 * t.r) / (n - 1));
 }
 const tName = t => L(t.name, t.en);
-const TRAFFIC_MIX = [['sedan', 28], ['kombi', 14], ['mikro', 12], ['taxi', 10], ['van', 12], ['truck', 7], ['sport', 9], ['super', 4], ['roadster', 6], ['jeep', 1]];
+const TRAFFIC_MIX = [['sedan', 28], ['kombi', 14], ['mikro', 12], ['taxi', 10], ['van', 12], ['truck', 7], ['sport', 9], ['super', 4], ['roadster', 6], ['jeep', 1], ['hatch', 12], ['suv', 9], ['pickup', 4], ['eco', 5], ['limo', 1], ['retro', 2], ['minibus', 3]];
 const MIX_SUM = TRAFFIC_MIX.reduce((a, m) => a + m[1], 0);
 function randType(rand = Math.random) { let s = rand() * MIX_SUM, acc = 0; for (const [k, w] of TRAFFIC_MIX) { acc += w; if (s < acc) return k; } return 'sedan'; }
 // fictional car-rental companies (colour of their parking bays, their fleet) and fictional insurers
 const RENT_COS = [
-  { n: 'Zielony Kluczyk', col: '#35c46a', cars: ['mikro', 'sedan', 'mikro', 'kombi'], ins: 1, start: 3, km: 1.2, prot: 9 },
-  { n: 'Fioletowa Fura', col: '#a066f0', cars: ['sport', 'roadster', 'super', 'sport'], ins: 2, start: 15, km: 3.5, prot: 29 },
-  { n: 'Pomarańczowe Koła', col: '#ff8a1f', cars: ['van', 'kombi', 'truck', 'van'], ins: 3, start: 8, km: 2.2, prot: 15 },
-  { n: 'Błękitny Bak', col: '#2fb8e0', cars: ['sedan', 'kombi', 'roadster', 'sedan'], ins: 1, start: 5, km: 1.6, prot: 9 },
+  { n: 'Zielony Kluczyk', col: '#35c46a', cars: ['mikro', 'hatch', 'sedan', 'eco', 'kombi'], ins: 1, start: 3, km: 1.2, prot: 9 },
+  { n: 'Fioletowa Fura', col: '#a066f0', cars: ['sport', 'roadster', 'super', 'limo', 'retro'], ins: 2, start: 15, km: 3.5, prot: 29 },
+  { n: 'Pomarańczowe Koła', col: '#ff8a1f', cars: ['van', 'pickup', 'minibus', 'truck', 'suv'], ins: 3, start: 8, km: 2.2, prot: 15 },
+  { n: 'Błękitny Bak', col: '#2fb8e0', cars: ['sedan', 'suv', 'eco', 'hatch', 'roadster', 'kombi'], ins: 1, start: 5, km: 1.6, prot: 9 },
 ];
 const INSURERS = ['TU Spokojna Głowa', 'TU Złoty Zderzak', 'TU Miękkie Lądowanie', 'TU Bezpieczny Zakręt'];
 // rough price of a full repair after a crash, PLN
-const REPAIR_VAL = { taxi: 3200, sedan: 3200, kombi: 3500, sport: 7500, mikro: 1800, van: 4800, police: 4000, super: 14500, roadster: 8200, jeep: 6000, army: 9000, tank: 40000, heli: 60000, truck: 9500, tow: 9000 };
+const REPAIR_VAL = { taxi: 3200, sedan: 3200, kombi: 3500, sport: 7500, mikro: 1800, van: 4800, police: 4000, super: 14500, roadster: 8200, jeep: 6000, army: 9000, tank: 40000, heli: 60000, truck: 9500, tow: 9000, hatch: 2600, suv: 5200, pickup: 5000, eco: 6500, limo: 12000, retro: 7000, minibus: 6000 };
 
 // ---------- city generation ----------
 // A seaside town grown from a seed: a river with bridges, an old town round a market square, avenues and ring roads,
@@ -1574,7 +1590,12 @@ function rentalSpots(w) {
     if (Math.abs(wrapA(f.a - l.a)) > 0.15) continue;   // straight stretches only
     if (strips.some(o => Math.abs(o.x - cx) < minD && Math.abs(o.y - cy) < minD && Math.hypot(o.x - cx, o.y - cy) < minD)) continue;
     const st = { x: cx, y: cy, a: Math.atan2(l.y - f.y, l.x - f.x), len: n * slot + 8, wid: W + 12, co, n, slots: [] };
-    for (const p of pts) { const r = { x: p.x, y: p.y, a: p.a, co, type: C.cars[Math.floor(rnd() * C.cars.length)], car: null, strip: st }; st.slots.push(r); slots.push(r); }
+    // every place in the bay holds a different model (the whole fleet in a random order, repeated for long bays), each in its own colour
+    const order = C.cars.slice(); for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
+    pts.forEach((p, k) => {
+      const type = order[k % order.length], cols = TYPES[type].cols, col = cols[(k + Math.floor(rnd() * cols.length)) % cols.length];
+      const r = { x: p.x, y: p.y, a: p.a, co, type, col, car: null, strip: st }; st.slots.push(r); slots.push(r);
+    });
     strips.push(st);
   }
   // grids, so each frame only looks at the bays near the view (a big city has hundreds of bays and thousands of places)
@@ -1601,7 +1622,7 @@ function fillRentals(all) {
     if (r.car && d > 1900 && r.car.rental && !r.car.owned) { r.car.gone = true; r.car = null; continue; }
     if (!r.car && d < 1400 && (all || d > 750) && !cars.some(o => Math.abs(o.x - r.x) < 40 && Math.abs(o.y - r.y) < 40)) {
       const C = RENT_COS[r.co], c = makeCar(r.type, r.x, r.y, r.a);
-      c.col = C.col; c.rental = C; c.parked = true; c.keep = true; r.car = c; cars.push(c);
+      c.col = r.col; c.rental = C; c.parked = true; c.keep = true; r.car = c; cars.push(c);
     }
     if (r.car) rentLive.add(r); else rentLive.delete(r);
   }
@@ -1815,10 +1836,11 @@ function renderLedger() {
 }
 function toggleLedger(on) {
   const el = $('ledger'); el.hidden = on != null ? !on : !el.hidden;
-  if (!el.hidden) { $('bill').hidden = true; billT = 0; renderLedger(); }
+  if (!el.hidden) { hideBill(); renderLedger(); }
 }
 // what the garage did, and who paid for it
 let billT = 0;
+function hideBill() { $('bill').hidden = true; $('billMini').hidden = true; billT = 0; }
 function showBill(car, ws, towDist, dmg) {
   car.burning = false; car.fireOut = false;
   const base = REPAIR_VAL[car.t.key] || 3000, r10 = v => Math.round(v / 10) * 10;
@@ -1834,7 +1856,8 @@ function showBill(car, ws, towDist, dmg) {
     + `<div class="brow sum"><span>${L('Razem', 'Total')}</span><b>${zl(sum)}</b></div>`
     + `<p>${L(`Naprawę${tow ? ', holowanie' : ''} i obsługę pokrył ubezpieczyciel <b>${ins}</b>${car.rental ? ` (polisa firmy ${car.rental.n})` : ''}. Do zapłaty: <b>0 zł</b>.`, `Repair${tow ? ', towing' : ''} and service were covered by the insurer <b>${ins}</b>${car.rental ? ` (${car.rental.n} policy)` : ''}. You pay: <b>PLN 0</b>.`)}</p>`
     + `<small>${L('Ubezpieczyciel i warsztat są fikcyjne. Dotknij, aby zamknąć.', 'The insurer and the garage are fictional. Tap to close.')}</small>`;
-  $('bill').hidden = false; billT = 9;
+  $('billMini').innerHTML = `<span>${L('Kosztorys naprawy, razem', 'Repair bill, total')}</span><b>${zl(sum)}</b>`;
+  $('bill').hidden = false; $('billMini').hidden = false; billT = 9;
   popup(car.x, car.y - 30, L('naprawione', 'repaired'), '#e8833a');
 }
 // put a car that wandered off (after a chase) back onto the nearest lane
@@ -1870,7 +1893,7 @@ function offence(key, stars, fine, label, witnessR) {
   if (!reasons.includes(label)) reasons.push(label);
   escapeT = 0;
   for (const c of seen.length ? seen : copsNear(player.x, player.y, 450)) c.pol.chase = true;
-  toast(was ? L(`Policja: ${label}! Mandaty: ${fines} zł`, `Police: ${label}! Fines: PLN ${fines}`) : L(`Policja: ${label}. Zatrzymaj się przy radiowozie albo uciekaj.`, `Police: ${label}. Stop next to the patrol car or get away.`));
+  toast(was ? L(`Policja: ${label}! Mandaty: ${fines} zł`, `Police: ${label}! Fines: PLN ${fines}`) : L(`Policja: ${label}. Zatrzymaj się przy radiowozie.`, `Police: ${label}. Stop next to the patrol car.`));
 }
 function endChase() {
   for (const c of cars) if (c.pol && c.pol.chase) { c.pol.chase = false; if (c.driver === 'ai' && !c.wreck) aiReset(c); }
@@ -2336,7 +2359,7 @@ function newWorld(kind, sd) {
   spawnMilitary(); spawnHelis(); setupPlanes();
   clearTiles(); startTileProbe(); workQ.clear();
   rentLive.clear();
-  towJob = null; fireJob = null; billT = 0; $('bill').hidden = true; ledger = []; claims = []; $('ledger').hidden = true; setRentNav(false);
+  towJob = null; fireJob = null; hideBill(); ledger = []; claims = []; $('ledger').hidden = true; setRentNav(false);
   rentalSpots(city); for (const r of city.rentals) r.car = null;   // cars of a previous game in this city are gone
   updateRentals(0, true);
   money = START_MONEY; trips = 0; T = 0; wanted = 0; fines = 0; reasons = []; bustT = 0; escapeT = 0;
@@ -3664,6 +3687,33 @@ function drawCar(c) {
     const on = c.sig, ph = Math.floor(T * 6) % 2;
     ctx.fillStyle = on && ph ? '#ffc21a' : '#7a5a10'; ctx.fillRect(L / 2 - 19, -W / 2 + 2, 5, W / 2 - 2);
     ctx.fillStyle = on && !ph ? '#ffc21a' : '#7a5a10'; ctx.fillRect(L / 2 - 19, 0, 5, W / 2 - 2);
+  } else if (t.key === 'pickup') {
+    // cab in front, open load bed behind
+    ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.fillRect(-L / 2 + 2, -W / 2 + 2.5, L * 0.46, W - 5);
+    ctx.strokeStyle = 'rgba(255,255,255,.18)'; for (let x = -L / 2 + 7; x < -L / 2 + L * 0.46; x += 6) { ctx.beginPath(); ctx.moveTo(x, -W / 2 + 3); ctx.lineTo(x, W / 2 - 3); ctx.stroke(); }
+    ctx.fillStyle = glass; ctx.fillRect(L * 0.1, -W / 2 + 2.5, L * 0.14, W - 5); ctx.fillRect(-L * 0.02, -W / 2 + 3, 3, W - 6);
+  } else if (t.key === 'minibus') {
+    // a row of side windows and a big windscreen
+    ctx.fillStyle = glass; ctx.fillRect(L / 2 - 11, -W / 2 + 3, 6, W - 6);
+    for (let x = -L / 2 + 5; x < L / 2 - 16; x += 8) { ctx.fillRect(x, -W / 2 + 1.5, 6, 2.5); ctx.fillRect(x, W / 2 - 4, 6, 2.5); }
+    ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fillRect(-L / 2 + 4, -W / 2 + 5, L - 20, W - 10);
+  } else if (t.key === 'limo') {
+    // long, with three windows in a row and a dark roof
+    ctx.fillStyle = glass; ctx.fillRect(L * 0.16, -W / 2 + 2.5, L * 0.12, W - 5); ctx.fillRect(-L * 0.38, -W / 2 + 3, L * 0.09, W - 6);
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(-L * 0.27, -W / 2 + 3, L * 0.41, W - 6);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-L * 0.27, -W / 2 + 3, L * 0.41, 1); ctx.fillRect(-L * 0.27, W / 2 - 4, L * 0.41, 1);
+  } else if (t.key === 'suv') {
+    // tall body with roof rails and a spare wheel at the back
+    ctx.fillStyle = glass; ctx.fillRect(L * 0.12, -W / 2 + 2.5, L * 0.15, W - 5); ctx.fillRect(-L * 0.4, -W / 2 + 3, L * 0.1, W - 6);
+    ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(-L * 0.28, -W / 2 + 3, L * 0.38, W - 6);
+    ctx.fillStyle = 'rgba(20,20,20,.7)'; ctx.fillRect(-L * 0.28, -W / 2 + 3, L * 0.38, 1.6); ctx.fillRect(-L * 0.28, W / 2 - 4.6, L * 0.38, 1.6);
+    ctx.fillStyle = '#26282b'; ctx.beginPath(); ctx.arc(-L / 2 - 0.5, 0, 4, 0, 7); ctx.fill();
+  } else if (t.key === 'retro') {
+    // rounded wings, a small cabin and chrome bumpers
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(L * 0.3, -W / 2 + 2, 6, 2.5, 0, 0, 7); ctx.ellipse(L * 0.3, W / 2 - 2, 6, 2.5, 0, 0, 7); ctx.ellipse(-L * 0.3, -W / 2 + 2, 6, 2.5, 0, 0, 7); ctx.ellipse(-L * 0.3, W / 2 - 2, 6, 2.5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = glass; ctx.fillRect(L * 0.04, -W / 2 + 3, L * 0.12, W - 6); ctx.fillRect(-L * 0.24, -W / 2 + 3.5, L * 0.08, W - 7);
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(-L * 0.16, -W / 2 + 3.5, L * 0.2, W - 7);
+    ctx.fillStyle = c.wreck ? '#444' : '#d9dde0'; ctx.fillRect(L / 2 - 1.5, -W / 2 + 1, 1.5, W - 2); ctx.fillRect(-L / 2, -W / 2 + 1, 1.5, W - 2);
   } else if (t.key === 'van') {
     ctx.fillStyle = glass; ctx.fillRect(L / 2 - 12, -W / 2 + 3, 6, W - 6);
     ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(-L / 2 + 4, -W / 2 + 3, L - 18, W - 6);
@@ -3677,8 +3727,11 @@ function drawCar(c) {
       ctx.fillStyle = on && ph ? '#ff3b30' : '#7a1d18'; ctx.fillRect(-3, -W / 2 + 3, 5, (W - 6) / 2);
       ctx.fillStyle = on && !ph ? '#3b7bff' : '#1b2f6a'; ctx.fillRect(-3, 0, 5, (W - 6) / 2);
     }
+    if (t.key === 'eco' && !c.wreck) { ctx.fillStyle = '#35c46a'; ctx.fillRect(-L / 2 + 3, -W / 2, L - 6, 1.6); ctx.fillRect(-L / 2 + 3, W / 2 - 1.6, L - 6, 1.6); ctx.fillStyle = 'rgba(30,60,90,.55)'; ctx.fillRect(-L * 0.23, -W / 2 + 3, L * 0.32, W - 6); }
+    if (t.key === 'hatch') { ctx.fillStyle = glass; ctx.fillRect(-L / 2 + 1, -W / 2 + 3.5, 3, W - 7); }
     if (t.key === 'taxi' && !c.wreck) { ctx.fillStyle = '#1b1b1b'; ctx.fillRect(-5, -4, 8, 8); ctx.fillStyle = '#f7f2e0'; ctx.fillRect(-5, -4, 4, 4); ctx.fillRect(-1, 0, 4, 4); }
   }
+  if (c.rental && !c.wreck && !t.heli) { ctx.fillStyle = c.rental.col; ctx.fillRect(-4, -W / 2 + 0.5, 8, 2.5); ctx.fillRect(-4, W / 2 - 3, 8, 2.5); }
   if (!c.wreck) {
     ctx.fillStyle = '#fff6c8'; ctx.fillRect(L / 2 - 2.5, -W / 2 + 2, 2.5, 3.5); ctx.fillRect(L / 2 - 2.5, W / 2 - 5.5, 2.5, 3.5);
     ctx.fillStyle = c.brakeLit ? '#ff3b2f' : '#8f1f1a'; ctx.fillRect(-L / 2, -W / 2 + 2, 2.5, 3.5); ctx.fillRect(-L / 2, W / 2 - 5.5, 2.5, 3.5);
@@ -4135,14 +4188,45 @@ function speedoPads() {
   }
   return padsTopCache;
 }
-addEventListener('resize', () => { padsTopCache = null; });
+// bottom edge of the icon row under the minimap (the vertical speed bar on phones starts below it)
+let toolsBotCache = null, dashTopCache = null;
+const toolsBot = () => (toolsBotCache === null ? (toolsBotCache = document.querySelector('.tools').getBoundingClientRect().bottom) : toolsBotCache);
+const dashTop = () => (dashTopCache === null || !dashTopCache ? (dashTopCache = $('dash').getBoundingClientRect().top) : dashTopCache);
+const touchUI = matchMedia('(pointer:coarse)');
+addEventListener('resize', () => { padsTopCache = null; toolsBotCache = null; dashTopCache = null; });
+// phones (any width, also in landscape) and narrow windows: a slim vertical bar right at the screen edge instead of the round dial
+function drawSpeedBar(c, kmh, back, y0, y1) {
+  const MAX = c.t.heli ? 400 : 240, w = 26, x = vw - w - 2, g = ctx;
+  const t0 = y0 + 32, t1 = y1 - 6, th = t1 - t0, tx = x + 8, tw = w - 16, yv = v => t1 - th * clamp(v / MAX, 0, 1);
+  g.save();
+  g.fillStyle = 'rgba(18,20,24,.82)'; g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 1;
+  rr2(x, y0, w, y1 - y0, 6); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.1)'; g.fillRect(tx, t0, tw, th);
+  // above the car's top speed in red, then the current speed filling up from the bottom
+  g.fillStyle = 'rgba(229,83,61,.55)'; g.fillRect(tx, t0, tw, yv(c.t.max * 0.36) - t0);
+  g.fillStyle = kmh > c.t.max * 0.36 * 0.92 ? '#e5533d' : '#f2c230'; const yk = yv(kmh); g.fillRect(tx, yk, tw, t1 - yk);
+  g.fillStyle = 'rgba(243,238,226,.55)';
+  const stepV = MAX > 300 ? 40 : 20;
+  for (let v = stepV; v < MAX; v += stepV) { const big = v % (stepV * 2) === 0; g.fillRect(big ? x + 3 : x + 5, Math.round(yv(v)), big ? w - 6 : w - 10, 1); }
+  if (limActive()) { g.fillStyle = '#ffffff'; g.fillRect(x + 1, Math.round(yv(limV)) - 1, w - 2, 2.5); }
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = '#f3eee2'; g.font = `${kmh >= 99.5 ? 11 : 13}px Bungee, Impact, sans-serif`; g.fillText(String(Math.round(kmh)), x + w / 2, y0 + 12);
+  g.font = '600 9px "Barlow Semi Condensed", sans-serif'; g.fillStyle = back ? '#f2c230' : 'rgba(243,238,226,.7)';
+  g.fillText(c.air > 0.3 ? '\u2191' : back ? 'R' : 'km/h', x + w / 2, y0 + 25);
+  g.restore();
+}
 let speedoBg = null;
 function drawSpeedo() {
   if (state !== 'play' || player.mode !== 'car') return;
   const c = player.car, kmh = speedOf(c) * 0.36, padsTop = speedoPads();
+  const ca = Math.cos(c.a), sa = Math.sin(c.a), back = c.vx * ca + c.vy * sa < -5;
+  if (touchUI.matches || vw <= 600) {
+    const fb = $('fuelBtn'), y0 = Math.max(toolsBot(), fb.hidden || !fb.offsetParent ? 0 : fb.getBoundingClientRect().bottom) + 8;
+    const y1 = (dashTop() || vh - 60) - 8;
+    if (y1 - y0 >= 90) return drawSpeedBar(c, kmh, back, y0, y1);
+  }
   const R = padsTop ? (vw < 420 ? 48 : 54) : 64;
   const cx = vw - 16 - R, cy = padsTop ? padsTop - 10 - R : vh - 16 - R;
-  const ca = Math.cos(c.a), sa = Math.sin(c.a), back = c.vx * ca + c.vy * sa < -5;
   const MAX = c.t.heli ? 400 : 240, a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, ang = v => a0 + (a1 - a0) * clamp(v / MAX, 0, 1);
   // the dial (background, the car's top speed in red, ticks and numbers) is drawn once into an image and only pasted each frame
   const key = R + '|' + MAX + '|' + c.t.max + '|' + dpr + '|' + fontV;
@@ -4293,7 +4377,7 @@ function hud(dt) {
   }
   if (sayT > 0) { sayT -= dt; if (sayT <= 0) $('jobSay').textContent = ''; }
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.add('hide'); }
-  if (billT > 0) { billT -= dt; if (billT <= 0) $('bill').hidden = true; }
+  if (billT > 0) { billT -= dt; if (billT <= 0) hideBill(); }
   const c = player.mode === 'car' ? player.car : null;
   setT('spd', String(c ? Math.round(speedOf(c) * 0.36) : Math.round(Math.hypot(player.vx, player.vy) * 0.36)));
   setT('street', (autoOn ? 'AUTOPILOT · ' : '') + (limActive() ? `LIMIT ${limV} · ` : '') + streetAt(player.x, player.y));
@@ -4567,14 +4651,14 @@ const HOWTO_PL = `
   <li><b>Paliwo:</b> każde auto ma swój bak i realne spalanie w mieście (np. sedan ok. 7,5 l/100 km, ciężarówka ok. 32 l). Zatrzymaj się na stacji (żółte P) i naciśnij T albo „Tankuj”. Ceny według średnich cen z ${PRICE_DATE}.</li>
   <li><b>Klakson (H):</b> auta przed tobą włączają kierunkowskaz, zjeżdżają do prawej krawędzi, zatrzymują się i przepuszczają cię. Piesi się odsuwają.</li>
   <li><b>Auta:</b> supersamochód i kabriolet są najszybsze, ciężarówka wytrzymała, maluch zwrotny i oszczędny. Na terenach wojskowych stoją terenówki, ciężarówki i czołgi (tylko do jazdy). Gdy auto dymi, warsztat (pomarańczowe W, fikcyjny) je naprawi, a koszty pokryje ubezpieczyciel.</li>
-  <li><b>Wynajem:</b> auta na wynajem stoją w całym mieście, po 3–10 na długich kopertach przy krawężniku w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia, a w aucie możesz ją włączyć klawiszem R albo przyciskiem „Wynajem”, gdy chcesz zmienić auto.</li>
+  <li><b>Wynajem:</b> auta na wynajem stoją w całym mieście, po 3–10 na długich kopertach przy krawężniku w kolorze firmy: Zielony Kluczyk (zielone koperty, małe auta i elektryki), Fioletowa Fura (fioletowe, sportowe, limuzyna i klasyk), Pomarańczowe Koła (pomarańczowe, dostawcze, pikapy, minibusy i ciężarówki) i Błękitny Bak (błękitne, osobowe i SUV-y). Na jednej kopercie każde auto jest inne, a na dachu ma naklejkę w kolorze firmy. Pieszo prowadzi do nich fioletowa linia, a w aucie możesz ją włączyć klawiszem R albo przyciskiem „Wynajem”, gdy chcesz zmienić auto.</li>
   <li><b>Laweta:</b> gdy auto się rozbije i zapali, najpierw przyjeżdża straż pożarna i gasi pożar, a potem laweta na sygnale i odholowuje je do warsztatu. Holowanie, naprawę i obsługę pokrywa ubezpieczyciel (fikcyjny), a rachunek pojawia się na ekranie.</li>
   <li><b>Koszty (K):</b> przycisk „koszty” obok stanu konta pokazuje koszty, które ponosisz: wynajem (opłata startowa i za kilometr) i pakiety ochrony. Naprawy, holowanie i obsługę opłacone przez ubezpieczyciela widać osobno, po rozwinięciu „Naprawy z ubezpieczenia”. Żadna z tych kwot nie jest odejmowana od zarobku.</li>
   <li><b>Helikopter:</b> stoi na lotnisku i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku. Wyląduj do 45 m od pasażera albo celu, a pasażer sam podejdzie. Autopilot też umie latać.</li>
   <li><b>Autopilot (O):</b> sam jedzie do pasażera, do celu albo na stację i omija zaparkowane auta. Jedzie zawsze z ogranicznikiem prędkości. Dotknięcie sterowania go wyłącza.</li>
   <li><b>Ogranicznik prędkości (L):</b> trzyma 50 km/h w mieście i 70 km/h na głównych arteriach. Znak z limitem pojawia się przy prędkościomierzu.</li>
   <li><b>Komunikacja:</b> autobusy i tramwaje jeżdżą według rozkładu na aktualną godzinę, z numerami linii na dachach.</li>
-  <li><b>Policja:</b> reaguje, gdy widzi taranowanie radiowozu. Za lekką stłuczkę dostajesz tylko pouczenie, a gdy to radiowóz wjedzie w ciebie, mandatu nie ma. Zatrzymaj się przy radiowozie i zapłać mandat albo uciekaj.</li>
+  <li><b>Policja:</b> reaguje, gdy widzi taranowanie radiowozu. Za lekką stłuczkę dostajesz tylko pouczenie, a gdy to radiowóz wjedzie w ciebie, mandatu nie ma. Zatrzymaj się przy radiowozie i zapłać mandat.</li>
   <li><b>Telefon:</b> joystick do góry to gaz, w dół hamowanie i wsteczny, na boki skręt.</li>`;
 const HOWTO_EN = `
   <li><b>Passengers:</b> a yellow marker by the kerb. Stop next to it and they get in. The arrow and the map lead to the drop-off.</li>
@@ -4582,14 +4666,14 @@ const HOWTO_EN = `
   <li><b>Fuel:</b> every car has its own tank and realistic city consumption (e.g. a sedan about 7.5 l/100 km, a truck about 32 l). Stop at a petrol station (yellow F) and press T or "Refuel". Prices follow Polish averages of ${PRICE_DATE}.</li>
   <li><b>Horn (H):</b> cars ahead switch on their indicator, pull over to the right-hand kerb, stop and let you through. Pedestrians step aside.</li>
   <li><b>Cars:</b> the supercar and convertible are fastest, the truck is tough, the mini car is nimble and frugal. Military areas hold jeeps, trucks and tanks (driving only). When your car smokes, a garage (orange G, fictional) fixes it and the insurer pays.</li>
-  <li><b>Rentals:</b> rental cars stand all over town, 3 to 10 to a long kerbside bay painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them; in a car, switch it on with R or the "Rental" button when you want to change cars.</li>
+  <li><b>Rentals:</b> rental cars stand all over town, 3 to 10 to a long kerbside bay painted in the company colour: Zielony Kluczyk (green bays, small and electric cars), Fioletowa Fura (purple, sports cars, a limousine and a classic), Pomarańczowe Koła (orange, vans, pickups, minibuses and trucks) and Błękitny Bak (light blue, everyday cars and SUVs). Every car in a bay is different and has a sticker in the company colour on its roof. On foot, a purple line leads to them; in a car, switch it on with R or the "Rental" button when you want to change cars.</li>
   <li><b>Tow truck:</b> when your car is wrecked and catches fire, the fire brigade comes first and puts it out, then a tow truck arrives with beacons flashing and takes it to a garage. Towing, repair and service are paid by a (fictional) insurer, and the bill shows on screen.</li>
   <li><b>Costs (K):</b> the "costs" button next to your balance shows the costs you bear: rentals (start fee and per km) and cover packages. Repairs, towing and service paid by the insurer are listed separately under "Insurance repairs". None of these amounts is taken from your earnings.</li>
   <li><b>Helicopter:</b> parked at the airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included. Land within 45 m of the passenger or the drop-off and they walk the rest. The autopilot can fly it too.</li>
   <li><b>Autopilot (O):</b> drives to the passenger, the drop-off or a petrol station by itself and steers around parked cars. It always keeps to the speed limit. Touch the controls to take over.</li>
   <li><b>Speed limiter (L):</b> holds 50 km/h in town and 70 km/h on main roads. A limit sign shows next to the speedometer.</li>
   <li><b>Public transport:</b> buses and trams run to the timetable for the current time, with line numbers on their roofs.</li>
-  <li><b>Police:</b> react when they see a rammed patrol car. A slow bump only earns a warning, and when the patrol car hits you there is no fine. Stop next to the police car and pay the fine, or get away.</li>
+  <li><b>Police:</b> react when they see a rammed patrol car. A slow bump only earns a warning, and when the patrol car hits you there is no fine. Stop next to the police car and pay the fine.</li>
   <li><b>Phone:</b> joystick up is throttle, down is brake and reverse, sideways steers.</li>`;
 
 // ---------- legal notice, privacy, cookies ----------
@@ -4605,7 +4689,7 @@ function showLegal(back, focus) {
 }
 const LEGAL_PL = () => `
   <h2>Czym jest ta gra</h2>
-  <p>„Kurs przez Miasto” to darmowa, niekomercyjna gra przeglądarkowa i fikcja. Postacie, pojazdy, stacje paliw, ceny kursów, zachowanie policji i ruchu drogowego są wymyślone. Ucieczki przed policją czy wjazdy w tramwaj są elementami zabawy i nie zachęcają do łamania przepisów. Gra nie jest nawigacją ani symulatorem nauki jazdy. Sugerowany wiek: 12+ (to nie jest oficjalna klasyfikacja PEGI).</p>
+  <p>„Kurs przez Miasto” to darmowa, niekomercyjna gra przeglądarkowa i fikcja. Postacie, pojazdy, stacje paliw, ceny kursów, zachowanie policji i ruchu drogowego są wymyślone. Gra nie zachęca do łamania przepisów: kolizje, także z radiowozem czy tramwajem, kończą się w niej uszkodzeniem auta, mandatem albo naprawą, a w prawdziwym ruchu trzeba jeździć ostrożnie i zgodnie z przepisami. Gra nie jest nawigacją ani symulatorem nauki jazdy. Sugerowany wiek: 12+ (to nie jest oficjalna klasyfikacja PEGI).</p>
   <h2>Mapa</h2>
   <p>Ulice, budynki, wody i nazwy miejsc pochodzą z <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © autorzy OpenStreetMap, na licencji <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. Dane zostały uproszczone i mogą być nieaktualne. Uproszczone bazy zapisane w tej stronie i w plikach danych miast (folder <code>data</code>) są bazami pochodnymi OSM i są udostępniane na tej samej licencji ODbL; można je pobrać razem ze stroną.</p>
 ${cityLegal()}  <h2>Nazwy i znaki towarowe</h2>
@@ -4634,7 +4718,7 @@ ${cityLegal()}  <h2>Nazwy i znaki towarowe</h2>
   <p>© 2026 Witek, Jaś i Maks. Kod, grafika i teksty gry są chronione prawem autorskim. Dane map, rozkładów i czcionek należą do ich autorów i są wykorzystywane na licencjach opisanych powyżej.</p>`;
 const LEGAL_EN = () => `
   <h2>What this game is</h2>
-  <p>"Kurs przez Miasto" is a free, non-commercial browser game and a work of fiction. Characters, vehicles, petrol stations, fares, police and traffic behaviour are made up. Escaping the police or bumping into trams are part of the game and do not encourage breaking the law. The game is not a navigation tool or a driving-school simulator. Suggested age: 12+ (not an official PEGI rating).</p>
+  <p>"Kurs przez Miasto" is a free, non-commercial browser game and a work of fiction. Characters, vehicles, petrol stations, fares, police and traffic behaviour are made up. The game does not encourage breaking the law: collisions, including with patrol cars or trams, end in a damaged car, a fine or a repair, and in real traffic you must drive carefully and obey the rules. The game is not a navigation tool or a driving-school simulator. Suggested age: 12+ (not an official PEGI rating).</p>
   <h2>Map</h2>
   <p>Streets, buildings, water and place names come from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © OpenStreetMap contributors, under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. The data is simplified and may be out of date. The simplified databases embedded in this page and in the city data files (the <code>data</code> folder) are derivatives of OSM and are made available under the same ODbL licence; they can be downloaded together with the page.</p>
 ${cityLegal()}  <h2>Names and trademarks</h2>
@@ -4690,11 +4774,11 @@ $('autoBtn').onclick = toggleAuto;
 $('rentBtn').onclick = toggleRentNav;
 $('mapBtn').onclick = () => openMap();
 // minimap on or off (settings): without it the buttons move up and a Map button takes its place
-function applyMinimap() { $('mmw').hidden = !SET.minimap; $('mapBtn').hidden = SET.minimap; $('app').classList.toggle('nomm', !SET.minimap); }
+function applyMinimap() { $('mmw').hidden = !SET.minimap; $('mapBtn').hidden = SET.minimap; $('app').classList.toggle('nomm', !SET.minimap); toolsBotCache = null; }
 applyMinimap();
 $('pauseBtn').onclick = () => { if (state === 'play' || state === 'paused') togglePause(); };
 $('setBtn').onclick = () => { if (state === 'play' || state === 'paused') showSettings('play'); };
-$('bill').onclick = () => { $('bill').hidden = true; billT = 0; };
+$('bill').onclick = $('billMini').onclick = hideBill;
 $('costBtn').onclick = () => toggleLedger();
 $('muteBtn').onclick = () => { SND.on = !SND.on; $('muteBtn').textContent = SND.on ? L('Dźwięk', 'Sound') : L('Cisza', 'Muted'); $('muteBtn').classList.toggle('off', !SND.on); };
 
