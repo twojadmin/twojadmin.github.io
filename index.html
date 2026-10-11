@@ -245,7 +245,8 @@ try { LANG = localStorage.getItem('kpm-lang') || ((navigator.language || 'pl').t
 if (LANG !== 'pl' && LANG !== 'en') LANG = 'en';
 const L = (pl, en) => (LANG === 'en' ? en : pl);
 const zl = v => (LANG === 'en' ? 'PLN ' + v : v + ' zł');
-const cvs = $('view'), ctx = cvs.getContext('2d');
+const cvs = $('view');
+let ctx = cvs.getContext('2d');   // swapped for a tile's context while ground tiles are drawn
 const mmC = $('mm'), mctx = mmC.getContext('2d');
 
 // ---------- random ----------
@@ -1253,27 +1254,48 @@ const ROUTE_COL = { repair: ['#e8833a', '232,131,58'], fuel: ['#3b8bff', '59,139
 function routeCol(rgb) { const c = route && ROUTE_COL[route.kind] || (job && job.inCar ? ['#6cc070', '108,192,112'] : ['#f2c230', '242,194,48']); return c[rgb ? 1 : 0]; }
 function auxRoute(kind, n) {
   const nd = nearestNode(n.w.sx, n.w.sy);
-  if (!auxCache[kind] || auxCache[kind].target !== nd.id || auxCache[kind].city !== city) auxCache[kind] = { target: nd.id, city, dij: dijkstra(nd.id) };
+  if (!auxCache[kind] || auxCache[kind].target !== nd.id || auxCache[kind].city !== city || !dijFresh(auxCache[kind].dij, player.x, player.y)) auxCache[kind] = { target: nd.id, city, dij: dijkstra(nd.id, { from: { x: player.x, y: player.y } }) };
   const r = routeFrom(player.x, player.y, auxCache[kind].dij, n.w.sx, n.w.sy);
   r.tgt = { x: n.w.sx, y: n.w.sy, ws: n.w }; r.kind = kind; r.dist = Math.round(n.d / 10);
   return r;
 }
-function dijkstra(target) {
-  const ns = city.nodes, n = ns.length, D = new Float64Array(n).fill(Infinity), nxt = new Int32Array(n).fill(-1), nxtE = new Int32Array(n).fill(-1);
-  const hd = [], hn = [];
-  const push = (d, u) => { let i = hd.length; hd.push(d); hn.push(u); while (i > 0) { const p = (i - 1) >> 1; if (hd[p] <= hd[i]) break; [hd[p], hd[i]] = [hd[i], hd[p]]; [hn[p], hn[i]] = [hn[i], hn[p]]; i = p; } };
-  const pop = () => {
-    const d = hd[0], u = hn[0], ld = hd.pop(), lu = hn.pop();
-    if (hd.length) { hd[0] = ld; hn[0] = lu; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < hd.length && hd[l] < hd[m]) m = l; if (r < hd.length && hd[r] < hd[m]) m = r; if (m === i) break; [hd[m], hd[i]] = [hd[i], hd[m]]; [hn[m], hn[i]] = [hn[i], hn[m]]; i = m; } }
-    return [d, u];
+// Shortest paths to `target` over the street graph (heap in typed arrays, no allocations per step).
+// opt.from: an A* search towards that point which stops once the junctions around it (the ones routeFrom looks at) are settled;
+// opt.need: stop once these junctions are settled; opt.maxD: stop beyond this distance. Without opt the whole graph is searched.
+let dHK = new Float64Array(4096), dHN = new Int32Array(4096);
+function dijkstra(target, opt = {}) {
+  const ns = city.nodes, n = ns.length, D = new Float64Array(n).fill(Infinity), nxt = new Int32Array(n).fill(-1), nxtE = new Int32Array(n).fill(-1), done = new Uint8Array(n);
+  const from = opt.from || null, fx = from ? from.x : 0, fy = from ? from.y : 0, maxD = opt.maxD || Infinity;
+  let need = opt.need || (from ? gQuery(city.nodeGrid, 600, fx - 700, fy - 700, fx + 700, fy + 700).map(nd => nd.id) : null);
+  if (from && !need.length) need = [nearestNode(fx, fy).id];
+  let left = 0; const isNeed = need ? new Uint8Array(n) : null;
+  if (need) for (const id of need) if (!isNeed[id]) { isNeed[id] = 1; left++; }
+  const h = from ? u => Math.hypot(ns[u].x - fx, ns[u].y - fy) : () => 0;
+  let hs = 0;
+  const push = (k, u) => {
+    if (hs >= dHK.length) { const K = new Float64Array(hs * 2), N = new Int32Array(hs * 2); K.set(dHK); N.set(dHN); dHK = K; dHN = N; }
+    let i = hs++;
+    while (i > 0) { const p = (i - 1) >> 1; if (dHK[p] <= k) break; dHK[i] = dHK[p]; dHN[i] = dHN[p]; i = p; }
+    dHK[i] = k; dHN[i] = u;
   };
-  D[target] = 0; push(0, target);
-  while (hd.length) {
-    const [d, u] = pop(); if (d > D[u]) continue;
-    for (const a of ns[u].adj) { const nd = d + a.len; if (nd < D[a.n]) { D[a.n] = nd; nxt[a.n] = u; nxtE[a.n] = a.e; push(nd, a.n); } }
+  const pop = () => {
+    const u = dHN[0], k = dHK[--hs], v = dHN[hs];
+    let i = 0;
+    for (;;) { const l = 2 * i + 1; if (l >= hs) break; const r = l + 1, m = r < hs && dHK[r] < dHK[l] ? r : l; if (dHK[m] >= k) break; dHK[i] = dHK[m]; dHN[i] = dHN[m]; i = m; }
+    if (hs) { dHK[i] = k; dHN[i] = v; }
+    return u;
+  };
+  D[target] = 0; push(h(target), target);
+  while (hs) {
+    const u = pop(); if (done[u]) continue; done[u] = 1;
+    const du = D[u]; if (du > maxD) break;
+    if (isNeed && isNeed[u] && --left <= 0) break;
+    for (const a of ns[u].adj) { const v = a.n; if (done[v]) continue; const nd = du + a.len; if (nd < D[v]) { D[v] = nd; nxt[v] = u; nxtE[v] = a.e; push(nd + h(v), v); } }
   }
-  return { D, nxt, nxtE, target };
+  return { D, nxt, nxtE, target, from };
 }
+// a cached search is still good while the player stays near the point it was made for
+const dijFresh = (R, x, y) => !R.from || Math.hypot(R.from.x - x, R.from.y - y) < 300;
 function nearestNode(x, y) {
   for (const R of [500, 1500, 5000, 1e6]) {
     let b = null, bd = Infinity;
@@ -1557,11 +1579,11 @@ const towRide = () => !!towJob && towJob.phase !== 'idle' && player.mode === 'ca
 const insurerFor = c => INSURERS[c.rental ? c.rental.ins : 0];
 // a street path between (x, y) and a junction about D away: towards the point (arrive) or away from it (leave)
 function servicePath(x, y, D, arrive) {
-  const n0 = nearestNode(x, y), dij = dijkstra(n0.id);
+  const n0 = nearestNode(x, y), dij = dijkstra(n0.id, { maxD: D * 1.3 });
   let best = n0, bd = Infinity;
   for (const n of city.nodes) { const d = dij.D[n.id]; if (d < Infinity && Math.abs(d - D) < bd) { bd = Math.abs(d - D); best = n; } }
   if (arrive) return cleanPath(routeFrom(best.x, best.y, dij, x, y).pts);
-  return cleanPath(routeFrom(x, y, dijkstra(best.id), best.x, best.y).pts);
+  return cleanPath(routeFrom(x, y, dijkstra(best.id, { from: { x, y } }), best.x, best.y).pts);
 }
 function callTow(car) {
   if (!city.workshops.length) return false;
@@ -1670,7 +1692,7 @@ function updateTow(dt) {
   } else if (J.phase === 'load') {
     const k = Math.min(1, J.t / 1.6); onBed(k * k * (3 - 2 * k));
     if (k >= 1) {
-      const ws = nearestWorkshop(car.x, car.y).w, dij = dijkstra(nearestNode(ws.sx, ws.sy).id);
+      const ws = nearestWorkshop(car.x, car.y).w, dij = dijkstra(nearestNode(ws.sx, ws.sy).id, { from: { x: tr.x, y: tr.y } });
       J.P = cleanPath(routeFrom(tr.x, tr.y, dij, ws.sx, ws.sy).pts); if (J.P.length < 2) J.P = [{ x: tr.x, y: tr.y }, { x: ws.sx, y: ws.sy }];
       J.ws = ws; J.s = 0; J.v = 0; J.end = pathLen(J.P); J.dist = J.end; J.phase = 'go'; J.from = towBed(tr);
       toast(ride ? L(`Laweta wiezie cię do: ${poiName(ws)}. E albo „Pomiń” skraca dojazd.`, `The tow truck takes you to ${poiName(ws)}. E or "Skip" skips the ride.`) : L(`Laweta zabrała auto do: ${poiName(ws)}.`, `The tow truck took the car to ${poiName(ws)}.`));
@@ -1840,7 +1862,12 @@ function updatePolice(dt) {
   }
   if (!wanted) return;
   chaseDijT -= dt;
-  if (chaseDijT <= 0) { chaseDijT = 1; chaseDij = dijkstra(nearestNode(player.x, player.y).id); }
+  if (chaseDijT <= 0) {
+    // only the junctions around the chasing patrol cars are needed
+    chaseDijT = 1; const need = [];
+    for (const c of cars) if (c.pol && c.pol.chase && c.driver === 'ai') for (const nd of gQuery(city.nodeGrid, 600, c.x - 700, c.y - 700, c.x + 700, c.y + 700)) need.push(nd.id);
+    chaseDij = need.length ? dijkstra(nearestNode(player.x, player.y).id, { need }) : null;
+  }
   const chasers = cops.filter(c => c.pol.chase);
   // only a patrol that is close by and sees you joins in
   if (chasers.length < 1 + wanted) for (const c of cops) if (!c.pol.chase && Math.hypot(c.x - player.x, c.y - player.y) < 450) { c.pol.chase = true; break; }
@@ -2004,7 +2031,7 @@ function makeOffer() {
     if (d && Math.hypot(d.x - s.x, d.y - s.y) > (wide ? 1500 : 900)) dest = d;
   }
   if (!dest) return null;
-  const R0 = dijkstra(nearestNode(dest.x, dest.y).id), rt = routeFrom(s.x, s.y, R0, dest.x, dest.y);
+  const R0 = dijkstra(nearestNode(dest.x, dest.y).id, { from: s }), rt = routeFrom(s.x, s.y, R0, dest.x, dest.y);
   const fare = Math.round(9 + rt.len / (wide ? 140 : 75));
   return { x: s.x, y: s.y, nx: s.nx, ny: s.ny, addr: s.addr, dest, len: rt.len, fare, limit: Math.round(rt.len / 190 + 18), who: personName(mpick(PEOPLE)), shirt: mpick(SHIRTS), born: T, ph: mr(0, 6) };
 }
@@ -2253,6 +2280,7 @@ function newWorld(kind, sd) {
   for (let k = 0; k < 30; k++) spawnPed(taxi.x, taxi.y, 0, 1000);
   if (city.real || city.gen) for (let k = 0; k < 26; k++) spawnParked(taxi.x, taxi.y, 90, 1200);
   spawnMilitary(); spawnHelis(); setupPlanes();
+  clearTiles(); startTileProbe();
   towJob = null; fireJob = null; billT = 0; $('bill').hidden = true; ledger = []; claims = []; $('ledger').hidden = true; setRentNav(false);
   rentalSpots(city); updateRentals(0, true);
   money = START_MONEY; trips = 0; T = 0; wanted = 0; fines = 0; reasons = []; bustT = 0; escapeT = 0;
@@ -2308,7 +2336,7 @@ function nearbyInfo() {
 }
 
 // ---------- settings ----------
-const SET = { gfx: 'auto', preset: 'normal', dmg: 1, dead: 0.18, curve: 2, joy: 0.45, gas: 0.55, turnSlow: 0.5, reach: 1.4, vmax: 90, night: 'auto', names: true, pois: true, minimap: true };
+const SET = { gfx: 'auto', preset: 'normal', dmg: 1, dead: 0.18, curve: 2, joy: 0.45, gas: 0.55, turnSlow: 0.5, reach: 1.4, vmax: 90, night: 'auto', names: true, pois: true, minimap: true, tiles: true };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('kpm-set3') || '{}')); } catch (e) { /* storage unavailable */ }
 function saveSet() { try { localStorage.setItem('kpm-set3', JSON.stringify(SET)); } catch (e) { /* storage unavailable */ } }
 const SLIDERS = () => [
@@ -2342,6 +2370,7 @@ function showSettings(back) {
     <fieldset class="seg"><legend>${L('Pora dnia', 'Time of day')}</legend>
       ${[['auto', L('Jak za oknem', 'Like outside')], ['day', L('Dzień', 'Day')], ['night', L('Noc', 'Night')]].map(([v, l]) => `<label for="night_${v}"><input type="radio" name="night" id="night_${v}" value="${v}" ${SET.night === v ? 'checked' : ''}> ${l}</label>`).join('')}
     </fieldset>
+    <label class="chk" for="setTiles"><input id="setTiles" type="checkbox" ${SET.tiles ? 'checked' : ''}> ${L('Kafelki podłoża (do ok. 40 MB pamięci): na początku gry sprawdzamy, czy przyspieszają rysowanie, i używamy ich tylko wtedy. Wyłącz, jeśli telefonowi brakuje pamięci.', 'Ground tiles (up to about 40 MB of memory): at the start of a game we check whether they speed up drawing and only use them if so. Turn off if your phone runs short of memory.')}</label>
     <label class="chk" for="setMinimap"><input id="setMinimap" type="checkbox" ${SET.minimap ? 'checked' : ''}> ${L('Minimapa w rogu ekranu (bez niej gra działa odrobinę lżej, a mapę miasta otwiera przycisk Mapa albo klawisz M)', 'Minimap in the corner (the game runs slightly lighter without it; the Map button or M opens the city map)')}</label>
     <label class="chk" for="setNames"><input id="setNames" type="checkbox" ${SET.names ? 'checked' : ''}> ${L('Nazwy ulic w czasie jazdy', 'Street names while driving')}</label>
     <label class="chk" for="setPois"><input id="setPois" type="checkbox" ${SET.pois ? 'checked' : ''}> ${L('Oznaczenia sklepów, szkół, kościołów i innych miejsc', 'Icons for shops, schools, churches and other places')}</label>
@@ -2352,9 +2381,10 @@ function showSettings(back) {
   const dmgLabel = () => { $('setv_dmg').textContent = SET.dmg <= 0 ? L('wyłączone', 'off') : Math.round(SET.dmg * 100) + '%'; for (const [v] of DMG_PRESETS) $('dmg_' + v).checked = SET.dmg === +v; };
   for (const el of document.querySelectorAll('input[name=dmg]')) el.onchange = e => { SET.dmg = +e.target.value; $('set_dmg').value = SET.dmg; dmgLabel(); saveSet(); };
   $('set_dmg').oninput = e => { SET.dmg = +e.target.value; dmgLabel(); saveSet(); };
-  for (const el of document.querySelectorAll('input[name=gfx]')) el.onchange = e => { SET.gfx = e.target.value; gfxScale = 1; upTries = 0; resize(); saveSet(); };
+  for (const el of document.querySelectorAll('input[name=gfx]')) el.onchange = e => { SET.gfx = e.target.value; lowDetail = false; upTries = 0; resize(); saveSet(); };
   for (const el of document.querySelectorAll('input[name=night]')) el.onchange = e => { SET.night = e.target.value; saveSet(); };
   $('setNames').onchange = e => { SET.names = e.target.checked; saveSet(); };
+  $('setTiles').onchange = e => { SET.tiles = e.target.checked; clearTiles(); startTileProbe(); saveSet(); };
   $('setMinimap').onchange = e => { SET.minimap = e.target.checked; applyMinimap(); saveSet(); };
   $('setPois').onchange = e => { SET.pois = e.target.checked; saveSet(); };
   $('setDone').onclick = () => { if (back === 'menu') { state = 'menu'; showStart(); return; } state = prev === 'paused' ? 'play' : prev; if (state === 'menu') state = 'play'; $('ov').hidden = true; };
@@ -2836,7 +2866,7 @@ function drawNight(q, v) {
   const lamps = [];
   for (const r of q.r) if (r.id !== undefined && r.cls <= 4) for (const l of lampsOf(r)) if (Math.abs(l.x - cam.x) < (v.x1 - v.x0) / 2 + 200 && Math.abs(l.y - cam.y) < (v.y1 - v.y0) / 2 + 200) lamps.push(l);
   // only the closest lamps: plenty to light the screen, cheap on phones
-  lamps.sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y)); lamps.length = Math.min(lamps.length, SET.gfx === 'eco' || gfxScale < 0.9 ? 32 : 56);
+  lamps.sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y)); lamps.length = Math.min(lamps.length, lowGfx() ? 32 : 56);
   m.globalAlpha = 0.8; for (const l of lamps) m.drawImage(LIGHT, l.x - 150, l.y - 150, 300, 300);
   m.globalAlpha = 1;
   carLights(c => { const L = c.t.L; m.save(); m.translate(c.x, c.y); m.rotate(c.a); m.drawImage(CONE, L / 2 - 4, -c.t.W * 3.2, 300, c.t.W * 6.4); m.restore(); });
@@ -2914,9 +2944,9 @@ function partialLane(path, e, fwd, from, to) {
   path.push(lanePt(e, fwd, Math.max(from, to), off));
 }
 function buildAutoPath(c, tgt) {
-  const R0 = dijkstra(nearestNode(tgt.x, tgt.y).id);
   const r = nearestSeg(c.x, c.y, 500, s => s.e >= 0); if (!r) return null;
   const e = city.edges[r.s.e], s = r.s.s0 + r.t * r.s.len;
+  const R0 = dijkstra(nearestNode(tgt.x, tgt.y).id, { from: { x: c.x, y: c.y }, need: [e.a, e.b] });
   const tr = nearestSeg(tgt.x, tgt.y, 800, sg => sg.e >= 0), te = tr ? city.edges[tr.s.e] : null, ts = tr ? tr.s.s0 + tr.t * tr.s.len : 0;
   const path = [];
   // which way along the current street: the cheaper way to the target (one-way streets only forwards)
@@ -3082,10 +3112,10 @@ function step(dt) {
   const nTraffic = cars.filter(c => c.ai).length, want = Math.round((innerWidth < 700 ? 20 : 28) * (1 - 0.65 * nightK));
   if (nTraffic > want + 3) { const far = cars.find(c => c.ai && !c.keep && !(c.pol && c.pol.chase) && Math.hypot(c.x - px, c.y - py) > 1000); if (far) far.gone = true; }
   if (nTraffic < want && Math.random() < 0.3) spawnTraffic(px, py, 700, 1200);
-  const pedWant = Math.round(34 * (1 - 0.6 * nightK));
+  const pedWant = Math.round((lowGfx() ? 22 : 34) * (1 - 0.6 * nightK));
   if (peds.length > pedWant + 4) { const far = peds.find(p => Math.hypot(p.x - px, p.y - py) > 900); if (far) far.gone = true; }
   if (peds.length < pedWant && Math.random() < 0.3) spawnPed(px, py, 600, 1100);
-  if ((city.real || city.gen) && Math.random() < 0.15 && cars.filter(c => c.parked && !c.driver).length < 26) spawnParked(px, py, 700, 1200);
+  if ((city.real || city.gen) && Math.random() < 0.15 && cars.filter(c => c.parked && !c.driver).length < (lowGfx() ? 14 : 26)) spawnParked(px, py, 700, 1200);
   updateRentals(dt);
   updatePeds(dt);
   updatePolice(dt);
@@ -3152,7 +3182,7 @@ function step(dt) {
     else if (offers.length) tgt = offers.reduce((m, o) => (Math.hypot(o.x - px, o.y - py) < Math.hypot(m.x - px, m.y - py) ? o : m));
     if (tgt) {
       const n = nearestNode(tgt.x, tgt.y);
-      if (!routeCache || routeCache.target !== n.id) routeCache = dijkstra(n.id);
+      if (!routeCache || routeCache.target !== n.id || !dijFresh(routeCache, px, py)) routeCache = dijkstra(n.id, { from: { x: px, y: py } });
       const flying = player.mode === 'car' && player.car.t.heli;
       route = flying ? { pts: [{ x: px, y: py }, { x: tgt.x, y: tgt.y }], len: Math.hypot(tgt.x - px, tgt.y - py) } : routeFrom(px, py, routeCache, tgt.x, tgt.y);
       route.tgt = tgt; route.kind = kind;
@@ -3185,10 +3215,12 @@ const cam = { x: 0, y: 0, z: 1, rot: -Math.PI / 2, cx: 0, cy: 0 };
 function upright(x, y, fn) { ctx.save(); ctx.translate(x, y); ctx.rotate(-cam.rot); fn(); ctx.restore(); }
 function w2s(x, y) { const dx = (x - cam.x) * cam.z, dy = (y - cam.y) * cam.z, c = Math.cos(cam.rot), sn = Math.sin(cam.rot); return [cam.cx + dx * c - dy * sn, cam.cy + dx * sn + dy * c]; }
 let vw = 0, vh = 0, dpr = 1;
-// render resolution: capped at 1.5x on high-DPI screens; 'auto' lowers it while frames run slow, 'eco' always renders at 75%
-let gfxScale = 1, frameEma = 16.7, slowT = 0, fastT = 0, upTries = 0;
+// render resolution: capped at 1.5x on high-DPI screens (2x for 'high'); 'eco' renders at 75%, 'auto' keeps full sharpness
+// 'auto' never lowers the resolution (that blurred the picture and every change was a hitch); when frames run slow it drops details instead
+let frameEma = 16.7, slowT = 0, fastT = 0, upTries = 0, lowDetail = false;
+const lowGfx = () => SET.gfx === 'eco' || lowDetail;
 function resize() {
-  vw = innerWidth; vh = innerHeight; dpr = Math.min(SET.gfx === 'high' ? 2 : 1.5, devicePixelRatio || 1) * (SET.gfx === 'eco' ? 0.75 : SET.gfx === 'high' ? 1 : gfxScale);
+  vw = innerWidth; vh = innerHeight; dpr = Math.min(SET.gfx === 'high' ? 2 : 1.5, devicePixelRatio || 1) * (SET.gfx === 'eco' ? 0.75 : 1);
   cvs.width = Math.round(vw * dpr); cvs.height = Math.round(vh * dpr);
 }
 addEventListener('resize', resize);
@@ -3270,14 +3302,94 @@ function drawGround(v, q) {
   ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath();
   for (const b of q.b) { const o = Math.min(30, b.h * 0.15); polyPathW(b, o, o); }
   ctx.fill();
-  // tyre marks
+  ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+}
+// tyre marks change all the time, so they are drawn over the (cached) ground every frame
+function drawSkids(v) {
   ctx.lineWidth = 3; ctx.lineCap = 'round';
   for (const s of skids) {
     if (s.x1 < v.x0 || s.x1 > v.x1 || s.y1 < v.y0 || s.y1 > v.y1) continue;
     ctx.strokeStyle = `rgba(20,20,22,${0.35 * (1 - s.t / 25)})`;
     ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
   }
-  ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+  ctx.lineCap = 'butt';
+}
+// ---------- ground tiles ----------
+// The ground (streets, green, water, rails, building shadows) never changes, so it is drawn once into 512 px tiles at a
+// resolution at least as fine as the screen needs, and each frame only pastes the visible tiles.
+const TILE_PX = 512, TILE_PAD = 8, TILE_MAX = 44;
+const tileCache = new Map(), tilePool = [];
+let tileLevel = 0, tileUse = 0;
+function tileLevelFor(s) {
+  // levels are powers of sqrt(2): never coarser than the screen, and the current one is kept while it is at most 1.6x finer
+  if (tileLevel && tileLevel >= s * 0.98 && tileLevel <= s * 1.6) return tileLevel;
+  return Math.pow(Math.SQRT2, Math.ceil(Math.log(s) / Math.log(Math.SQRT2) - 1e-6));
+}
+// Tiles pay off where pasting images is cheap (a graphics chip) and cost more where the browser draws in software,
+// so each game measures both: 4 s without and 4 s with tiles, and keeps tiles only if frames come out at least 10% faster.
+let tilesOn = false, tileProbe = null;
+function startTileProbe() { tilesOn = false; tileProbe = SET.tiles ? { phase: 0, t: 0, a: [], b: [] } : null; }
+function tileProbeStep(raw) {
+  const P = tileProbe; if (!P || state !== 'play' || raw > 200) return;
+  P.t += raw; if (P.t > 1000) (P.phase ? P.b : P.a).push(raw);   // the first second of each half is warm-up
+  if (P.t < 5000) return;
+  const med = x => x.sort((p, q) => p - q)[x.length >> 1] || 99;
+  if (P.phase === 0) { P.phase = 1; P.t = 0; tilesOn = true; return; }
+  tilesOn = med(P.b) < med(P.a) * 0.9; tileProbe = null;
+  if (!tilesOn) clearTiles();
+}
+function clearTiles() { for (const t of tileCache.values()) tilePool.push(t.c); tileCache.clear(); tileLevel = 0; }
+function renderTile(key, lvl, ix, iy) {
+  const ws = TILE_PX / lvl, x0 = ix * ws, y0 = iy * ws, pw = TILE_PAD / lvl;
+  let c = tilePool.pop();
+  if (!c) { c = document.createElement('canvas'); c.width = c.height = TILE_PX + 2 * TILE_PAD; }
+  const g = c.getContext('2d'), main = ctx, v = { x0: x0 - pw, y0: y0 - pw, x1: x0 + ws + pw, y1: y0 + ws + pw };
+  g.setTransform(lvl, 0, 0, lvl, TILE_PAD - x0 * lvl, TILE_PAD - y0 * lvl);
+  ctx = g;
+  try { drawGround(v, queryDraw(v)); } finally { ctx = main; }
+  const t = { c, x0, y0, ws, use: ++tileUse };
+  tileCache.set(key, t);
+  if (tileCache.size > TILE_MAX) {
+    let ok = null, ot = null;
+    for (const [k, o] of tileCache) if (!ot || o.use < ot.use) { ok = k; ot = o; }
+    tileCache.delete(ok); tilePool.push(ot.c);
+  }
+  return t;
+}
+function drawGroundTiles(v, q, RV) {
+  if (!SET.tiles || !tilesOn) { drawGround(v, q); return; }
+  const lvl = tileLevel = tileLevelFor(cam.z * dpr), ws = TILE_PX / lvl, reach = RV + ws * 0.71;
+  const cells = [];
+  for (let iy = Math.floor(v.y0 / ws); iy <= Math.floor(v.y1 / ws); iy++) for (let ix = Math.floor(v.x0 / ws); ix <= Math.floor(v.x1 / ws); ix++) {
+    const d = Math.hypot((ix + 0.5) * ws - cam.x, (iy + 0.5) * ws - cam.y);
+    if (d < reach) cells.push({ ix, iy, d });
+  }
+  cells.sort((a, b) => a.d - b.d);
+  let budget = 4, missing = false;
+  const ready = [];
+  for (const cl of cells) {
+    const key = lvl + ':' + cl.ix + ':' + cl.iy;
+    let t = tileCache.get(key);
+    if (!t && budget > 0) { t = renderTile(key, lvl, cl.ix, cl.iy); budget--; }
+    if (t) { t.use = ++tileUse; ready.push(t); } else missing = true;
+  }
+  // tiles still missing (a new zoom level): draw the ground directly this frame, the rest follow in the next frames
+  if (missing) drawGround(v, q);
+  else { ctx.fillStyle = city.real ? COLORS.ground : COLORS.grass2; ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0); }
+  // each tile is pasted a fraction of a pixel larger (from its padding, at the same scale) so no seams show
+  const e = 0.6 / (cam.z * dpr), se = e * lvl;
+  for (const t of ready) ctx.drawImage(t.c, TILE_PAD - se, TILE_PAD - se, TILE_PX + 2 * se, TILE_PX + 2 * se, t.x0 - e, t.y0 - e, t.ws + 2 * e, t.ws + 2 * e);
+  // spare time: prepare one tile just outside the view in the direction of travel
+  if (!missing && budget >= 3) {
+    const c = player.mode === 'car' ? player.car : null, ax = cam.x + (c ? c.vx : 0) * 1.5, ay = cam.y + (c ? c.vy : 0) * 1.5;
+    let best = null;
+    for (let iy = Math.floor((ay - reach - ws) / ws); iy <= Math.floor((ay + reach + ws) / ws); iy++) for (let ix = Math.floor((ax - reach - ws) / ws); ix <= Math.floor((ax + reach + ws) / ws); ix++) {
+      if (tileCache.has(lvl + ':' + ix + ':' + iy)) continue;
+      const d = Math.hypot((ix + 0.5) * ws - ax, (iy + 0.5) * ws - ay);
+      if (d < reach + ws && (!best || d < best.d)) best = { ix, iy, d };
+    }
+    if (best && tileCache.size < TILE_MAX - 4) renderTile(lvl + ':' + best.ix + ':' + best.iy, lvl, best.ix, best.iy);
+  }
 }
 function drawBuilding(b) {
   const s = HC / (HC - b.h), cx = cam.x, cy = cam.y, P = b.pts, n = P.length;
@@ -3313,11 +3425,17 @@ function drawBuilding(b) {
     upright(rx, ry, () => { ctx.fillStyle = 'rgba(18,20,24,.6)'; ctx.fillText(b.name.toUpperCase(), 1.5, 1.5); ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fillText(b.name.toUpperCase(), 0, 0); });
   }
 }
-function drawTree(t) {
-  const s = HC / (HC - 60), x = cam.x + (t.x - cam.x) * s, y = cam.y + (t.y - cam.y) * s;
-  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.arc(t.x + 6, t.y + 6, t.r, 0, 7); ctx.fill();
-  ctx.fillStyle = `hsl(${t.col[0]},${t.col[1]}%,${t.col[2]}%)`; ctx.beginPath(); ctx.arc(x, y, t.r, 0, 7); ctx.fill();
-  ctx.fillStyle = `hsl(${t.col[0]},${t.col[1]}%,${t.col[2] + 8}%)`; ctx.beginPath(); ctx.arc(x - t.r * 0.3, y - t.r * 0.3, t.r * 0.5, 0, 7); ctx.fill();
+function drawTrees(list) {
+  const s = HC / (HC - 60), low = lowGfx();
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath();
+  for (const t of list) { ctx.moveTo(t.x + 6 + t.r, t.y + 6); ctx.arc(t.x + 6, t.y + 6, t.r, 0, 7); }
+  ctx.fill();
+  for (const t of list) {
+    if (!t.c1) { t.c1 = `hsl(${t.col[0]},${t.col[1]}%,${t.col[2]}%)`; t.c2 = `hsl(${t.col[0]},${t.col[1]}%,${t.col[2] + 8}%)`; }
+    const x = cam.x + (t.x - cam.x) * s, y = cam.y + (t.y - cam.y) * s;
+    ctx.fillStyle = t.c1; ctx.beginPath(); ctx.arc(x, y, t.r, 0, 7); ctx.fill();
+    if (!low) { ctx.fillStyle = t.c2; ctx.beginPath(); ctx.arc(x - t.r * 0.3, y - t.r * 0.3, t.r * 0.5, 0, 7); ctx.fill(); }
+  }
 }
 function rr2(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function drawTank(c) {
@@ -3465,7 +3583,8 @@ function draw() {
   const RV = Math.hypot(Math.max(cam.cx, vw - cam.cx), Math.max(cam.cy, vh - cam.cy)) / z + 40;
   const v = { x0: cam.x - RV, y0: cam.y - RV, x1: cam.x + RV, y1: cam.y + RV };
   const q = queryDraw(v);
-  drawGround(v, q);
+  drawGroundTiles(v, q, RV);
+  drawSkids(v);
   drawAuxLines();
   drawRentBays(v);
   drawRouteLine();
@@ -3516,7 +3635,7 @@ function draw() {
     ctx.translate(c.x, c.y); ctx.rotate(c.a); ctx.drawImage(CONE_TINT, c.t.L / 2 - 4, -c.t.W * 3, 300, c.t.W * 6); ctx.restore();
   }
   // roofs and trees above the street
-  for (const t of q.t) drawTree(t);
+  drawTrees(q.t);
   q.b.sort((a, b) => a.h - b.h);
   for (const b of q.b) drawBuilding(b);
   // particles
@@ -3885,24 +4004,27 @@ function drawSpeedo() {
 }
 
 // ---------- street names in the driving view ----------
+// text widths are cached; a web font finishing loading changes them
+let fontV = 0;
+try { document.fonts.addEventListener('loadingdone', () => { fontV++; }); } catch (e) { /* no font loading API */ }
 function drawStreetNames(q, v) {
   const z = cam.z; if (z < 0.22) return;
-  const fs = 13 / z;
-  ctx.font = `600 ${fs}px "Barlow Semi Condensed", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // the text is set at a fixed 13 px and scaled with the view: a font size that changed with every zoom step made the browser re-render the glyphs each frame
+  ctx.font = '600 13px "Barlow Semi Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const placed = [];
   for (const r of q.r) {
     if (!r.name || r.cls > 6) continue;
-    let bk = 1, bl = 0;
-    for (let k = 1; k < r.pts.length; k++) { const l = Math.hypot(r.pts[k].x - r.pts[k - 1].x, r.pts[k].y - r.pts[k - 1].y); if (l > bl) { bl = l; bk = k; } }
-    const tw = ctx.measureText(r.name).width;
+    if (r._bk == null) { let bk = 1, bl = 0; for (let k = 1; k < r.pts.length; k++) { const l = Math.hypot(r.pts[k].x - r.pts[k - 1].x, r.pts[k].y - r.pts[k - 1].y); if (l > bl) { bl = l; bk = k; } } r._bk = bk; r._bl = bl; }
+    if (r._twv !== fontV) { r._tw = ctx.measureText(r.name).width; r._twv = fontV; }
+    const bk = r._bk, bl = r._bl, tw0 = r._tw, tw = tw0 / z;
     if (bl < tw + 40 / z) continue;
     const a = r.pts[bk - 1], b = r.pts[bk], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
     if (Math.hypot(mx - cam.x, my - cam.y) > (v.x1 - v.x0) / 2) continue;
     if (placed.some(p => Math.hypot(p.x - mx, p.y - my) < (p.n === r.name ? 700 : 90 / z))) continue;
     placed.push({ n: r.name, x: mx, y: my });
     let ang = Math.atan2(b.y - a.y, b.x - a.x); if (Math.cos(ang + cam.rot) < 0) ang += Math.PI;
-    ctx.save(); ctx.translate(mx, my); ctx.rotate(ang);
-    ctx.fillStyle = 'rgba(18,20,24,.62)'; ctx.fillRect(-tw / 2 - 5 / z, -fs * 0.7, tw + 10 / z, fs * 1.4);
+    ctx.save(); ctx.translate(mx, my); ctx.rotate(ang); ctx.scale(1 / z, 1 / z);
+    ctx.fillStyle = 'rgba(18,20,24,.62)'; ctx.fillRect(-tw0 / 2 - 5, -13 * 0.7, tw0 + 10, 13 * 1.4);
     ctx.fillStyle = '#f3eee2'; ctx.fillText(r.name, 0, 0);
     ctx.restore();
   }
@@ -4425,10 +4547,11 @@ function frame(now) {
   const raw = now - last, dt = Math.min(0.05, raw / 1000); last = now;
   if (SET.gfx === 'auto' && state === 'play' && raw < 200) {
     frameEma += (raw - frameEma) * 0.05;
-    if (frameEma > 21) { slowT += raw; fastT = 0; if (slowT > 1500 && gfxScale > 0.55) { gfxScale = Math.max(0.55, gfxScale * 0.85); resize(); slowT = 0; frameEma = 16.7; } }
-    else { slowT = 0; if (frameEma < 17.5 && gfxScale < 1 && upTries < 3) { fastT += raw; if (fastT > 8000) { gfxScale = Math.min(1, gfxScale / 0.85); upTries++; resize(); fastT = 0; } } }
+    if (frameEma > 21) { slowT += raw; fastT = 0; if (slowT > 1500 && !lowDetail) { lowDetail = true; slowT = 0; frameEma = 16.7; } }
+    else { slowT = 0; if (frameEma < 17.5 && lowDetail && upTries < 3) { fastT += raw; if (fastT > 8000) { lowDetail = false; upTries++; fastT = 0; } } }
   }
   if (!city || !mapC || !player.car) return;          // still loading
+  tileProbeStep(raw);
   try {
     if (state === 'play') { step(dt / 2); step(dt / 2); }
     if (state === 'map') { if (MV.dirty) renderBigMap(); } else draw();
