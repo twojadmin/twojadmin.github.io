@@ -63,7 +63,6 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .mmw{position:absolute;top:12px;right:16px;width:var(--mm);height:var(--mm);pointer-events:auto;cursor:pointer;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#1d4f66}
 .mmw canvas{width:100%;height:100%;display:block}
 .mmw small{position:absolute;right:4px;bottom:2px;font-size:11px;color:var(--paper);text-shadow:0 1px 2px #000}
-.osm{position:absolute;right:6px;bottom:calc(2px + env(safe-area-inset-bottom,0px));font-size:10px;line-height:1;color:var(--paper);opacity:.6;text-shadow:0 1px 2px #000}
 .dash{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 12px;white-space:nowrap;max-width:calc(100% - 32px);box-sizing:border-box}
 .dash .spd{font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums;color:var(--paper);min-width:3.2ch;text-align:right}
 .dash .spd small{font-family:var(--ui);font-size:12px;color:var(--dim);margin-left:3px}
@@ -185,7 +184,6 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
       </div>
     </div>
     <div class="mmw" id="mmw" title="Pokaż mapę miasta"><canvas id="mm" width="224" height="224"></canvas><small id="mmLbl">© OpenStreetMap</small></div>
-    <small class="osm" id="osmLbl">© OpenStreetMap</small>
     <div class="tools"><button class="ghost" id="pauseBtn" type="button">Pauza</button><button class="ghost" id="muteBtn" type="button">Dźwięk</button><button class="ghost" id="setBtn" type="button">Ustawienia</button><button class="ghost" id="autoBtn" type="button" title="Autopilot (O): jedzie sam do celu">Autopilot</button></div>
     <button class="ghost fuelbtn" id="fuelBtn" type="button" hidden>Tankuj (T)</button>
     <div class="dash" id="dash">
@@ -1491,7 +1489,6 @@ function newWorld(kind, sd) {
   cityKind = kind;
   if (kind === 'random') { seed = sd || seed; city = gridWorld(genCity(seed)); } else city = CITIES.find(c => c.id === kind).load();
   prepTransit(city); transitVeh.clear(); transitT = 0; player.roof = null;
-  $('osmLbl').hidden = !city.real;   // map credit in the corner of the driving view; a generated town has no OSM data
   try { localStorage.setItem('kpm-seed', String(seed)); } catch (e) { /* storage unavailable */ }
   cars = []; peds = []; parts = []; skids = []; pops = []; offers = []; job = null; routeCache = null; route = null; auxRoutes = [];
   if (city.parkSpots) for (const s of city.parkSpots) if (s.take) { const c = makeCar(randType(mulberry32(Math.round(s.x * 7 + s.y))), s.x, s.y, s.a); c.keep = true; cars.push(c); }
@@ -2041,7 +2038,7 @@ function sigStopDist(c, cur) {
 }
 
 // ---------- night ----------
-// darkness follows the real sunset and sunrise in the current city, or a fixed choice in the settings
+// darkness follows the real sunset and sunrise in Poznań, or a fixed choice in the settings
 let nightK = 0, maskC = null, maskG = null;
 function sunDarkness() {
   const d = new Date(), doy = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
@@ -3190,9 +3187,11 @@ function refuelClose(msg) {
   document.activeElement && document.activeElement.blur && document.activeElement.blur();
 }
 
+// ---------- cities ----------
+// To add a city: embed its data as <script id="<id>-meta"> and <script id="<id>-bin"> (same format as Poznań),
+// then flip `ready` on its entry below. Everything else (traffic, jobs, map, fuel) works from the data.
 // ---------- cities: listed in data/cities.json, each with its own data files and legal notes ----------
-// Adding a city = data/<id>.json + data/<id>.bin + an entry in data/cities.json. This file does not change.
-// data/<id>.b64.txt is only a fallback for hosts that cannot serve .bin (see fetchCityData).
+// Adding a city = data/<id>.json + data/<id>.bin (or .b64.txt) + an entry in data/cities.json. This file does not change.
 let CITIES = [], CITY_DEFAULT = '', indexErr = false;
 async function loadCityIndex() {
   const res = await fetch('data/cities.json', { cache: 'no-cache' });
@@ -3251,7 +3250,7 @@ function applyStatic() {
 }
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
 function noticeSeen() { try { return localStorage.getItem('kpm-notice') === '1'; } catch (e) { return false; } }
-// city data is downloaded and prepared only when chosen
+// cities other than Poznań are downloaded and prepared only when chosen
 let cityBusy = false;
 async function ensureCity(id) {
   if (WORLDS[id] && WORLDS[id].mapC) return true;
@@ -3348,7 +3347,7 @@ const LEGAL_PL = () => `
   <p>Ulice, budynki, wody i nazwy miejsc pochodzą z <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © autorzy OpenStreetMap, na licencji <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. Dane zostały uproszczone i mogą być nieaktualne. Uproszczone bazy zapisane w tej stronie i w plikach danych miast (folder <code>data</code>) są bazami pochodnymi OSM i są udostępniane na tej samej licencji ODbL; można je pobrać razem ze stroną.</p>
 ${cityLegal()}  <h2>Nazwy i znaki towarowe</h2>
   <p>Gra nie pokazuje żadnych firm. Sklepy, centra handlowe, restauracje, hotele, apteki, prywatne gabinety, kluby i siłownie nie są zaznaczone na mapie. Warsztaty i stacje paliw w grze są fikcyjne: stoją w wybranych przez grę punktach przy głównych ulicach, a nie w miejscach prawdziwych warsztatów i stacji, więc ich ceny i usługi nie dotyczą żadnej istniejącej firmy. Gra nie wyświetla nazw budynków ani nazw jednostek wojskowych.</p>
-  <p>Zaznaczone są tylko miejsca publiczne (szkoły, przedszkola, uczelnie, szpitale, komisariaty, straż pożarna, biblioteki, muzea, teatry, miejskie obiekty sportowe, miejsca kultu), zawsze pod nazwą ogólną. Centra handlowe występujące jako cele kursów mają opisy ogólne (tylko z nazwą dzielnicy lub ulicy), a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi. Nazwy ulic, dzielnic i znanych miejsc publicznych (np. rynków i dworców) służą wyłącznie do opisania położenia. Gra nie jest powiązana z władzami żadnego miasta, żadną firmą ani instytucją i nie jest przez nie sponsorowana ani zatwierdzona. Jeśli uważasz, że jakieś oznaczenie narusza Twoje prawa, napisz do nas, a usuniemy je.</p>
+  <p>Zaznaczone są tylko miejsca publiczne (szkoły, przedszkola, uczelnie, szpitale, komisariaty, straż pożarna, biblioteki, muzea, teatry, miejskie obiekty sportowe, miejsca kultu), zawsze pod nazwą ogólną. Centra handlowe występujące jako cele kursów mają opisy ogólne (np. „Centrum handlowe na Ratajach”, „Centrum handlowe przy Fordońskiej”), a nazwy firm w kilku nazwach przystanków zastąpiono słowami ogólnymi. Nazwy ulic, dzielnic i znanych miejsc publicznych (np. Stary Rynek, Dworzec Poznań Główny) służą wyłącznie do opisania położenia. Gra nie jest powiązana z władzami żadnego miasta, żadną firmą ani instytucją i nie jest przez nie sponsorowana ani zatwierdzona. Jeśli uważasz, że jakieś oznaczenie narusza Twoje prawa, napisz do nas, a usuniemy je.</p>
   <h2>Ceny paliw i spalanie</h2>
   <p>Ceny są orientacyjne: średnie ceny maksymalne ogłoszone na ${PRICE_DATE} (Pb95 ${money2(FUEL.pb95.p)} zł/l, Pb98 ${money2(FUEL.pb98.p)} zł/l, ON ${money2(FUEL.on.p)} zł/l, LPG ${money2(FUEL.lpg.p)} zł/l). Stacje w grze są fikcyjne (nie stoją w miejscach prawdziwych stacji) i liczą 0–4% mniej. Spalanie jest przybliżonym spalaniem miejskim dla danego typu pojazdu. Nie jest to oferta handlowa ani porada.</p>
   <h2 id="legal-privacy">Prywatność i ciasteczka</h2>
@@ -3377,7 +3376,7 @@ const LEGAL_EN = () => `
   <p>Streets, buildings, water and place names come from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> © OpenStreetMap contributors, under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">Open Database License (ODbL) 1.0</a>. The data is simplified and may be out of date. The simplified databases embedded in this page and in the city data files (the <code>data</code> folder) are derivatives of OSM and are made available under the same ODbL licence; they can be downloaded together with the page.</p>
 ${cityLegal()}  <h2>Names and trademarks</h2>
   <p>The game shows no businesses. Shops, shopping centres, restaurants, hotels, pharmacies, private practices, clubs and gyms are not marked on the map. Garages and petrol stations in the game are fictional: they stand at points chosen by the game along main streets, not where real garages and stations are, so their prices and services do not relate to any real business. The game shows no building names and no names of military units.</p>
-  <p>Only public places are marked (schools, kindergartens, universities, hospitals, police and fire stations, libraries, museums, theatres, municipal sports grounds, places of worship), always under a generic label. Shopping centres used as trip destinations have generic descriptions (only with the district or street name), and company names in a few stop names were replaced with generic words. Street, district and well-known public place names (e.g. market squares and stations) are used only to describe locations. The game is not affiliated with, sponsored or endorsed by any city authority or any company or institution. If you believe a marking infringes your rights, write to us and we will remove it.</p>
+  <p>Only public places are marked (schools, kindergartens, universities, hospitals, police and fire stations, libraries, museums, theatres, municipal sports grounds, places of worship), always under a generic label. Shopping centres used as trip destinations have generic descriptions (e.g. "Centrum handlowe na Ratajach"), and company names in a few stop names were replaced with generic words. Street, district and well-known public place names (e.g. Stary Rynek, Poznań Główny station) are used only to describe locations. The game is not affiliated with, sponsored or endorsed by any city authority or any company or institution. If you believe a marking infringes your rights, write to us and we will remove it.</p>
   <h2>Fuel prices and consumption</h2>
   <p>Prices are approximate: Polish average maximum pump prices announced for ${PRICE_DATE} (Petrol 95 PLN ${money2(FUEL.pb95.p)}/l, Petrol 98 PLN ${money2(FUEL.pb98.p)}/l, Diesel PLN ${money2(FUEL.on.p)}/l, LPG PLN ${money2(FUEL.lpg.p)}/l). Stations in the game are fictional (not located where real stations are) and charge 0–4% less. Consumption is an approximate city figure for each vehicle type. This is not a commercial offer or advice.</p>
   <h2 id="legal-privacy">Privacy and cookies</h2>
