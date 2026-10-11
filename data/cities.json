@@ -1,5 +1,5 @@
 {
- "_info": "Spis miast gry Kurs przez Miasto. Każde miasto: data/<id>.json + data/<id>.bin (lub .b64.txt). Dodanie miasta = nowe pliki danych + wpis tutaj; plik gry się nie zmienia.",
+ "_info": "Spis miast gry Kurs przez Miasto. Każde miasto: data/<id>.json + data/<id>.bin (data/<id>.b64.txt jest potrzebny tylko na serwerach, które nie udostępniają .bin). Dodanie miasta = nowe pliki danych + wpis tutaj; plik gry się nie zmienia.",
  "default": "poznan",
  "cities": [
   {
