@@ -187,22 +187,27 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
 .gauge i{display:block;height:100%;background:#e6c23a}
 @media (pointer:coarse){.fuelbtn{display:none}}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
-/* small screens: the buttons under the minimap shrink to one row of icons (the label stays for screen readers); on touch phones
-   the rental navigation moves to a see-through tile next to Auto */
-@media (max-width:600px){
-  .tools{flex-wrap:nowrap;gap:4px;max-width:none;right:10px}
-  .mmw{right:10px}
-  .tools .ghost{font-size:0;width:30px;height:30px;padding:0;display:grid;place-items:center;line-height:1}
-  .tools .ghost::before{font-size:14px;font-weight:700}
-  #pauseBtn::before{content:'\275A\275A';font-size:9px;letter-spacing:1px}
-  #muteBtn::before{content:'\266A'}
-  #muteBtn.off::before{text-decoration:line-through;opacity:.6}
-  #setBtn::before{content:'\2699\FE0E';font-size:16px}
-  #autoBtn::before{content:'A'}
-  #rentBtn::before{content:'W'}
-  #mapBtn::before{content:'\25A6';font-size:16px}
-}
+/* the buttons under the minimap are one row of small icons on every screen (the label stays for screen readers and the tooltip);
+   on touch phones the rental navigation moves to a see-through tile next to Auto */
+.tools{flex-wrap:nowrap;gap:4px;max-width:none}
+@media (max-width:600px){.tools,.mmw{right:10px}}
+.tools .ghost{font-size:0;width:30px;height:30px;padding:0;display:grid;place-items:center;line-height:1}
+.tools .ghost::before{font-size:14px;font-weight:700}
+#pauseBtn::before{content:'\275A\275A';font-size:9px;letter-spacing:1px}
+#muteBtn::before{content:'\266A'}
+#muteBtn.off::before{text-decoration:line-through;opacity:.6}
+#setBtn::before{content:'\2699\FE0E';font-size:16px}
+#autoBtn::before{content:'A'}
+#rentBtn::before{content:'W'}
+#mapBtn::before{content:'\25A6';font-size:16px}
 @media (max-width:600px) and (pointer:coarse){#rentBtn{display:none}}
+@media (pointer:coarse) and (max-height:500px){
+  .pads .col{grid-template-columns:repeat(2,56px);gap:8px}
+  .pads .col button{width:56px}
+  .pads .small,.pads .act{height:38px;font-size:12px}
+  .pads .col .brake{grid-column:span 2;width:auto;height:56px}
+  .pads .joy{width:112px;height:112px}
+}
 .billmini{display:none}
 @media (max-width:600px){
   .bill:not(.ledger){display:none}
@@ -4570,6 +4575,7 @@ function applyStatic() {
     ['rentPad', 'aria-label', 'Nawigacja do aut na wynajem (R)', 'Navigation to rental cars (R)'],
     ['pauseBtn', 'title', 'Pauza (P)', 'Pause (P)'],
     ['setBtn', 'title', 'Ustawienia', 'Settings'],
+    ['muteBtn', 'title', 'Dźwięk wł. / wył.', 'Sound on / off'],
     ['limPad', 'aria-label', 'Ogranicznik prędkości (L)', 'Speed limiter (L)'],
     ['costBtn', 'title', 'Rachunek kosztów: wynajem, ubezpieczenie, naprawy (K)', 'Cost sheet: rentals, insurance, repairs (K)'],
   ];
