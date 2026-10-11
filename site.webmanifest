@@ -1,7 +1,7 @@
 {
   "name": "Kurs przez Miasto",
   "short_name": "Kurs",
-  "description": "Darmowa gra taksówkarska w przeglądarce po prawdziwym Poznaniu z okolicami. Wozisz pasażerów, tankujesz na stacjach, a tramwaje i autobusy jeżdżą według rozkładu ZTM. Wersja polska i angielska.",
+  "description": "Darmowa gra taksówkarska w przeglądarce po prawdziwym Poznaniu z okolicami, Bydgoszczy i innymi miastami. Wozisz pasażerów, tankujesz na stacjach, a tramwaje i autobusy jeżdżą według rozkładu. Wersja polska i angielska.",
   "lang": "pl",
   "start_url": "/",
   "scope": "/",
