@@ -87,6 +87,7 @@ kbd{font-family:var(--ui);font-size:12px;border:1px solid var(--line);border-bot
 .toast{position:absolute;left:50%;top:34%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font-size:16px;font-weight:600;text-align:center;max-width:calc(100% - 32px);box-sizing:border-box;transition:opacity .25s}
 .toast.hide{opacity:0}
 .bill{position:absolute;left:50%;top:42%;transform:translateX(-50%);width:340px;max-width:calc(100% - 32px);box-sizing:border-box;background:var(--panel);border:1px solid #e8833a;border-radius:6px;padding:10px 14px;font-size:14px;line-height:1.35;pointer-events:auto;cursor:pointer}
+.perf{position:absolute;left:8px;top:40%;margin:0;max-width:min(430px, calc(100% - 16px));box-sizing:border-box;background:rgba(18,20,24,.85);color:#f3eee2;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font:12px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;pointer-events:none}
 .bill h3{margin:0 0 6px;font-size:16px;color:#ffb27a}
 .bill .brow{display:flex;justify-content:space-between;gap:12px}
 .bill .brow b{white-space:nowrap}
@@ -122,7 +123,6 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
   .dash .st span{white-space:nowrap}
   .dash .hp{width:100%;max-width:70px}
 }
-@media (max-width:600px){.tools{flex-direction:column;align-items:stretch;width:var(--mm);max-width:none}.tools .ghost{padding:5px 6px;font-size:12px}}
 @media (max-width:420px){.pads button{width:58px;height:58px}.pads .brake{height:84px}.pads .joy{width:116px;height:116px}.pads .small,.pads .act{height:40px}}
 .ov{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,12,15,.66);padding-inline:16px;padding-block:16px;box-sizing:border-box;pointer-events:auto}
 .card{width:100%;max-width:560px;max-height:100%;overflow:auto;box-sizing:border-box;background:#1a1d22;border:1px solid var(--line);border-top:6px solid var(--cab);border-radius:8px;padding:20px 22px;display:grid;gap:12px}
@@ -186,6 +186,24 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
 .gauge i{display:block;height:100%;background:#e6c23a}
 @media (pointer:coarse){.fuelbtn{display:none}}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+/* small screens: the buttons under the minimap shrink to one row of icons (the label stays for screen readers); on touch phones
+   the rental navigation moves to a see-through tile next to Auto */
+@media (max-width:600px){
+  .tools{flex-wrap:nowrap;gap:4px;max-width:none}
+  .tools .ghost{font-size:0;width:30px;height:30px;padding:0;display:grid;place-items:center;line-height:1}
+  .tools .ghost::before{font-size:14px;font-weight:700}
+  #pauseBtn::before{content:'\275A\275A';font-size:9px;letter-spacing:1px}
+  #muteBtn::before{content:'\266A'}
+  #muteBtn.off::before{text-decoration:line-through;opacity:.6}
+  #setBtn::before{content:'\2699\FE0E';font-size:16px}
+  #autoBtn::before{content:'A'}
+  #rentBtn::before{content:'W'}
+  #mapBtn::before{content:'\25A6';font-size:16px}
+}
+@media (max-width:600px) and (pointer:coarse){#rentBtn{display:none}}
+.pads .rent{background:rgba(176,124,255,.14);border-color:rgba(176,124,255,.55);color:#e5d6ff}
+.pads .rent.on{background:rgba(176,124,255,.5);color:#fff}
+@media (min-width:601px){.pads .rent{display:none}}
 </style>
 
 <div class="app" id="app">
@@ -214,13 +232,14 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
     <div class="keys" id="keys"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>M</kbd> mapa · <kbd>H</kbd> klakson · <kbd>O</kbd> autopilot</div>
     <div class="toast hide" id="toast"></div>
     <div class="bill" id="bill" hidden></div>
+    <pre class="perf" id="perf" hidden></pre>
     <div class="bill ledger" id="ledger" hidden></div>
   </div>
   <div class="pads" id="pads">
     <div class="pg"><div class="joy" id="joy" aria-label="Joystick: kierunek jazdy"><div class="knob" id="knob"></div></div></div>
     <div class="pg">
       <div class="col"><button class="act" data-act="enter" id="enterBtn" type="button">Wysiądź</button><button class="small" data-k="hb" id="hbBtn" type="button">Ręczny</button><button class="small" data-act="horn" id="hornPad" type="button">Klakson</button><button class="act" data-act="fuel" id="fuelPad" type="button" hidden>Tankuj</button></div>
-      <div class="col"><button class="small" data-act="auto" id="autoPad" type="button">Auto</button><button class="small" data-act="limit" id="limPad" type="button">Limit</button>
+      <div class="col"><button class="small rent" data-act="rent" id="rentPad" type="button">Wynajem</button><button class="small" data-act="auto" id="autoPad" type="button">Auto</button><button class="small" data-act="limit" id="limPad" type="button">Limit</button>
       <button class="brake" data-k="brake" id="brakePad" type="button" aria-label="Hamulec i wsteczny">Hamuj</button></div>
     </div>
   </div>
@@ -247,6 +266,7 @@ const L = (pl, en) => (LANG === 'en' ? en : pl);
 const zl = v => (LANG === 'en' ? 'PLN ' + v : v + ' zł');
 const cvs = $('view');
 let ctx = cvs.getContext('2d');   // swapped for a tile's context while ground tiles are drawn
+const mainCtx = ctx;
 const mmC = $('mm'), mctx = mmC.getContext('2d');
 
 // ---------- random ----------
@@ -1242,7 +1262,7 @@ const AUX_COL = { fuel: '#3b8bff', repair: '#e8833a', rent: '#b07cff' }, AUX_RGB
 let rentNav = false;
 function setRentNav(on) {
   rentNav = on; routeT = 0;
-  $('rentBtn').classList.toggle('on', on); $('rentBtn').textContent = on ? L('Wynajem: wł.', 'Rental: on') : L('Wynajem', 'Rental');
+  $('rentBtn').classList.toggle('on', on); $('rentPad').classList.toggle('on', on); $('rentBtn').textContent = on ? L('Wynajem: wł.', 'Rental: on') : L('Wynajem', 'Rental');
 }
 function toggleRentNav() {
   if (state !== 'play') return;
@@ -1471,7 +1491,7 @@ function aiExtend(c) {
   // prefer going straight on and staying on bigger streets
   const ws = opts.map(([e2, f]) => {
     const p = lanePt(e2, f, laneTrim(e2, f)[0], laneOff(e2)), cosA = last.dx * p.dx + last.dy * p.dy;
-    return Math.max(0.05, 0.6 + cosA) * (e2.cls <= 2 ? 1.6 : 1);
+    return Math.max(0.05, 0.6 + cosA) * (e2.cls <= 2 ? 2.2 : e2.cls >= 4 ? 0.45 : 1);
   });
   let r = Math.random() * ws.reduce((a, b) => a + b, 0), k = 0;
   while (k < ws.length - 1 && (r -= ws[k]) > 0) k++;
@@ -1492,10 +1512,14 @@ function newAI(c, e, fwd, s) {
   if (c.ai.path.length < 2) aiExtend(c);
   c.driver = 'ai';
 }
+// how likely a car appears on a street of each class (per metre): traffic keeps to the main roads, side streets stay quiet
+const TRAFFIC_CLS_W = [6, 6, 4, 2, 0.4, 0.2, 0.2, 0, 0];
 function spawnTraffic(px, py, minD, maxD, type) {
-  const cand = edgesAround(px, py, maxD).filter(e => e.len > 60);
+  const cand = edgesAround(px, py, maxD).filter(e => e.len > 60 && (TRAFFIC_CLS_W[e.cls] || 0) > 0);
+  const wsum = cand.reduce((a, e) => a + e.len * TRAFFIC_CLS_W[e.cls], 0);
+  const pickE = () => { let r = Math.random() * wsum; for (const e of cand) if ((r -= e.len * TRAFFIC_CLS_W[e.cls]) <= 0) return e; return cand[cand.length - 1]; };
   for (let tries = 0; tries < 20 && cand.length; tries++) {
-    const e = mpick(cand), fwd = e.ow ? true : Math.random() < 0.5, [s0, s1] = laneTrim(e, fwd);
+    const e = pickE(), fwd = e.ow ? true : Math.random() < 0.5, [s0, s1] = laneTrim(e, fwd);
     if (s1 - s0 < 20) continue;
     const s = mr(s0, s1), p = lanePt(e, fwd, s, laneOff(e)), d = Math.hypot(p.x - px, p.y - py);
     if (d < minD || d > maxD) continue;
@@ -1526,30 +1550,52 @@ function spawnParked(px, py, minD, maxD) {
   return null;
 }
 // rental cars: bays painted along the kerb all over town, in the colour of a (fictional) rental company
+// long kerbside bays ("envelopes") of 3–10 places each, in a company's colour; each place is one rental car.
+// One bay every 400 m (generated town) or 560 m (real city) gives about as many cars in all as single bays every 130/180 m did.
+const fleetDims = C => { let L = 0, W = 0; for (const k of C.cars) { L = Math.max(L, TYPES[k].L); W = Math.max(W, TYPES[k].W); } return { slot: L + 12, W }; };
 function rentalSpots(w) {
   if (w.rentals) return w.rentals;
-  const rnd = mulberry32(5521), out = [], minD = w.gen ? 1300 : 1800;
-  const cand = w.edges.filter(e => e.cls >= 2 && e.cls <= 4 && e.len > 160 && e.w >= 70);
+  const rnd = mulberry32(5521), slots = [], strips = [], minD = w.gen ? 4000 : 5600;
+  const cand = w.edges.filter(e => e.cls >= 2 && e.cls <= 4 && e.len > 260 && e.w >= 70);
   for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
   for (const e of cand) {
-    const s = e.len * (0.3 + rnd() * 0.4), side = rnd() < 0.5 ? 1 : -1, p = pointAt(e, s);
-    const co = Math.floor(rnd() * RENT_COS.length), C = RENT_COS[co], type = C.cars[Math.floor(rnd() * C.cars.length)], off = curbOff(e, TYPES[type]);
-    const x = p.x - p.dy * side * off, y = p.y + p.dx * side * off;
-    if (out.some(o => Math.abs(o.x - x) < minD && Math.abs(o.y - y) < minD && Math.hypot(o.x - x, o.y - y) < minD)) continue;
-    if (pointBlocked(x, y, TYPES[type].W / 2 + 1) || inWater(x, y)) continue;
-    out.push({ x, y, a: Math.atan2(p.dy, p.dx) + (side < 0 ? Math.PI : 0), co, type, car: null });
+    const co = Math.floor(rnd() * RENT_COS.length), C = RENT_COS[co], { slot, W } = fleetDims(C), fit = Math.floor((e.len - 80) / slot);
+    if (fit < 3) continue;
+    const n = Math.min(fit, 3 + Math.floor(rnd() * 8)), side = rnd() < 0.5 ? 1 : -1;
+    const s0 = 40 + (e.len - 80 - n * slot) * rnd(), off = e.w / 2 - 3 + W / 2, pts = [];
+    let ok = true;
+    for (let k = 0; k < n && ok; k++) {
+      const p = pointAt(e, s0 + (k + 0.5) * slot), x = p.x - p.dy * side * off, y = p.y + p.dx * side * off;
+      if (pointBlocked(x, y, W / 2 + 1) || inWater(x, y)) ok = false;
+      pts.push({ x, y, a: Math.atan2(p.dy, p.dx) + (side < 0 ? Math.PI : 0) });
+    }
+    if (!ok) continue;
+    const f = pts[0], l = pts[n - 1], cx = (f.x + l.x) / 2, cy = (f.y + l.y) / 2;
+    if (Math.abs(wrapA(f.a - l.a)) > 0.15) continue;   // straight stretches only
+    if (strips.some(o => Math.abs(o.x - cx) < minD && Math.abs(o.y - cy) < minD && Math.hypot(o.x - cx, o.y - cy) < minD)) continue;
+    const st = { x: cx, y: cy, a: Math.atan2(l.y - f.y, l.x - f.x), len: n * slot + 8, wid: W + 12, co, n, slots: [] };
+    for (const p of pts) { const r = { x: p.x, y: p.y, a: p.a, co, type: C.cars[Math.floor(rnd() * C.cars.length)], car: null, strip: st }; st.slots.push(r); slots.push(r); }
+    strips.push(st);
   }
-  return (w.rentals = out);
+  // grids, so each frame only looks at the bays near the view (a big city has hundreds of bays and thousands of places)
+  w.rentGrid = new Map(); w.stripGrid = new Map();
+  for (const r of slots) gAdd(w.rentGrid, 1024, { x0: r.x, y0: r.y, x1: r.x, y1: r.y }, r);
+  for (const st of strips) gAdd(w.stripGrid, 1024, { x0: st.x - st.len / 2, y0: st.y - st.len / 2, x1: st.x + st.len / 2, y1: st.y + st.len / 2 }, st);
+  w.rentStrips = strips;
+  return (w.rentals = slots);
 }
+const stripNear = (x0, y0, x1, y1) => (city.stripGrid ? gQuery(city.stripGrid, 1024, x0, y0, x1, y1) : []);
 // a free rental car waits in every bay near the player; bays far away are emptied again
 let rentT = 0;
 function updateRentals(dt, all) {
   rentT -= dt; if (rentT > 0 && !all) return; rentT = 0.5;
   if (all) fillRentals(true); else later('rent', () => fillRentals(false));
 }
+const rentNear = (x0, y0, x1, y1) => (city.rentGrid ? gQuery(city.rentGrid, 1024, x0, y0, x1, y1) : []);
+const rentLive = new Set();   // bays with a car standing in them
 function fillRentals(all) {
   const px = player.x, py = player.y;
-  for (const r of city.rentals || []) {
+  for (const r of new Set([...rentLive, ...rentNear(px - 1500, py - 1500, px + 1500, py + 1500)])) {
     const d = Math.hypot(r.x - px, r.y - py);
     if (r.car && (r.car.gone || Math.hypot(r.car.x - r.x, r.car.y - r.y) > 80)) { if (!r.car.owned) r.car.keep = false; r.car = null; }   // rented, towed or pushed out of the bay
     if (r.car && d > 1900 && r.car.rental && !r.car.owned) { r.car.gone = true; r.car = null; continue; }
@@ -1557,6 +1603,7 @@ function fillRentals(all) {
       const C = RENT_COS[r.co], c = makeCar(r.type, r.x, r.y, r.a);
       c.col = C.col; c.rental = C; c.parked = true; c.keep = true; r.car = c; cars.push(c);
     }
+    if (r.car) rentLive.add(r); else rentLive.delete(r);
   }
 }
 function nearestRental(x, y) {
@@ -2151,6 +2198,7 @@ pads.addEventListener('pointerdown', e => {
   if (b.dataset.act === 'fuel') { refuelOpen(); return; }
   if (b.dataset.act === 'auto') { toggleAuto(); return; }
   if (b.dataset.act === 'limit') { toggleLimit(); return; }
+  if (b.dataset.act === 'rent') { toggleRentNav(); return; }
   touch.set(e.pointerId, b.dataset.k); padUpdate();
 });
 pads.addEventListener('pointermove', e => { if (!touch.has(e.pointerId)) return; const b = padTarget(e); if (b && b.dataset.k) { touch.set(e.pointerId, b.dataset.k); padUpdate(); } });
@@ -2282,13 +2330,15 @@ function newWorld(kind, sd) {
   taxi.driver = 'player'; taxi.keep = true; taxi.owned = true; cars.push(taxi); initFuel(taxi, 0.4);
   player.mode = 'car'; player.car = taxi; player.x = taxi.x; player.y = taxi.y;
   cam.x = taxi.x; cam.y = taxi.y;
-  for (let k = 0; k < 24; k++) spawnTraffic(taxi.x, taxi.y, 120, 1100);
-  for (let k = 0; k < 30; k++) spawnPed(taxi.x, taxi.y, 0, 1000);
+  for (let k = 0; k < 12; k++) spawnTraffic(taxi.x, taxi.y, 120, 1100);
+  if (SET.peds) for (let k = 0; k < 30; k++) spawnPed(taxi.x, taxi.y, 0, 1000);
   if (city.real || city.gen) for (let k = 0; k < 26; k++) spawnParked(taxi.x, taxi.y, 90, 1200);
   spawnMilitary(); spawnHelis(); setupPlanes();
   clearTiles(); startTileProbe(); workQ.clear();
+  rentLive.clear();
   towJob = null; fireJob = null; billT = 0; $('bill').hidden = true; ledger = []; claims = []; $('ledger').hidden = true; setRentNav(false);
-  rentalSpots(city); updateRentals(0, true);
+  rentalSpots(city); for (const r of city.rentals) r.car = null;   // cars of a previous game in this city are gone
+  updateRentals(0, true);
   money = START_MONEY; trips = 0; T = 0; wanted = 0; fines = 0; reasons = []; bustT = 0; escapeT = 0;
   buildMinimap();
 }
@@ -2342,8 +2392,9 @@ function nearbyInfo() {
 }
 
 // ---------- settings ----------
-const SET = { gfx: 'auto', preset: 'normal', dmg: 1, dead: 0.18, curve: 2, joy: 0.45, gas: 0.55, turnSlow: 0.5, reach: 1.4, vmax: 90, night: 'auto', names: true, pois: true, minimap: true, tiles: true };
+const SET = { gfx: 'auto', preset: 'normal', dmg: 1, dead: 0.18, curve: 2, joy: 0.45, gas: 0.55, turnSlow: 0.5, reach: 1.4, vmax: 90, night: 'auto', names: true, pois: true, minimap: true, tiles: 'auto', perf: false, peds: false };
 try { Object.assign(SET, JSON.parse(localStorage.getItem('kpm-set3') || '{}')); } catch (e) { /* storage unavailable */ }
+if (SET.tiles === true) SET.tiles = 'auto'; else if (SET.tiles === false) SET.tiles = 'off';   // was a checkbox
 function saveSet() { try { localStorage.setItem('kpm-set3', JSON.stringify(SET)); } catch (e) { /* storage unavailable */ } }
 const SLIDERS = () => [
   ['dead', L('Martwa strefa w środku', 'Dead zone in the middle'), 0, 0.45, 0.01, v => Math.round(v * 100) + '%'],
@@ -2376,7 +2427,11 @@ function showSettings(back) {
     <fieldset class="seg"><legend>${L('Pora dnia', 'Time of day')}</legend>
       ${[['auto', L('Jak za oknem', 'Like outside')], ['day', L('Dzień', 'Day')], ['night', L('Noc', 'Night')]].map(([v, l]) => `<label for="night_${v}"><input type="radio" name="night" id="night_${v}" value="${v}" ${SET.night === v ? 'checked' : ''}> ${l}</label>`).join('')}
     </fieldset>
-    <label class="chk" for="setTiles"><input id="setTiles" type="checkbox" ${SET.tiles ? 'checked' : ''}> ${L('Kafelki podłoża (do ok. 40 MB pamięci): na początku gry sprawdzamy, czy przyspieszają rysowanie, i używamy ich tylko wtedy. Wyłącz, jeśli telefonowi brakuje pamięci.', 'Ground tiles (up to about 40 MB of memory): at the start of a game we check whether they speed up drawing and only use them if so. Turn off if your phone runs short of memory.')}</label>
+    <label class="chk" for="setPeds"><input id="setPeds" type="checkbox" ${SET.peds ? 'checked' : ''}> ${L('Piesi na chodnikach (dla wydajniejszych urządzeń; pasażerowie są zawsze)', 'Pedestrians on the pavements (for faster devices; passengers are always there)')}</label>
+    <label class="chk" for="setPerf"><input id="setPerf" type="checkbox" ${SET.perf ? 'checked' : ''}> ${L('Licznik płynności: klatki na sekundę, najdłuższe klatki i czas rysowania poszczególnych części (do szukania przyczyn zacięć)', 'Smoothness meter: frames per second, the longest frames and the time each part takes to draw (to track down stutter)')}</label>
+    <fieldset class="seg"><legend>${L('Kafelki podłoża (ulice rysowane raz i zapamiętane, do ok. 40 MB pamięci)', 'Ground tiles (streets drawn once and kept, up to about 40 MB of memory)')}</legend>
+      ${[['auto', L('Automatycznie: gra sprawdza, czy pomagają', 'Automatic: the game checks whether they help')], ['on', L('Zawsze', 'Always')], ['off', L('Nigdy', 'Never')]].map(([v, l]) => `<label for="tiles_${v}"><input type="radio" name="tiles" id="tiles_${v}" value="${v}" ${SET.tiles === v ? 'checked' : ''}> ${l}</label>`).join('')}
+    </fieldset>
     <label class="chk" for="setMinimap"><input id="setMinimap" type="checkbox" ${SET.minimap ? 'checked' : ''}> ${L('Minimapa w rogu ekranu (bez niej gra działa odrobinę lżej, a mapę miasta otwiera przycisk Mapa albo klawisz M)', 'Minimap in the corner (the game runs slightly lighter without it; the Map button or M opens the city map)')}</label>
     <label class="chk" for="setNames"><input id="setNames" type="checkbox" ${SET.names ? 'checked' : ''}> ${L('Nazwy ulic w czasie jazdy', 'Street names while driving')}</label>
     <label class="chk" for="setPois"><input id="setPois" type="checkbox" ${SET.pois ? 'checked' : ''}> ${L('Oznaczenia sklepów, szkół, kościołów i innych miejsc', 'Icons for shops, schools, churches and other places')}</label>
@@ -2390,7 +2445,9 @@ function showSettings(back) {
   for (const el of document.querySelectorAll('input[name=gfx]')) el.onchange = e => { SET.gfx = e.target.value; lowDetail = false; upTries = 0; resize(); saveSet(); };
   for (const el of document.querySelectorAll('input[name=night]')) el.onchange = e => { SET.night = e.target.value; saveSet(); };
   $('setNames').onchange = e => { SET.names = e.target.checked; saveSet(); };
-  $('setTiles').onchange = e => { SET.tiles = e.target.checked; clearTiles(); startTileProbe(); saveSet(); };
+  $('setPeds').onchange = e => { SET.peds = e.target.checked; if (!SET.peds) peds = peds.filter(p => p.e == null); saveSet(); };
+  $('setPerf').onchange = e => { SET.perf = e.target.checked; PF.iv = []; PF.t = 0; PF.acc = {}; saveSet(); };
+  for (const el of document.querySelectorAll('input[name=tiles]')) el.onchange = e => { SET.tiles = e.target.value; clearTiles(); startTileProbe(); saveSet(); };
   $('setMinimap').onchange = e => { SET.minimap = e.target.checked; applyMinimap(); saveSet(); };
   $('setPois').onchange = e => { SET.pois = e.target.checked; saveSet(); };
   $('setDone').onclick = () => { if (back === 'menu') { state = 'menu'; showStart(); return; } state = prev === 'paused' ? 'play' : prev; if (state === 'menu') state = 'play'; $('ov').hidden = true; };
@@ -2883,7 +2940,8 @@ function drawNight(q, v) {
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(maskC, 0, 0, mw, mh, 0, 0, cvs.width, cvs.height); ctx.restore();
   // 3. coloured glow: sodium lamps, headlight beams, tail lights, signals
   ctx.save(); worldTf(ctx, dpr); ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = 0.28 * k; for (const l of lamps) ctx.drawImage(LAMP, l.x - 110, l.y - 110, 220, 220);
+  // the wide sodium halos cover a lot of pixels: left out when the game is short of time
+  if (!lowGfx()) { ctx.globalAlpha = 0.28 * k; for (const l of lamps) ctx.drawImage(LAMP, l.x - 110, l.y - 110, 220, 220); }
   ctx.globalAlpha = 0.9 * k; for (const l of lamps) ctx.drawImage(LAMP, l.x - 7, l.y - 7, 14, 14);
   ctx.globalAlpha = 0.14 * k;
   carLights(c => { const L = c.t.L; ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a); ctx.drawImage(CONE_TINT, L / 2 - 4, -c.t.W * 3.2, 300, c.t.W * 6.4); ctx.restore(); });
@@ -3037,6 +3095,26 @@ function applyLimit(c, ctl, dt) {
   if (vf > vmax + 8) { const k = Math.max(0, 1 - 0.7 * dt); c.vx *= k; c.vy *= k; }   // engine braking down to the limit
 }
 
+// ---------- smoothness meter (Settings): frame rate, long frames and where the time goes ----------
+const PF = { acc: {}, iv: [], t: 0 };
+const PF_NAMES = [['sim', 'symulacja', 'simulation'], ['ground', 'ulice', 'streets'], ['cars', 'pojazdy', 'vehicles'], ['build', 'budynki', 'buildings'], ['night', 'noc', 'night'],
+  ['labels', 'napisy', 'labels'], ['minimap', 'minimapa', 'minimap'], ['hud', 'panel', 'panel'], ['queue', 'kolejka', 'queue']];
+function pfMark(name, t0) { const t = performance.now(); if (SET.perf) PF.acc[name] = (PF.acc[name] || 0) + t - t0; return t; }
+function pfFrame(raw) {
+  const el = $('perf');
+  if (!SET.perf || state !== 'play') { if (!el.hidden) el.hidden = true; return; }
+  el.hidden = false;
+  if (raw < 1000) { PF.iv.push(raw); PF.t += raw; }
+  if (PF.t < 1000) return;
+  const n = PF.iv.length, sum = PF.iv.reduce((a, b) => a + b, 0), worst = Math.max(...PF.iv);
+  const over = ms => Math.round(PF.iv.filter(x => x > ms).length / n * 100);
+  let js = 0; const parts = PF_NAMES.map(([k, pl, en]) => { const v = (PF.acc[k] || 0) / n; js += v; return `${L(pl, en)} ${v.toFixed(1)}`; });
+  el.textContent = `${Math.round(n * 1000 / sum)} ${L('kl/s', 'fps')} · ${L('najdłuższa', 'worst')} ${Math.round(worst)} ms · >20 ms: ${over(20)}% · >34 ms: ${over(34)}%\n`
+    + parts.join(' · ') + ` ms\n${L('gra', 'game')} ${js.toFixed(1)} ms, ${L('przeglądarka', 'browser')} ${Math.max(0, sum / n - js).toFixed(1)} ms · ${L('obraz', 'canvas')} ${cvs.width}×${cvs.height} (×${dpr.toFixed(2)})`
+    + (tilesOn ? L(' · kafelki', ' · tiles') : '') + (lowDetail ? L(' · mniej szczegółów', ' · fewer details') : '');
+  PF.iv = []; PF.t = 0; PF.acc = {};
+}
+
 // ---------- work spread over frames ----------
 // Jobs that may wait a frame or two (new passengers, route refreshes, spawning traffic and people, the police route) go into a queue
 // that runs after the frame is drawn, while the frame still has time, so no single frame has to do all of them at once.
@@ -3097,7 +3175,7 @@ function step(dt) {
     if (c === player.car && player.mode === 'car' || c.svc || c.towedBy) continue;
     if (c.pol && c.pol.chase && c.driver === 'ai' && !c.wreck) { const u = policeDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
     else if (c.ai && !c.wreck) { const u = aiDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
-    else if (c.t.heli) heliPhysics(c, { thr: 0, steer: 0, hb: false }, dt);
+    else if (c.t.heli) { if (c.driver || c.air || c.vx || c.vy) heliPhysics(c, { thr: 0, steer: 0, hb: false }, dt); }   // parked ones just stand
     else if (c.vx || c.vy || c.spin) { physics(c, 0, 0, false, dt); if (Math.abs(c.vx) + Math.abs(c.vy) < 0.05 && Math.abs(c.spin) < 0.001) c.vx = c.vy = c.spin = 0; }   // parked cars at rest need no physics
   }
   // collisions only matter near the player; far-away cars just drive
@@ -3133,12 +3211,12 @@ function step(dt) {
   cullT -= dt;
   if (cullT <= 0) { cullT = 0.25; cars = cars.filter(c => !c.gone && (c.keep || c === player.car) || !c.gone && !c.keep && c !== player.car && Math.hypot(c.x - px, c.y - py) < (c.pol && c.pol.chase ? 2200 : 1500)); }
   let nTraffic = 0, nParked = 0; for (const c of cars) { if (c.ai) nTraffic++; else if (c.parked && !c.driver) nParked++; }
-  const want = Math.round((innerWidth < 700 ? 20 : 28) * (1 - 0.65 * nightK));
+  const want = Math.round((innerWidth < 700 ? 10 : 14) * (1 - 0.65 * nightK));
   if (nTraffic > want + 3) { const far = cars.find(c => c.ai && !c.keep && !(c.pol && c.pol.chase) && Math.hypot(c.x - px, c.y - py) > 1000); if (far) far.gone = true; }
   if (nTraffic < want && Math.random() < 0.3) later('traffic', () => spawnTraffic(player.x, player.y, 700, 1200));
   const pedWant = Math.round((lowGfx() ? 22 : 34) * (1 - 0.6 * nightK));
   if (peds.length > pedWant + 4) { const far = peds.find(p => Math.hypot(p.x - px, p.y - py) > 900); if (far) far.gone = true; }
-  if (peds.length < pedWant && Math.random() < 0.3) later('ped', () => spawnPed(player.x, player.y, 600, 1100));
+  if (SET.peds && peds.length < pedWant && Math.random() < 0.3) later('ped', () => spawnPed(player.x, player.y, 600, 1100));
   if ((city.real || city.gen) && Math.random() < 0.15 && nParked < (lowGfx() ? 14 : 26)) later('parked', () => spawnParked(player.x, player.y, 700, 1200));
   updateRentals(dt);
   updatePeds(dt);
@@ -3314,9 +3392,12 @@ function drawGround(v, q) {
     ctx.strokeStyle = k.split('|')[0]; ctx.lineWidth = list[0].w; ctx.beginPath(); for (const r of list) polyPath(r.pts); ctx.stroke();
   }
   ctx.lineCap = 'butt';
-  ctx.strokeStyle = COLORS.mark; ctx.lineWidth = 2; ctx.setLineDash([16, 14]); ctx.beginPath();
-  for (const r of q.r) if (r.cls <= 4 && r.cls !== 5 && !r.ow && r.w >= 64 && r.len > 60) polyPath(r.pts);
-  ctx.stroke(); ctx.setLineDash([]);
+  // dashed centre lines are slow to draw in Safari: left out when the game is short of time, or zoomed out (live drawing only; tiles keep them)
+  if (ctx !== mainCtx || !lowGfx() && cam.z > 0.45) {
+    ctx.strokeStyle = COLORS.mark; ctx.lineWidth = 2; ctx.setLineDash([16, 14]); ctx.beginPath();
+    for (const r of q.r) if (r.cls <= 4 && r.cls !== 5 && !r.ow && r.w >= 64 && r.len > 60) polyPath(r.pts);
+    ctx.stroke(); ctx.setLineDash([]);
+  }
   // runway centre line and taxiway guide lines at Ławica
   for (const r of q.r) if (r.cls === 7 || r.cls === 8) {
     ctx.beginPath(); polyPath(r.pts);
@@ -3332,10 +3413,12 @@ function drawGround(v, q) {
     ctx.strokeStyle = 'rgba(30,30,34,.8)'; ctx.lineWidth = 17; ctx.stroke();
     ctx.strokeStyle = tram ? 'rgba(88,88,92,.95)' : '#7a6a58'; ctx.lineWidth = 12; ctx.stroke();
   }
-  // building shadows, all in one path
-  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath();
-  for (const b of q.b) { const o = Math.min(30, b.h * 0.15); polyPathW(b, o, o); }
-  ctx.fill();
+  // building shadows, all in one path (skipped in live drawing when the game is short of time)
+  if (ctx !== mainCtx || !lowGfx()) {
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath();
+    for (const b of q.b) { const o = Math.min(30, b.h * 0.15); polyPathW(b, o, o); }
+    ctx.fill();
+  }
   ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
 }
 // tyre marks change all the time, so they are drawn over the (cached) ground every frame
@@ -3354,25 +3437,33 @@ function drawSkids(v) {
 const TILE_PX = 512, TILE_PAD = 8, TILE_MAX = 44;
 const tileCache = new Map(), tilePool = [];
 let tileLevel = 0, tileUse = 0;
+let tileWant = 0;
 function tileLevelFor(s) {
-  // levels are powers of sqrt(2): never coarser than the screen, and the current one is kept while it is at most 1.6x finer
-  if (tileLevel && tileLevel >= s * 0.98 && tileLevel <= s * 1.6) return tileLevel;
+  // levels are powers of sqrt(2): never coarser than the screen, and the current one is kept while it is at most 1.7x finer
+  if (tileWant) return tileWant;
+  if (tileLevel && tileLevel >= s * 0.98 && tileLevel <= s * 1.7) return tileLevel;
   return Math.pow(Math.SQRT2, Math.ceil(Math.log(s) / Math.log(Math.SQRT2) - 1e-6));
 }
 // Tiles pay off where pasting images is cheap (a graphics chip) and cost more where the browser draws in software,
-// so each game measures both: 4 s without and 4 s with tiles, and keeps tiles only if frames come out at least 10% faster.
-let tilesOn = false, tileProbe = null;
-function startTileProbe() { tilesOn = false; tileProbe = SET.tiles ? { phase: 0, t: 0, a: [], b: [] } : null; }
+// so each game measures both, alternating 3 s without and 3 s with tiles twice (so the busy first seconds of a game don't favour either),
+// and keeps tiles only if frames come out at least 15% faster on average. The start of each window is skipped; for the first tiled window
+// longer, while the visible tiles are prepared. After that every frame counts: new tiles keep being drawn as you drive.
+let tilesOn = false, tileProbe = null, tileBusy = false;
+const PROBE = [[false, 700], [true, 1500], [false, 700], [true, 700]];
+function startTileProbe() { tilesOn = SET.tiles === 'on'; tileProbe = SET.tiles === 'auto' ? { w: 0, t: 0, a: [], b: [] } : null; if (tileProbe) tilesOn = PROBE[0][0]; }
 function tileProbeStep(raw) {
   const P = tileProbe; if (!P || state !== 'play' || raw > 200) return;
-  P.t += raw; if (P.t > 1000) (P.phase ? P.b : P.a).push(raw);   // the first second of each half is warm-up
-  if (P.t < 5000) return;
-  const med = x => x.sort((p, q) => p - q)[x.length >> 1] || 99;
-  if (P.phase === 0) { P.phase = 1; P.t = 0; tilesOn = true; return; }
-  tilesOn = med(P.b) < med(P.a) * 0.9; tileProbe = null;
+  P.t += raw;
+  const [on, skip] = PROBE[P.w];
+  if (P.t > skip) (on ? P.b : P.a).push(raw);
+  if (P.t < 3000) return;
+  P.w++; P.t = 0;
+  if (P.w < PROBE.length) { tilesOn = PROBE[P.w][0]; return; }
+  const mean = x => x.length ? x.reduce((p, q) => p + q, 0) / x.length : 99;   // the mean, not the median: long frames are what you feel
+  tilesOn = mean(P.b) < mean(P.a) * 0.85; tileProbe = null;
   if (!tilesOn) clearTiles();
 }
-function clearTiles() { for (const t of tileCache.values()) tilePool.push(t.c); tileCache.clear(); tileLevel = 0; }
+function clearTiles() { for (const t of tileCache.values()) tilePool.push(t.c); tileCache.clear(); tileLevel = 0; tileWant = 0; }
 function renderTile(key, lvl, ix, iy) {
   const ws = TILE_PX / lvl, x0 = ix * ws, y0 = iy * ws, pw = TILE_PAD / lvl;
   let c = tilePool.pop();
@@ -3391,7 +3482,9 @@ function renderTile(key, lvl, ix, iy) {
   return t;
 }
 function drawGroundTiles(v, q, RV) {
-  if (!SET.tiles || !tilesOn) { drawGround(v, q); return; }
+  tileBusy = false;
+  if (SET.tiles === 'off' || !tilesOn) { drawGround(v, q); return; }
+  const prev = tileLevel;
   const lvl = tileLevel = tileLevelFor(cam.z * dpr), ws = TILE_PX / lvl, reach = RV + ws * 0.71;
   const cells = [];
   for (let iy = Math.floor(v.y0 / ws); iy <= Math.floor(v.y1 / ws); iy++) for (let ix = Math.floor(v.x0 / ws); ix <= Math.floor(v.x1 / ws); ix++) {
@@ -3399,17 +3492,33 @@ function drawGroundTiles(v, q, RV) {
     if (d < reach) cells.push({ ix, iy, d });
   }
   cells.sort((a, b) => a.d - b.d);
-  let budget = 4, missing = false;
+  // missing tiles are drawn closest first, as many as fit in about 5 ms (at least one)
+  const tb = performance.now();
+  let missing = false, budget = 3;
   const ready = [];
   for (const cl of cells) {
     const key = lvl + ':' + cl.ix + ':' + cl.iy;
     let t = tileCache.get(key);
-    if (!t && budget > 0) { t = renderTile(key, lvl, cl.ix, cl.iy); budget--; }
+    if (!t && (budget === 3 || performance.now() - tb < 5)) { t = renderTile(key, lvl, cl.ix, cl.iy); budget--; tileBusy = true; }
     if (t) { t.use = ++tileUse; ready.push(t); } else missing = true;
   }
-  // tiles still missing (a new zoom level): draw the ground directly this frame, the rest follow in the next frames
-  if (missing) drawGround(v, q);
-  else { ctx.fillStyle = city.real ? COLORS.ground : COLORS.grass2; ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0); }
+  ctx.fillStyle = city.real ? COLORS.ground : COLORS.grass2; ctx.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+  if (missing) {
+    tileBusy = true;
+    // a new zoom level: paste the previous level's tiles underneath while the new ones are prepared; draw directly only if those are missing too
+    const old = []; let gap = false;
+    if (prev && prev !== lvl) {
+      const pws = TILE_PX / prev, preach = RV + pws * 0.71;
+      for (let iy = Math.floor(v.y0 / pws); iy <= Math.floor(v.y1 / pws) && !gap; iy++) for (let ix = Math.floor(v.x0 / pws); ix <= Math.floor(v.x1 / pws); ix++) {
+        if (Math.hypot((ix + 0.5) * pws - cam.x, (iy + 0.5) * pws - cam.y) >= preach) continue;
+        const t = tileCache.get(prev + ':' + ix + ':' + iy); if (!t) { gap = true; break; } old.push(t);
+      }
+    } else gap = true;
+    if (gap) drawGround(v, q);
+    else { const e = 0.6 / (cam.z * dpr), se = e * prev; for (const t of old) ctx.drawImage(t.c, TILE_PAD - se, TILE_PAD - se, TILE_PX + 2 * se, TILE_PX + 2 * se, t.x0 - e, t.y0 - e, t.ws + 2 * e, t.ws + 2 * e); }
+    tileLevel = prev && !gap ? prev : lvl;   // keep the old level as the backdrop until the new one is complete
+    if (tileLevel !== lvl) tileWant = lvl;
+  } else tileWant = 0;
   // each tile is pasted a fraction of a pixel larger (from its padding, at the same scale) so no seams show
   const e = 0.6 / (cam.z * dpr), se = e * lvl;
   for (const t of ready) ctx.drawImage(t.c, TILE_PAD - se, TILE_PAD - se, TILE_PX + 2 * se, TILE_PX + 2 * se, t.x0 - e, t.y0 - e, t.ws + 2 * e, t.ws + 2 * e);
@@ -3448,7 +3557,7 @@ function drawBuilding(b) {
   }
   ctx.beginPath(); polyPath(R); ctx.closePath();
   ctx.fillStyle = b.cols.roof; ctx.fill();
-  ctx.strokeStyle = b.cols.rim; ctx.lineWidth = 3; ctx.stroke();
+  if (!lowGfx()) { ctx.strokeStyle = b.cols.rim; ctx.lineWidth = 3; ctx.stroke(); }
   if (b.details) {
     const x0 = cx + (b.bb.x0 - cx) * s, y0 = cy + (b.bb.y0 - cy) * s, w = (b.bb.x1 - b.bb.x0) * s, h = (b.bb.y1 - b.bb.y0) * s;
     ctx.fillStyle = b.cols.det; for (const d of b.details) ctx.fillRect(x0 + d[0] * w, y0 + d[1] * h, d[2] * w, d[3] * h);
@@ -3491,13 +3600,19 @@ function drawTank(c) {
 }
 // rental bays: an outlined "envelope" in the company's colour
 function drawRentBays(v) {
-  for (const r of city.rentals || []) {
-    if (r.x < v.x0 - 60 || r.x > v.x1 + 60 || r.y < v.y0 - 60 || r.y > v.y1 + 60) continue;
-    const C = RENT_COS[r.co], t = TYPES[r.type], hl = t.L / 2 + 7, hw = t.W / 2 + 6;
-    ctx.save(); ctx.translate(r.x, r.y); ctx.rotate(r.a);
+  for (const st of stripNear(v.x0 - 60, v.y0 - 60, v.x1 + 60, v.y1 + 60)) {
+    const C = RENT_COS[st.co], hl = st.len / 2, hw = st.wid / 2, sl = (st.len - 8) / st.n;
+    ctx.save(); ctx.translate(st.x, st.y); ctx.rotate(st.a);
     ctx.fillStyle = C.col; ctx.globalAlpha = 0.14; ctx.fillRect(-hl, -hw, 2 * hl, 2 * hw);
     ctx.strokeStyle = C.col; ctx.lineWidth = 3; ctx.globalAlpha = 0.95; ctx.strokeRect(-hl, -hw, 2 * hl, 2 * hw);
-    ctx.lineWidth = 2; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(-hl, -hw); ctx.lineTo(hl, hw); ctx.moveTo(-hl, hw); ctx.lineTo(hl, -hw); ctx.stroke();
+    // one place per car: a divider and the envelope cross
+    ctx.lineWidth = 1.5; ctx.globalAlpha = 0.5; ctx.beginPath();
+    for (let k = 0; k < st.n; k++) {
+      const x0 = -hl + 4 + k * sl, x1 = x0 + sl;
+      if (k) { ctx.moveTo(x0, -hw); ctx.lineTo(x0, hw); }
+      ctx.moveTo(x0 + 3, -hw + 3); ctx.lineTo(x1 - 3, hw - 3); ctx.moveTo(x0 + 3, hw - 3); ctx.lineTo(x1 - 3, -hw + 3);
+    }
+    ctx.stroke();
     ctx.restore();
   }
 }
@@ -3597,31 +3712,44 @@ function marker(x, y, col, label, ph) {
     });
   }
 }
+// the same easing as `f` per frame at 60 fps, whatever the real frame time
+let frameDt = 1 / 60;
+const ease = f => 1 - Math.pow(1 - f, frameDt * 60);
 function draw() {
   if (!city) return;
+  let tm = performance.now();
   updateNight();
   // camera: look ahead of motion, zoom out at speed
   const sp = player.mode === 'car' ? speedOf(player.car) : 0;
   const base = clamp(Math.min(vw, vh) / 700, 0.55, 1.2);
   const zt = base * (player.mode === 'foot' ? 1.45 : lerp(1.18, 0.5, clamp(sp / 380, 0, 1) ** 0.8)) * (player.mode === 'car' ? 1 - 0.4 * (player.car.air || 0) : 1);
-  cam.z = lerp(cam.z || zt, zt, zt < cam.z ? 0.035 : 0.02);
+  // smoothing per unit of time, not per frame: Safari on iPhones often alternates 16 and 33 ms frames, and per-frame easing then made the view judder
+  cam.z = lerp(cam.z || zt, zt, ease(zt < cam.z ? 0.035 : 0.02));
   // heading-up view: the map turns so the car (or the walker) always faces the top of the screen
   const head = player.mode === 'car' ? player.car.a : player.a;
-  cam.rot += wrapA(-Math.PI / 2 - head - cam.rot) * (player.mode === 'car' ? 0.05 : 0.08);
+  cam.rot += wrapA(-Math.PI / 2 - head - cam.rot) * ease(player.mode === 'car' ? 0.05 : 0.08);
   cam.rot = wrapA(cam.rot);
   const lx = player.mode === 'car' ? player.car.vx * 0.2 : 0, ly = player.mode === 'car' ? player.car.vy * 0.2 : 0;
-  cam.x = lerp(cam.x, player.x + lx, 0.1); cam.y = lerp(cam.y, player.y + ly, 0.1);
+  cam.x = lerp(cam.x, player.x + lx, ease(0.1)); cam.y = lerp(cam.y, player.y + ly, ease(0.1));
   const z = cam.z;
   cam.cx = vw / 2; cam.cy = vh * (player.mode === 'car' ? 0.62 : 0.56);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.translate(cam.cx, cam.cy); ctx.rotate(cam.rot); ctx.scale(z, z); ctx.translate(-cam.x, -cam.y);
   const RV = Math.hypot(Math.max(cam.cx, vw - cam.cx), Math.max(cam.cy, vh - cam.cy)) / z + 40;
   const v = { x0: cam.x - RV, y0: cam.y - RV, x1: cam.x + RV, y1: cam.y + RV };
   const q = queryDraw(v);
+  // keep only what can reach the (rotated) screen: on a tall phone screen the square around the camera is about four times the visible area
+  const cr = Math.cos(cam.rot), sr = Math.sin(cam.rot);
+  const onScr = (cx, cy, r, pad) => { const dx = cx - cam.x, dy = cy - cam.y, sx = (dx * cr - dy * sr) * z + cam.cx, sy = (dx * sr + dy * cr) * z + cam.cy, m = r * z + pad; return sx > -m && sx < vw + m && sy > -m && sy < vh + m; };
+  const bbScr = (b, pad) => onScr((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, Math.hypot(b.x1 - b.x0, b.y1 - b.y0) / 2, pad);
+  q.b = q.b.filter(b => bbScr(b.bb, 110));   // roofs lean away from the centre: a wide margin
+  q.r = q.r.filter(r => bbScr(r.bb, 30)); q.g = q.g.filter(g => bbScr(g.bb, 10)); q.l = q.l.filter(l => bbScr(l.bb, 20));
+  q.t = q.t.filter(t => onScr(t.x, t.y, t.r, 20));
   drawGroundTiles(v, q, RV);
   drawSkids(v);
   drawAuxLines();
   drawRentBays(v);
   drawRouteLine();
+  tm = pfMark('ground', tm);
   // markers on the ground
   if (!job) for (const o of offers) if (o.x > v.x0 - 60 && o.x < v.x1 + 60 && o.y > v.y0 - 60 && o.y < v.y1 + 60) marker(o.x, o.y, '#f2c230', null, o.ph);
   if (job && job.inCar) marker(job.dest.x, job.dest.y, '#6cc070', null, 0);
@@ -3668,13 +3796,15 @@ function draw() {
     const c = player.car; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, c.flashT * 3) * 0.85;
     ctx.translate(c.x, c.y); ctx.rotate(c.a); ctx.drawImage(CONE_TINT, c.t.L / 2 - 4, -c.t.W * 3, 300, c.t.W * 6); ctx.restore();
   }
+  tm = pfMark('cars', tm);
   // roofs and trees above the street
   drawTrees(q.t);
   q.b.sort((a, b) => a.h - b.h);
   for (const b of q.b) drawBuilding(b);
+  tm = pfMark('build', tm);
   // particles
   for (const p of parts) { const a = p.life / p.max; ctx.fillStyle = `rgba(${p.col},${p.spark ? a : a * 0.45})`; ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, 7); ctx.fill(); }
-  if (nightK > 0.02) drawNight(q, v);
+  if (nightK > 0.02) { tm = pfMark('cars', tm); drawNight(q, v); tm = pfMark('night', tm); }
   if (SET.names) drawStreetNames(q, v);
   if (player.mode === 'foot' && player.roof) {
     const s2 = HC / (HC - player.roof.h), rx = cam.x + (player.x - cam.x) * s2, ry = cam.y + (player.y - cam.y) * s2;
@@ -3693,12 +3823,12 @@ function draw() {
   if (job && job.inCar) {
     const d = job.dest; if (d.x > v.x0 - 60 && d.x < v.x1 + 60 && d.y > v.y0 - 60 && d.y < v.y1 + 60) marker(d.x, d.y, '#6cc070', L('Cel: ', 'Drop-off: ') + (d.lm || d.addr.split(',')[0]), 0);
   }
-  for (const r of city.rentals || []) {
-    if (Math.abs(r.x - player.x) > 320 || Math.abs(r.y - player.y) > 320 || (r.car && r.car.owned)) continue;
-    const C = RENT_COS[r.co], t = r.car ? tName(r.car.t) : '';
-    upright(r.x, r.y, () => {
+  for (const st of stripNear(player.x - 400, player.y - 400, player.x + 400, player.y + 400)) {
+    if (Math.abs(st.x - player.x) > 400 || Math.abs(st.y - player.y) > 400) continue;
+    const C = RENT_COS[st.co], free = st.slots.filter(r => r.car && !r.car.owned).length;
+    upright(st.x, st.y, () => {
       ctx.font = '600 12px "Barlow Semi Condensed", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      const txt = C.n + (t ? ' · ' + t : '') + L(' · wynajem', ' · rental'), w = ctx.measureText(txt).width + 12;
+      const txt = C.n + L(` · wynajem · wolne ${free} z ${st.n}`, ` · rental · ${free} of ${st.n} free`), w = ctx.measureText(txt).width + 12;
       ctx.fillStyle = 'rgba(18,20,24,.82)'; rr2(-w / 2, -42, w, 18, 4); ctx.fill(); ctx.fillStyle = C.col; ctx.fillRect(-w / 2, -42, 4, 18);
       ctx.fillStyle = '#f3eee2'; ctx.fillText(txt, 2, -33);
     });
@@ -3734,6 +3864,7 @@ function draw() {
     if (near) { ctx.strokeStyle = near.wreck ? 'rgba(229,83,61,.8)' : canUse(near) && !near.svc && !near.towedBy ? 'rgba(242,194,48,.9)' : 'rgba(160,160,160,.6)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2; ctx.save(); ctx.translate(near.x, near.y); ctx.rotate(near.a); rr2(-near.t.L / 2 - 4, -near.t.W / 2 - 4, near.t.L + 8, near.t.W + 8, 6); ctx.stroke(); ctx.restore(); ctx.setLineDash([]); }
     nearCar = near;
   } else nearCar = null;
+  tm = pfMark('labels', tm);
   // edge pointer to an off-screen target
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   if (route && route.tgt && state === 'play') {
@@ -3801,17 +3932,26 @@ function* buildMinimapG(w) {
 // vb: the part of the world in view, so off-screen markers (thousands of rental bays in Poznań) are skipped
 function drawOverlay(g, M, big, vb) {
   const inV = (x, y) => x > vb.x0 && x < vb.x1 && y > vb.y0 && y < vb.y1;
+  // a polyline, but only the stretches with a point in view (long routes have thousands of points)
+  const linePath = pts => {
+    let prevIn = false, open = false;
+    for (let k = 0; k < pts.length; k++) {
+      const p = pts[k], pin = inV(p.x, p.y), nin = k + 1 < pts.length && inV(pts[k + 1].x, pts[k + 1].y);
+      if (pin || prevIn || nin) { const [x, y] = M(p.x, p.y); if (open) g.lineTo(x, y); else { g.moveTo(x, y); open = true; } } else open = false;
+      prevIn = pin;
+    }
+  };
   if (route) {
     g.strokeStyle = routeCol(); g.lineWidth = big ? 4 : 3; g.lineJoin = 'round'; g.beginPath();
-    route.pts.forEach((p, k) => { const [x, y] = M(p.x, p.y); k ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+    linePath(route.pts); g.stroke();
   }
   const dot = (x, y, r, col) => { if (!inV(x, y)) return; const [sx, sy] = M(x, y); g.fillStyle = '#121418'; g.beginPath(); g.arc(sx, sy, r + 1.5, 0, 7); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); };
   // rental bays: on the big map only once zoomed in enough for them not to cover the town
   if (!big || MV.z > 0.025) {
     const a = big ? 4 : 3, b = big ? 3 : 2;
-    g.fillStyle = '#121418';
-    for (const r of city.rentals || []) if (inV(r.x, r.y) && !(r.car && r.car.owned)) { const [sx, sy] = M(r.x, r.y); g.fillRect(sx - a, sy - a, 2 * a, 2 * a); }
-    for (const r of city.rentals || []) if (inV(r.x, r.y) && !(r.car && r.car.owned)) { const [sx, sy] = M(r.x, r.y); g.fillStyle = RENT_COS[r.co].col; g.fillRect(sx - b, sy - b, 2 * b, 2 * b); }
+    const list = stripNear(vb.x0, vb.y0, vb.x1, vb.y1).filter(st => inV(st.x, st.y) && st.slots.some(r => !(r.car && r.car.owned))), sp = list.map(st => M(st.x, st.y));
+    g.fillStyle = '#121418'; for (const [sx, sy] of sp) g.fillRect(sx - a, sy - a, 2 * a, 2 * a);
+    list.forEach((r, k) => { g.fillStyle = RENT_COS[r.co].col; g.fillRect(sp[k][0] - b, sp[k][1] - b, 2 * b, 2 * b); });
   }
   if (towJob && towJob.tr.sig) dot(towJob.tr.x, towJob.tr.y, big ? 6 : 4, Math.floor(T * 4) % 2 ? '#ffc21a' : '#7a5a10');
   if (fireJob && fireJob.tr.sig) dot(fireJob.tr.x, fireJob.tr.y, big ? 6 : 4, Math.floor(T * 4) % 2 ? '#e0412f' : '#4aa3ff');
@@ -3822,7 +3962,7 @@ function drawOverlay(g, M, big, vb) {
   for (const tv of transitVeh.values()) dot(tv.x, tv.y, big ? 4 : 2.2, tv.tram ? '#e0412f' : '#4f86d1');
   if (route && route.kind === 'repair') dot(route.tgt.x, route.tgt.y, big ? 7 : 4.5, '#e8833a');
   if (route && route.kind === 'fuel') dot(route.tgt.x, route.tgt.y, big ? 7 : 4.5, '#3b8bff');
-  for (const r of auxRoutes) { g.strokeStyle = AUX_COL[r.kind]; g.lineWidth = big ? 3 : 2; g.setLineDash([6, 5]); g.beginPath(); r.pts.forEach((p, k) => { const [x, y] = M(p.x, p.y); k ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); g.setLineDash([]); dot(r.tgt.x, r.tgt.y, big ? 7 : 4.5, AUX_COL[r.kind]); }
+  for (const r of auxRoutes) { g.strokeStyle = AUX_COL[r.kind]; g.lineWidth = big ? 3 : 2; g.setLineDash([6, 5]); g.beginPath(); linePath(r.pts); g.stroke(); g.setLineDash([]); dot(r.tgt.x, r.tgt.y, big ? 7 : 4.5, AUX_COL[r.kind]); }
   const a = player.mode === 'car' ? player.car.a : player.a, r = big ? 11 : 7, [px, py] = M(player.x, player.y);
   g.save(); g.translate(px, py); g.rotate(a);
   g.fillStyle = '#ffffff'; g.strokeStyle = '#121418'; g.lineWidth = 1.5;
@@ -3996,6 +4136,7 @@ function speedoPads() {
   return padsTopCache;
 }
 addEventListener('resize', () => { padsTopCache = null; });
+let speedoBg = null;
 function drawSpeedo() {
   if (state !== 'play' || player.mode !== 'car') return;
   const c = player.car, kmh = speedOf(c) * 0.36, padsTop = speedoPads();
@@ -4003,20 +4144,28 @@ function drawSpeedo() {
   const cx = vw - 16 - R, cy = padsTop ? padsTop - 10 - R : vh - 16 - R;
   const ca = Math.cos(c.a), sa = Math.sin(c.a), back = c.vx * ca + c.vy * sa < -5;
   const MAX = c.t.heli ? 400 : 240, a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, ang = v => a0 + (a1 - a0) * clamp(v / MAX, 0, 1);
+  // the dial (background, the car's top speed in red, ticks and numbers) is drawn once into an image and only pasted each frame
+  const key = R + '|' + MAX + '|' + c.t.max + '|' + dpr + '|' + fontV;
+  if (!speedoBg || speedoBg.key !== key) {
+    const cv = document.createElement('canvas'), S = Math.ceil((2 * R + 4) * dpr), b = cv.getContext('2d'), o = R + 2;
+    cv.width = cv.height = S; b.setTransform(dpr, 0, 0, dpr, 0, 0);
+    b.fillStyle = 'rgba(18,20,24,.82)'; b.beginPath(); b.arc(o, o, R, 0, 7); b.fill();
+    b.strokeStyle = 'rgba(255,255,255,.14)'; b.lineWidth = 1; b.stroke();
+    b.strokeStyle = 'rgba(229,83,61,.75)'; b.lineWidth = 4; b.beginPath(); b.arc(o, o, R - 6, ang(c.t.max * 0.36), a1); b.stroke();
+    b.strokeStyle = 'rgba(243,238,226,.7)'; b.fillStyle = 'rgba(243,238,226,.75)'; b.font = `600 ${R > 55 ? 10 : 9}px "Barlow Semi Condensed", sans-serif`; b.textAlign = 'center'; b.textBaseline = 'middle';
+    const stepV = MAX > 300 ? 40 : 20;
+    for (let v = 0; v <= MAX; v += stepV) {
+      const t = ang(v), big = v % (stepV * 2) === 0, r1 = R - 11, r2 = R - (big ? 17 : 14);
+      b.lineWidth = big ? 2 : 1; b.beginPath(); b.moveTo(o + Math.cos(t) * r1, o + Math.sin(t) * r1); b.lineTo(o + Math.cos(t) * r2, o + Math.sin(t) * r2); b.stroke();
+      if (big && R > 50) b.fillText(String(v), o + Math.cos(t) * (R - 26), o + Math.sin(t) * (R - 26));
+    }
+    speedoBg = { key, cv };
+  }
   const g = ctx;
   g.save();
-  g.fillStyle = 'rgba(18,20,24,.82)'; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.fill();
-  g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 1; g.stroke();
-  // the car's own top speed in red
-  g.strokeStyle = 'rgba(229,83,61,.75)'; g.lineWidth = 4; g.beginPath(); g.arc(cx, cy, R - 6, ang(c.t.max * 0.36), a1); g.stroke();
+  g.drawImage(speedoBg.cv, cx - R - 2, cy - R - 2, 2 * R + 4, 2 * R + 4);
   g.strokeStyle = '#f2c230'; g.lineWidth = 4; g.beginPath(); g.arc(cx, cy, R - 6, a0, ang(kmh)); g.stroke();
-  g.strokeStyle = 'rgba(243,238,226,.7)'; g.fillStyle = 'rgba(243,238,226,.75)'; g.font = `600 ${R > 55 ? 10 : 9}px "Barlow Semi Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  const stepV = MAX > 300 ? 40 : 20;
-  for (let v = 0; v <= MAX; v += stepV) {
-    const t = ang(v), big = v % (stepV * 2) === 0, r1 = R - 11, r2 = R - (big ? 17 : 14);
-    g.lineWidth = big ? 2 : 1; g.beginPath(); g.moveTo(cx + Math.cos(t) * r1, cy + Math.sin(t) * r1); g.lineTo(cx + Math.cos(t) * r2, cy + Math.sin(t) * r2); g.stroke();
-    if (big && R > 50) g.fillText(String(v), cx + Math.cos(t) * (R - 26), cy + Math.sin(t) * (R - 26));
-  }
+  g.fillStyle = 'rgba(243,238,226,.75)'; g.font = `600 ${R > 55 ? 10 : 9}px "Barlow Semi Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
   if (limActive()) {
     const tl = ang(limV), sr = R * 0.24, sx = cx - R * 0.78, sy = cy - R * 0.78;
     g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx + Math.cos(tl) * (R - 2), cy + Math.sin(tl) * (R - 2)); g.lineTo(cx + Math.cos(tl) * (R - 15), cy + Math.sin(tl) * (R - 15)); g.stroke();
@@ -4333,6 +4482,10 @@ function applyStatic() {
     ['bigmap', 'aria-label', 'Mapa miasta: przeciągnij, żeby przesunąć, szczypnij albo użyj + i −, żeby przybliżyć', 'City map: drag to pan, pinch or use + and − to zoom'],
     ['keys', 'html', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>H</kbd> klakson · <kbd>T</kbd> tankuj · <kbd>M</kbd> mapa · <kbd>O</kbd> autopilot · <kbd>L</kbd> limit · <kbd>R</kbd> wynajem · <kbd>K</kbd> koszty', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> drive · <kbd>Space</kbd> handbrake · <kbd>E</kbd> get in / out · <kbd>H</kbd> horn · <kbd>T</kbd> refuel · <kbd>M</kbd> map · <kbd>O</kbd> autopilot · <kbd>L</kbd> limiter · <kbd>R</kbd> rental · <kbd>K</kbd> costs'],
     ['limPad', 'text', 'Limit', 'Limit'],
+    ['rentPad', 'text', 'Wynajem', 'Rental'],
+    ['rentPad', 'aria-label', 'Nawigacja do aut na wynajem (R)', 'Navigation to rental cars (R)'],
+    ['pauseBtn', 'title', 'Pauza (P)', 'Pause (P)'],
+    ['setBtn', 'title', 'Ustawienia', 'Settings'],
     ['limPad', 'aria-label', 'Ogranicznik prędkości (L)', 'Speed limiter (L)'],
     ['costBtn', 'title', 'Rachunek kosztów: wynajem, ubezpieczenie, naprawy (K)', 'Cost sheet: rentals, insurance, repairs (K)'],
   ];
@@ -4414,7 +4567,7 @@ const HOWTO_PL = `
   <li><b>Paliwo:</b> każde auto ma swój bak i realne spalanie w mieście (np. sedan ok. 7,5 l/100 km, ciężarówka ok. 32 l). Zatrzymaj się na stacji (żółte P) i naciśnij T albo „Tankuj”. Ceny według średnich cen z ${PRICE_DATE}.</li>
   <li><b>Klakson (H):</b> auta przed tobą włączają kierunkowskaz, zjeżdżają do prawej krawędzi, zatrzymują się i przepuszczają cię. Piesi się odsuwają.</li>
   <li><b>Auta:</b> supersamochód i kabriolet są najszybsze, ciężarówka wytrzymała, maluch zwrotny i oszczędny. Na terenach wojskowych stoją terenówki, ciężarówki i czołgi (tylko do jazdy). Gdy auto dymi, warsztat (pomarańczowe W, fikcyjny) je naprawi, a koszty pokryje ubezpieczyciel.</li>
-  <li><b>Wynajem:</b> auta na wynajem stoją w całym mieście w kopertach w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia, a w aucie możesz ją włączyć klawiszem R albo przyciskiem „Wynajem”, gdy chcesz zmienić auto.</li>
+  <li><b>Wynajem:</b> auta na wynajem stoją w całym mieście, po 3–10 na długich kopertach przy krawężniku w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia, a w aucie możesz ją włączyć klawiszem R albo przyciskiem „Wynajem”, gdy chcesz zmienić auto.</li>
   <li><b>Laweta:</b> gdy auto się rozbije i zapali, najpierw przyjeżdża straż pożarna i gasi pożar, a potem laweta na sygnale i odholowuje je do warsztatu. Holowanie, naprawę i obsługę pokrywa ubezpieczyciel (fikcyjny), a rachunek pojawia się na ekranie.</li>
   <li><b>Koszty (K):</b> przycisk „koszty” obok stanu konta pokazuje koszty, które ponosisz: wynajem (opłata startowa i za kilometr) i pakiety ochrony. Naprawy, holowanie i obsługę opłacone przez ubezpieczyciela widać osobno, po rozwinięciu „Naprawy z ubezpieczenia”. Żadna z tych kwot nie jest odejmowana od zarobku.</li>
   <li><b>Helikopter:</b> stoi na lotnisku i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku. Wyląduj do 45 m od pasażera albo celu, a pasażer sam podejdzie. Autopilot też umie latać.</li>
@@ -4429,7 +4582,7 @@ const HOWTO_EN = `
   <li><b>Fuel:</b> every car has its own tank and realistic city consumption (e.g. a sedan about 7.5 l/100 km, a truck about 32 l). Stop at a petrol station (yellow F) and press T or "Refuel". Prices follow Polish averages of ${PRICE_DATE}.</li>
   <li><b>Horn (H):</b> cars ahead switch on their indicator, pull over to the right-hand kerb, stop and let you through. Pedestrians step aside.</li>
   <li><b>Cars:</b> the supercar and convertible are fastest, the truck is tough, the mini car is nimble and frugal. Military areas hold jeeps, trucks and tanks (driving only). When your car smokes, a garage (orange G, fictional) fixes it and the insurer pays.</li>
-  <li><b>Rentals:</b> rental cars stand all over town in bays painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them; in a car, switch it on with R or the "Rental" button when you want to change cars.</li>
+  <li><b>Rentals:</b> rental cars stand all over town, 3 to 10 to a long kerbside bay painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them; in a car, switch it on with R or the "Rental" button when you want to change cars.</li>
   <li><b>Tow truck:</b> when your car is wrecked and catches fire, the fire brigade comes first and puts it out, then a tow truck arrives with beacons flashing and takes it to a garage. Towing, repair and service are paid by a (fictional) insurer, and the bill shows on screen.</li>
   <li><b>Costs (K):</b> the "costs" button next to your balance shows the costs you bear: rentals (start fee and per km) and cover packages. Repairs, towing and service paid by the insurer are listed separately under "Insurance repairs". None of these amounts is taken from your earnings.</li>
   <li><b>Helicopter:</b> parked at the airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included. Land within 45 m of the passenger or the drop-off and they walk the rest. The autopilot can fly it too.</li>
@@ -4543,7 +4696,7 @@ $('pauseBtn').onclick = () => { if (state === 'play' || state === 'paused') togg
 $('setBtn').onclick = () => { if (state === 'play' || state === 'paused') showSettings('play'); };
 $('bill').onclick = () => { $('bill').hidden = true; billT = 0; };
 $('costBtn').onclick = () => toggleLedger();
-$('muteBtn').onclick = () => { SND.on = !SND.on; $('muteBtn').textContent = SND.on ? L('Dźwięk', 'Sound') : L('Cisza', 'Muted'); };
+$('muteBtn').onclick = () => { SND.on = !SND.on; $('muteBtn').textContent = SND.on ? L('Dźwięk', 'Sound') : L('Cisza', 'Muted'); $('muteBtn').classList.toggle('off', !SND.on); };
 
 resize();
 applyStatic();
@@ -4586,13 +4739,20 @@ function frame(now) {
     else { slowT = 0; if (frameEma < 17.5 && lowDetail && upTries < 3) { fastT += raw; if (fastT > 8000) { lowDetail = false; upTries++; fastT = 0; } } }
   }
   if (!city || !mapC || !player.car) return;          // still loading
-  tileProbeStep(raw);
+  tileProbeStep(raw); frameDt = dt;
+  pfFrame(raw);
   try {
+    let tf = performance.now();
     if (state === 'play') { step(dt / 2); step(dt / 2); }
+    tf = pfMark('sim', tf);
     if (state === 'map') { if (MV.dirty) renderBigMap(); } else draw();
+    tf = performance.now();
     if (SET.minimap) drawMinimap();
+    tf = pfMark('minimap', tf);
     hud(dt); engineSound();
+    tf = pfMark('hud', tf);
     runLater(t0, 12);
+    pfMark('queue', tf);
   } catch (err) { console.error(err); }
 }
 requestAnimationFrame(frame);
