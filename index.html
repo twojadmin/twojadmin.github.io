@@ -51,7 +51,10 @@ body{background:var(--ink);color:var(--paper);font-family:var(--ui);font-size:15
 .bill.ledger{top:64px;width:420px;max-height:calc(100% - 150px);overflow:auto;cursor:default;border-color:var(--line);background:#16181c}
 .ledger .lsum{margin-bottom:8px}
 .ledger .litems .brow{border-top:1px solid var(--line);padding:4px 0;font-size:13px}
-.ledger .litems small{color:var(--dim)}
+.ledger .litems small,.ledger .claim small{color:var(--dim)}
+.ledger details{margin-top:10px;border-top:1px solid var(--line);padding-top:6px}
+.ledger summary{cursor:pointer;font-weight:600;color:#ffb27a}
+.ledger .claim{border-top:1px solid var(--line);padding:6px 0;font-size:13px}
 .wanted{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--stop);border-radius:6px;padding:3px 10px}
 .wanted b{font-size:18px;letter-spacing:2px;color:var(--stop)}
 .wanted span{font-size:13px;color:var(--paper);font-variant-numeric:tabular-nums}
@@ -217,7 +220,7 @@ button:focus-visible{outline:2px solid var(--cab);outline-offset:2px}
     <div class="pg"><div class="joy" id="joy" aria-label="Joystick: kierunek jazdy"><div class="knob" id="knob"></div></div></div>
     <div class="pg">
       <div class="col"><button class="act" data-act="enter" id="enterBtn" type="button">Wysiądź</button><button class="small" data-k="hb" id="hbBtn" type="button">Ręczny</button><button class="small" data-act="horn" id="hornPad" type="button">Klakson</button><button class="act" data-act="fuel" id="fuelPad" type="button" hidden>Tankuj</button></div>
-      <div class="col"><button class="small" data-act="auto" id="autoPad" type="button">Auto</button>
+      <div class="col"><button class="small" data-act="auto" id="autoPad" type="button">Auto</button><button class="small" data-act="limit" id="limPad" type="button">Limit</button>
       <button class="brake" data-k="brake" id="brakePad" type="button" aria-label="Hamulec i wsteczny">Hamuj</button></div>
     </div>
   </div>
@@ -276,6 +279,7 @@ const TYPES = {
   tank:     { name: 'Czołg', en: 'Tank', fuel: 'on', tank: 1200, cons: 300, L: 92, W: 44, max: 190, acc: 170, brake: 520, grip: 14, steer: 1.5, hp: 900, mass: 9, cols: ['#55603a'], tracks: 1 },
   heli:     { name: 'Helikopter', en: 'Helicopter', L: 54, W: 14, max: 1000, acc: 560, brake: 650, grip: 2, steer: 2.3, hp: 150, mass: 2, cols: ['#c8102e'], heli: 1 },
   truck: { name: 'Ciężarówka', en: 'Truck', fuel: 'on', tank: 300, cons: 32, L: 72, W: 24, max: 280, acc: 150, brake: 430, grip: 5,   steer: 1.7, hp: 240, mass: 3.2, cols: ['#c9532d', '#2c6a8a', '#4c7a3a'] },
+  fire:  { name: 'Wóz strażacki', en: 'Fire engine', L: 76, W: 25, max: 340, acc: 220, brake: 520, grip: 6, steer: 1.8, hp: 500, mass: 4, cols: ['#c8231b'] },
   tow:   { name: 'Laweta', en: 'Tow truck', L: 74, W: 24, max: 300, acc: 200, brake: 500, grip: 6, steer: 1.8, hp: 400, mass: 3.5, cols: ['#f0a020'] },
 };
 for (const k in TYPES) {
@@ -1386,12 +1390,14 @@ function collideCars(a, b) {
   b.x -= nx * pen * (1 / mb) / im; b.y -= ny * pen * (1 / mb) / im;
   const vn = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
   if (vn >= 0) return;
+  // who drove into whom (before the bounce): n points from b to a
+  const aClose = -(a.vx * nx + a.vy * ny), bClose = b.vx * nx + b.vy * ny;
   const j = -1.3 * vn / im;
   a.vx += j / ma * nx; a.vy += j / ma * ny; b.vx -= j / mb * nx; b.vy -= j / mb * ny;
   a.spin += (Math.cos(a.a) * best.p.o * ny - Math.sin(a.a) * best.p.o * nx) * j * 0.00006 / ma;
   b.spin -= (Math.cos(b.a) * best.q.o * ny - Math.sin(b.a) * best.q.o * nx) * j * 0.00006 / mb;
   impact(a, -vn * mb / (ma + mb) * 2, b); impact(b, -vn * ma / (ma + mb) * 2, a);
-  if (-vn > 110 && player.mode === 'car' && !autoOn && ((a === player.car && isCop(b)) || (b === player.car && isCop(a)))) offence('ram', 1, 150, L('staranowanie radiowozu', 'ramming a police car'), 300);
+  if (-vn > 25 && player.mode === 'car' && !autoOn && ((a === player.car && isCop(b)) || (b === player.car && isCop(a)))) copBump(a === player.car ? aClose : bClose, a === player.car ? bClose : aClose, -vn);
   if ((a.pol && a.pol.chase) || (b.pol && b.pol.chase)) { if (a.ai) a.ai.stun = 0; if (b.ai) b.ai.stun = 0; }
   if (a.ai) a.ai.stun = Math.max(a.ai.stun, 1.2);
   if (b.ai) b.ai.stun = Math.max(b.ai.stun, 1.2);
@@ -1481,15 +1487,17 @@ function spawnTraffic(px, py, minD, maxD, type) {
   }
   return null;
 }
+// parked cars stand at the kerb, half on the pavement, so the driving lane stays clear
+const curbOff = (e, t) => e.w / 2 - 3 + t.W / 2;
 // parked cars along the curb of quieter streets
 function spawnParked(px, py, minD, maxD) {
   const cand = edgesAround(px, py, maxD).filter(e => e.cls >= 3 && e.cls <= 4 && e.len > 100 && e.w >= 70);
   for (let tries = 0; tries < 10 && cand.length; tries++) {
-    const e = mpick(cand), s = mr(40, e.len - 40), side = Math.random() < 0.5 ? 1 : -1, p = pointAt(e, s);
-    const off = e.w / 2 - 12, x = p.x - p.dy * side * off, y = p.y + p.dx * side * off, d = Math.hypot(x - px, y - py);
-    if (d < minD || d > maxD || pointBlocked(x, y, 11) || cars.some(o => Math.abs(o.x - x) < 55 && Math.abs(o.y - y) < 55)) continue;
-    const c = makeCar(randType(), x, y, Math.atan2(p.dy, p.dx) + (side < 0 ? Math.PI : 0));
-    if (c.t.key === 'police' || c.t.key === 'truck' || c.t.key === 'jeep') continue;
+    const e = mpick(cand), s = mr(40, e.len - 40), side = Math.random() < 0.5 ? 1 : -1, p = pointAt(e, s), type = randType(), t = TYPES[type];
+    if (type === 'police' || type === 'truck' || type === 'jeep') continue;
+    const off = curbOff(e, t), x = p.x - p.dy * side * off, y = p.y + p.dx * side * off, d = Math.hypot(x - px, y - py);
+    if (d < minD || d > maxD || pointBlocked(x, y, t.W / 2 + 1) || inWater(x, y) || cars.some(o => Math.abs(o.x - x) < 55 && Math.abs(o.y - y) < 55)) continue;
+    const c = makeCar(type, x, y, Math.atan2(p.dy, p.dx) + (side < 0 ? Math.PI : 0));
     c.parked = true; cars.push(c);
     return c;
   }
@@ -1502,12 +1510,12 @@ function rentalSpots(w) {
   const cand = w.edges.filter(e => e.cls >= 2 && e.cls <= 4 && e.len > 160 && e.w >= 70);
   for (let k = cand.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [cand[k], cand[j]] = [cand[j], cand[k]]; }
   for (const e of cand) {
-    const s = e.len * (0.3 + rnd() * 0.4), side = rnd() < 0.5 ? 1 : -1, p = pointAt(e, s), off = e.w / 2 - 13;
+    const s = e.len * (0.3 + rnd() * 0.4), side = rnd() < 0.5 ? 1 : -1, p = pointAt(e, s);
+    const co = Math.floor(rnd() * RENT_COS.length), C = RENT_COS[co], type = C.cars[Math.floor(rnd() * C.cars.length)], off = curbOff(e, TYPES[type]);
     const x = p.x - p.dy * side * off, y = p.y + p.dx * side * off;
     if (out.some(o => Math.abs(o.x - x) < minD && Math.abs(o.y - y) < minD && Math.hypot(o.x - x, o.y - y) < minD)) continue;
-    if (pointBlocked(x, y, 12) || inWater(x, y)) continue;
-    const co = Math.floor(rnd() * RENT_COS.length), C = RENT_COS[co];
-    out.push({ x, y, a: Math.atan2(p.dy, p.dx) + (side < 0 ? Math.PI : 0), co, type: C.cars[Math.floor(rnd() * C.cars.length)], car: null });
+    if (pointBlocked(x, y, TYPES[type].W / 2 + 1) || inWater(x, y)) continue;
+    out.push({ x, y, a: Math.atan2(p.dy, p.dx) + (side < 0 ? Math.PI : 0), co, type, car: null });
   }
   return (w.rentals = out);
 }
@@ -1547,26 +1555,100 @@ function pathAt(P, s) {
 }
 const towRide = () => !!towJob && towJob.phase !== 'idle' && player.mode === 'car' && player.car === towJob.car;
 const insurerFor = c => INSURERS[c.rental ? c.rental.ins : 0];
+// a street path between (x, y) and a junction about D away: towards the point (arrive) or away from it (leave)
+function servicePath(x, y, D, arrive) {
+  const n0 = nearestNode(x, y), dij = dijkstra(n0.id);
+  let best = n0, bd = Infinity;
+  for (const n of city.nodes) { const d = dij.D[n.id]; if (d < Infinity && Math.abs(d - D) < bd) { bd = Math.abs(d - D); best = n; } }
+  if (arrive) return cleanPath(routeFrom(best.x, best.y, dij, x, y).pts);
+  return cleanPath(routeFrom(x, y, dijkstra(best.id), best.x, best.y).pts);
+}
 function callTow(car) {
   if (!city.workshops.length) return false;
   if (towJob) { towJob.tr.gone = true; towJob = null; }
-  const n0 = nearestNode(car.x, car.y), dij = dijkstra(n0.id);
-  let best = n0, bd = Infinity;
-  for (const n of city.nodes) { const D = dij.D[n.id]; if (D < Infinity && Math.abs(D - 3200) < bd) { bd = Math.abs(D - 3200); best = n; } }
-  const P = cleanPath(routeFrom(best.x, best.y, dij, car.x, car.y).pts);
+  const P = servicePath(car.x, car.y, 3200, true);
   if (P.length < 2) return false;
   const p0 = pathAt(P, 0), tr = makeCar('tow', p0.x, p0.y, Math.atan2(p0.dy, p0.dx));
-  tr.towTruck = true; tr.keep = true; tr.driver = 'tow'; tr.sig = true; cars.push(tr);
+  tr.towTruck = true; tr.svc = true; tr.keep = true; tr.driver = 'tow'; tr.sig = true; cars.push(tr);
   towJob = { tr, car, phase: 'come', P, s: 0, end: Math.max(0, pathLen(P) - (tr.t.L / 2 + car.t.L / 2 + 14)), v: 0, t: 0 };
   car.towWait = 0;
   toast(L(`Wezwano pomoc drogową (${insurerFor(car)}). Laweta będzie za ok. ${Math.max(5, Math.round(towJob.end / 190))} s.`, `Roadside assistance called (${insurerFor(car)}). Tow truck in about ${Math.max(5, Math.round(towJob.end / 190))} s.`));
   return true;
 }
+// service vehicles (tow truck, fire engine) follow a path along the right-hand side of the street, clear the way and push through jams
+function driveAlong(J, tr, car, vmax, dt) {
+  J.cw = (J.cw || 0) - dt; if (J.cw <= 0) { J.cw = 0.6; clearWay(tr, 450); }
+  const ca = Math.cos(tr.a), sa = Math.sin(tr.a);
+  // held up in a jam for a moment: the service vehicle noses through and shoves the cars in its way aside
+  J.stuck = J.v < 25 ? (J.stuck || 0) + dt : 0;
+  if (J.stuck > 0.6) J.push = 3;
+  J.push = Math.max(0, (J.push || 0) - dt);
+  for (const o of cars) {
+    if (o === tr || o === car || o.towedBy || Math.abs(o.x - tr.x) > 200 || Math.abs(o.y - tr.y) > 200) continue;
+    const rx = o.x - tr.x, ry = o.y - tr.y, along = rx * ca + ry * sa, lat = -rx * sa + ry * ca;
+    if (along <= -tr.t.L / 2 || Math.abs(lat) >= (o.t.W + tr.t.W) / 2 - 2) continue;
+    const gap = along - (o.t.L + tr.t.L) / 2 - 12;
+    if (J.push > 0 && gap < 40) {
+      const sd = lat >= 0 ? 1 : -1, k = 190 * dt;
+      o.x += -sa * sd * k + ca * k * 0.35; o.y += ca * sd * k + sa * k * 0.35; o.vx *= 0.5; o.vy *= 0.5;
+      if (o.ai) { o.ai.yieldT = Math.max(o.ai.yieldT || 0, 3); o.ai.blocked = 0; }
+    } else if (along > 0 && J.push <= 0) vmax = Math.min(vmax, Math.max(0, gap) * 2.5);
+  }
+  if (J.push > 0) vmax = Math.min(vmax, 90);
+  const left = J.end - J.s, vt = Math.min(vmax, Math.sqrt(Math.max(0, left) * 520) + 8);
+  J.v += clamp(vt - J.v, -600 * dt, 170 * dt); J.s = Math.min(J.end, J.s + J.v * dt);
+  const p = pathAt(J.P, J.s), off = 16 * clamp(Math.min(J.s / 120, (J.end - J.s) / 160), 0, 1), ox = tr.x, oy = tr.y;
+  tr.x = p.x - p.dy * off; tr.y = p.y + p.dx * off;
+  tr.a += wrapA(Math.atan2(p.dy, p.dx) - tr.a) * Math.min(1, dt * 5);
+  tr.vx = (tr.x - ox) / dt; tr.vy = (tr.y - oy) / dt;
+  return J.s >= J.end - 0.5;
+}
+// fire brigade: a wrecked car catches fire, a fire engine races in, puts it out, and only then the tow truck is called
+let fireJob = null;
+function callFire(car) {
+  const P = servicePath(car.x, car.y, 1600, true);
+  car.burning = true;
+  if (P.length < 2) { car.burning = false; car.fireOut = true; return false; }
+  const p0 = pathAt(P, 0), tr = makeCar('fire', p0.x, p0.y, Math.atan2(p0.dy, p0.dx));
+  tr.fireEngine = true; tr.svc = true; tr.keep = true; tr.driver = 'fire'; tr.sig = true; cars.push(tr);
+  fireJob = { tr, car, phase: 'come', P, s: 0, end: Math.max(0, pathLen(P) - (tr.t.L / 2 + car.t.L / 2 + 26)), v: 0, t: 0 };
+  toast(L(`Auto się pali! Straż pożarna w drodze, będzie za ok. ${Math.max(5, Math.round(fireJob.end / 180 + 3))} s.`, `The car is on fire! The fire brigade is on its way, about ${Math.max(5, Math.round(fireJob.end / 180 + 3))} s.`));
+  return true;
+}
+function updateFire(dt) {
+  const J = fireJob; if (!J) return;
+  const tr = J.tr, car = J.car;
+  if (tr.gone) { fireJob = null; return; }
+  J.t += dt;
+  if ((car.gone || !car.wreck) && J.phase !== 'leave') { car.burning = false; fireLeave(J); }
+  if (J.phase === 'come') {
+    if (driveAlong(J, tr, car, 330, dt)) { J.phase = 'spray'; J.t = 0; tr.vx = tr.vy = 0; toast(L('Strażacy gaszą pożar…', 'Firefighters are putting out the fire…')); }
+  } else if (J.phase === 'spray') {
+    // water from the front of the engine onto the car, steam rising from it
+    const nx = tr.x + Math.cos(tr.a) * tr.t.L * 0.45, ny = tr.y + Math.sin(tr.a) * tr.t.L * 0.45, d = Math.hypot(car.x - nx, car.y - ny) || 1;
+    for (let k = 0; k < 3; k++) { const sp = mr(0.8, 1.15) * d / 0.45; parts.push({ x: nx, y: ny, vx: (car.x - nx) / d * sp + mr(-30, 30), vy: (car.y - ny) / d * sp + mr(-30, 30), life: 0.45, max: 0.45, s: mr(2, 4), col: '170,215,255', spark: true }); }
+    if (Math.random() < 0.5) parts.push({ x: car.x + mr(-12, 12), y: car.y + mr(-12, 12), vx: mr(-15, 15), vy: mr(-30, -10), life: 1.4, max: 1.4, s: mr(6, 10), col: '235,238,240' });
+    if (J.t > 3.5) {
+      car.burning = false; car.fireOut = true;
+      toast(L('Pożar ugaszony. Wzywam lawetę…', 'Fire out. Calling the tow truck…'));
+      fireLeave(J);
+    }
+  } else if (J.phase === 'leave') {
+    if (driveAlong(J, tr, null, 220, dt) || (J.t > 40 && Math.hypot(tr.x - player.x, tr.y - player.y) > 1500)) { tr.gone = true; fireJob = null; }
+  }
+}
+function fireLeave(J) {
+  const P = servicePath(J.tr.x, J.tr.y, 4000, false);
+  J.phase = 'leave'; J.t = 0; J.v = 0; J.s = 0; J.cw = 0; J.stuck = 0; J.push = 0; J.tr.sig = false;
+  J.P = P.length > 1 ? P : [{ x: J.tr.x, y: J.tr.y }, { x: J.tr.x + Math.cos(J.tr.a) * 50, y: J.tr.y + Math.sin(J.tr.a) * 50 }];
+  J.end = pathLen(J.P);
+}
 function towBed(tr) { return { x: tr.x - Math.cos(tr.a) * tr.t.L * 0.16, y: tr.y - Math.sin(tr.a) * tr.t.L * 0.16, a: tr.a }; }
 function updateTow(dt) {
   const pc = player.car;
   // a wrecked car you drove calls for a tow truck after a moment
-  if (state === 'play' && pc && pc.wreck && pc.owned && !pc.towedBy && towable(pc) && city.workshops.length && (!towJob || towJob.phase === 'idle')) {
+  if (state === 'play' && pc && pc.wreck && pc.owned && !pc.towedBy && towable(pc) && !fireJob && !pc.fireOut) callFire(pc);
+  if (state === 'play' && pc && pc.wreck && pc.owned && pc.fireOut && !pc.towedBy && towable(pc) && city.workshops.length && (!towJob || towJob.phase === 'idle')) {
     pc.towWait = (pc.towWait || 0) + dt;
     if (pc.towWait > 1.5) callTow(pc);
   }
@@ -1575,33 +1657,7 @@ function updateTow(dt) {
   if (car.gone || tr.gone) { tr.gone = true; car.towedBy = null; towJob = null; return; }
   J.t += dt;
   const ride = towRide();
-  const move = vmax => {
-    J.cw = (J.cw || 0) - dt; if (J.cw <= 0) { J.cw = 0.6; clearWay(tr, 450); }
-    const ca = Math.cos(tr.a), sa = Math.sin(tr.a);
-    // held up in a jam for a moment: the tow truck noses through and shoves the cars in its way aside
-    J.stuck = J.v < 25 ? (J.stuck || 0) + dt : 0;
-    if (J.stuck > 0.6) J.push = 3;
-    J.push = Math.max(0, (J.push || 0) - dt);
-    for (const o of cars) {
-      if (o === tr || o === car || o.towedBy || Math.abs(o.x - tr.x) > 200 || Math.abs(o.y - tr.y) > 200) continue;
-      const rx = o.x - tr.x, ry = o.y - tr.y, along = rx * ca + ry * sa, lat = -rx * sa + ry * ca;
-      if (along <= -tr.t.L / 2 || Math.abs(lat) >= (o.t.W + tr.t.W) / 2 - 2) continue;
-      const gap = along - (o.t.L + tr.t.L) / 2 - 12;
-      if (J.push > 0 && gap < 40) {
-        const sd = lat >= 0 ? 1 : -1, k = 190 * dt;
-        o.x += -sa * sd * k + ca * k * 0.35; o.y += ca * sd * k + sa * k * 0.35; o.vx *= 0.5; o.vy *= 0.5;
-        if (o.ai) { o.ai.yieldT = Math.max(o.ai.yieldT || 0, 3); o.ai.blocked = 0; }
-      } else if (along > 0 && J.push <= 0) vmax = Math.min(vmax, Math.max(0, gap) * 2.5);
-    }
-    if (J.push > 0) vmax = Math.min(vmax, 90);
-    const left = J.end - J.s, vt = Math.min(vmax, Math.sqrt(Math.max(0, left) * 520) + 8);
-    J.v += clamp(vt - J.v, -600 * dt, 170 * dt); J.s = Math.min(J.end, J.s + J.v * dt);
-    const p = pathAt(J.P, J.s), off = 16 * clamp(Math.min(J.s / 120, (J.end - J.s) / 160), 0, 1), ox = tr.x, oy = tr.y;
-    tr.x = p.x - p.dy * off; tr.y = p.y + p.dx * off;
-    tr.a += wrapA(Math.atan2(p.dy, p.dx) - tr.a) * Math.min(1, dt * 5);
-    tr.vx = (tr.x - ox) / dt; tr.vy = (tr.y - oy) / dt;
-    return J.s >= J.end - 0.5;
-  };
+  const move = vmax => driveAlong(J, tr, car, vmax, dt);
   const onBed = k => { const b = towBed(tr); car.x = lerp(J.from.x, b.x, k); car.y = lerp(J.from.y, b.y, k); car.a = J.from.a + wrapA(b.a - J.from.a) * k; car.vx = tr.vx; car.vy = tr.vy; car.spin = 0; };
   if (J.phase === 'come') {
     if (!car.wreck) { tr.gone = true; towJob = null; return; }   // fixed on the spot at a garage after all
@@ -1651,10 +1707,12 @@ function towSkip() {
   }
 }
 // costs you never see in the yellow balance: rentals, cover, towing, repairs. Listed in the cost sheet next to the balance.
-let ledger = [], ledgerT = 0;
+let ledger = [], claims = [], ledgerT = 0, claimsOpen = false;
 function addCost(k, l, v, by) { const e = { k, l, v, by, at: clockLabel() }; ledger.push(e); return e; }
 const clockLabel = () => L(`${Math.floor(T / 60)} min gry`, `${Math.floor(T / 60)} min in`);
+// what you bore yourself (rentals, cover); damage the insurer paid is kept apart in claims
 const ledgerSum = () => ledger.reduce((a, e) => a + e.v, 0);
+const claimSum = c => c.items.reduce((a, it) => a + it.v, 0);
 // a rented car: start fee and protection package now, the per-km price as you drive
 function startRental(c) {
   const C = c.rental;
@@ -1664,29 +1722,39 @@ function startRental(c) {
 }
 function rentKm(c, dist) { const e = c.rentE; if (!e) return; e.km += dist / 10000; e.v = Math.round((c.rental.start + e.km * c.rental.km) * 100) / 100; }
 function ledgerHtml() {
-  const KN = { rent: L('Wynajem aut', 'Car rental'), ins: L('Ubezpieczenie', 'Insurance'), tow: L('Holowanie', 'Towing'), repair: L('Naprawy', 'Repairs'), svc: L('Obsługa', 'Service') };
+  const KN = { rent: L('Wynajem aut', 'Car rental'), ins: L('Pakiety ochrony', 'Cover packages') };
   const row = (a, b, c2) => `<div class="brow"><span>${a}${c2 ? `<br><small>${c2}</small>` : ''}</span><b>${b}</b></div>`;
-  const items = ledger.slice().reverse().map(e => row(e.l + (e.km != null ? `, ${e.km.toFixed(1).replace('.', LANG === 'en' ? '.' : ',')} km` : ''), zl(money2(e.v)), `${e.at} · ${e.k === 'rent' ? L('rozliczenie: ', 'billed by: ') : e.k === 'ins' ? L('ubezpieczyciel: ', 'insurer: ') : L('pokrył: ', 'paid by: ')}${e.by}`)).join('');
+  const items = ledger.slice().reverse().map(e => row(e.l + (e.km != null ? `, ${e.km.toFixed(1).replace('.', LANG === 'en' ? '.' : ',')} km` : ''), zl(money2(e.v)), `${e.at} · ${e.k === 'rent' ? L('rozliczenie: ', 'billed by: ') : L('ubezpieczyciel: ', 'insurer: ')}${e.by}`)).join('');
   const sums = Object.keys(KN).map(k => [k, ledger.filter(e => e.k === k).reduce((a, e) => a + e.v, 0)]).filter(([, v]) => v > 0).map(([k, v]) => row(KN[k], zl(money2(v)))).join('');
+  const cl = claims.slice().reverse().map(c => `<div class="claim"><div class="brow"><span><b>${c.what}</b><br><small>${c.at} · ${L('pokrył: ', 'paid by: ')}${c.ins}</small></span></div>`
+    + c.items.map(it => row(it.l, zl(money2(it.v)))).join('') + `<div class="brow sum"><span>${L('Szkoda razem', 'Claim total')}</span><b>${zl(money2(claimSum(c)))}</b></div></div>`).join('');
   return `<h3>${L('Rachunek kosztów', 'Cost sheet')}</h3>`
-    + (ledger.length ? `<div class="lsum">${sums}<div class="brow sum"><span>${L('Razem', 'Total')}</span><b>${zl(money2(ledgerSum()))}</b></div></div><div class="litems">${items}</div>`
+    + (ledger.length ? `<div class="lsum">${sums}<div class="brow sum"><span>${L('Razem poniesione', 'Total incurred')}</span><b>${zl(money2(ledgerSum()))}</b></div></div><div class="litems">${items}</div>`
       : `<p>${L('Na razie nie ma żadnych kosztów.', 'No costs so far.')}</p>`)
-    + `<p><small>${L('Tych kosztów nie odejmujemy od zarobku (żółta kwota): wynajem rozlicza wypożyczalnia, a szkody pokrywa ubezpieczyciel. Firmy są fikcyjne.', 'These costs are not taken from your earnings (the yellow amount): the rental company bills the rental and the insurer pays for damage. The companies are fictional.')}</small></p>`
+    + (claims.length ? `<details id="ledgerClaims"${claimsOpen ? ' open' : ''}><summary>${L(`Naprawy z ubezpieczenia (${claims.length}): razem ${zl(money2(claims.reduce((a, c) => a + claimSum(c), 0)))}`, `Insurance repairs (${claims.length}): total ${zl(money2(claims.reduce((a, c) => a + claimSum(c), 0)))}`)}</summary><p><small>${L('Te kwoty zapłacił ubezpieczyciel, więc nie wliczamy ich do twoich kosztów.', 'The insurer paid these, so they are not counted in your costs.')}</small></p>${cl}</details>` : '')
+    + `<p><small>${L('Koszty nie są odejmowane od zarobku (żółta kwota): wynajem rozlicza wypożyczalnia. Firmy są fikcyjne.', 'Costs are not taken from your earnings (the yellow amount): the rental company bills the rental. The companies are fictional.')}</small></p>`
     + `<button class="ghost" id="ledgerClose" type="button">${L('Zamknij', 'Close')}</button>`;
+}
+function renderLedger() {
+  const el = $('ledger'), sc = el.scrollTop;
+  el.innerHTML = ledgerHtml(); el.scrollTop = sc; ledgerT = 0.5;
+  $('ledgerClose').onclick = () => toggleLedger(false);
+  if ($('ledgerClaims')) $('ledgerClaims').ontoggle = e => { claimsOpen = e.target.open; };
 }
 function toggleLedger(on) {
   const el = $('ledger'); el.hidden = on != null ? !on : !el.hidden;
-  if (!el.hidden) { $('bill').hidden = true; billT = 0; el.innerHTML = ledgerHtml(); $('ledgerClose').onclick = () => toggleLedger(false); ledgerT = 0.5; }
+  if (!el.hidden) { $('bill').hidden = true; billT = 0; renderLedger(); }
 }
 // what the garage did, and who paid for it
 let billT = 0;
 function showBill(car, ws, towDist, dmg) {
+  car.burning = false; car.fireOut = false;
   const base = REPAIR_VAL[car.t.key] || 3000, r10 = v => Math.round(v / 10) * 10;
   const rep = r10(base * clamp(dmg, 0.08, 1) * mr(0.85, 1.15)), svc = r10(mr(120, 260)), km = towDist ? Math.max(1, towDist / 10000) : 0;
   const tow = towDist ? r10(250 + km * 9) : 0, sum = rep + svc + tow, ins = insurerFor(car), what = `${poiName(ws)}, ${tName(car.t)}`;
-  if (tow) addCost('tow', L(`Holowanie lawetą, ${km.toFixed(1).replace('.', ',')} km`, `Tow truck, ${km.toFixed(1)} km`), tow, ins);
-  addCost('repair', L(`Naprawa: ${what}`, `Repair: ${what}`), rep, ins);
-  addCost('svc', L(`Obsługa: diagnostyka, płyny, przegląd`, `Service: diagnostics, fluids, check-up`), svc, ins);
+  claims.push({ what, ins, at: clockLabel(), items: [
+    ...(tow ? [{ l: L(`Holowanie lawetą, ${km.toFixed(1).replace('.', ',')} km`, `Tow truck, ${km.toFixed(1)} km`), v: tow }] : []),
+    { l: L('Naprawa', 'Repair'), v: rep }, { l: L('Obsługa: diagnostyka, płyny, przegląd', 'Service: diagnostics, fluids, check-up'), v: svc }] });
   const row = (a, b) => `<div class="brow"><span>${a}</span><b>${b}</b></div>`;
   $('bill').innerHTML = `<h3>${poiName(ws)}: ${L('auto naprawione', 'car repaired')}</h3>`
     + (tow ? row(L(`Holowanie lawetą (${km.toFixed(1).replace('.', LANG === 'en' ? '.' : ',')} km)`, `Towing (${km.toFixed(1)} km)`), zl(tow)) : '')
@@ -1711,6 +1779,14 @@ function aiReset(c) {
 let wanted = 0, fines = 0, reasons = [], escapeT = 0, bustT = 0, chaseDij = null, chaseDijT = 0, offenceCool = {};
 const isCop = c => c.t.key === 'police' && c.pol && c.driver === 'ai' && !c.wreck;
 function copsNear(x, y, R) { return cars.filter(c => isCop(c) && Math.hypot(c.x - x, c.y - y) < R); }
+// a bump with a patrol car: their fault costs nothing, a slow bump by you gets a warning, only a real ram is an offence
+function copBump(meClose, copClose, hit) {
+  if (state !== 'play') return;
+  const cool = k => { if (offenceCool[k] && T - offenceCool[k] < 6) return false; offenceCool[k] = T; return true; };
+  if (copClose > meClose + 15) { if (!wanted && cool('copfault')) toast(L('Policja: to my wjechaliśmy w twoje auto. Bez mandatu, przepraszamy.', 'Police: we ran into you. No fine, sorry.')); return; }
+  if (hit > 110) { offence('ram', 1, 150, L('staranowanie radiowozu', 'ramming a police car'), 300); return; }
+  if (!wanted && cool('copwarn')) { toast(L('Policja: pouczenie. Stłuczka przy małej prędkości, tym razem bez mandatu. Proszę jechać ostrożniej.', 'Police: a warning. A slow bump, no fine this time. Please drive carefully.')); }
+}
 function offence(key, stars, fine, label, witnessR) {
   if (state !== 'play') return;
   if (offenceCool[key] && T - offenceCool[key] < 4) return;
@@ -1792,9 +1868,10 @@ function aiDrive(c, dt, ai = c.ai) {
     const rx = player.x - c.x, ry = player.y - c.y, alongP = rx * Math.cos(c.a) + ry * Math.sin(c.a);
     if (player.mode !== 'car' || alongP > c.t.L + 30 || Math.hypot(rx, ry) > 900) ai.yieldT = Math.min(ai.yieldT, 0.6);
   }
-  const sideT = ai.yieldT > 0 ? (ai.yieldMax || 14) : 0;
+  if (ai.avoidT > 0) ai.avoidT -= dt;
+  const sideT = ai.yieldT > 0 ? (ai.yieldMax || 14) : ai.avoidT > 0 ? ai.avoidS : 0;
   ai.side = ai.side || 0;
-  ai.side += clamp(sideT - ai.side, -22 * dt, 34 * dt);
+  ai.side += clamp(sideT - ai.side, -(ai.avoidT > 0 ? 45 : 22) * dt, 34 * dt);
   if (Math.abs(ai.side) > 0.3) {
     const pdx = tg.dx != null ? tg.dx : Math.cos(c.a), pdy = tg.dy != null ? tg.dy : Math.sin(c.a);
     tg = { x: tg.x - pdy * ai.side, y: tg.y + pdx * ai.side, dx: tg.dx, dy: tg.dy };
@@ -1818,7 +1895,7 @@ function aiDrive(c, dt, ai = c.ai) {
   if (stopD < Infinity) target = Math.min(target, stopD < 4 ? 0 : stopD * 1.4);   // red light ahead: stop at the line
   // look ahead for cars and people
   const ca = Math.cos(c.a), sa = Math.sin(c.a);
-  let blocked = false;
+  let blocked = false; ai.slow = false;
   // look further ahead the faster the car goes (braking distance)
   const look = 34 + Math.max(0, c.vx * ca + c.vy * sa) * 0.45, latW = ai.auto ? 19 : 15;
   if (ai.ignore <= 0) {
@@ -1827,6 +1904,15 @@ function aiDrive(c, dt, ai = c.ai) {
       if (o === c) continue;
       const rx = o.x - c.x, ry = o.y - c.y; if (Math.abs(rx) > 260 || Math.abs(ry) > 260) continue;
       const along = rx * ca + ry * sa, lat = -rx * sa + ry * ca;
+      // a standing car (parked, wrecked, abandoned) ahead: swing out around it rather than wait
+      if (along > 0 && along < c.t.L / 2 + o.t.L / 2 + look + 40 && Math.abs(lat) < (c.t.W + o.t.W) / 2 + 4 && !o.ai && o !== player.car && !o.svc && speedOf(o) < 8 && !(ai.yieldT > 0)) {
+        const need = (c.t.W + o.t.W) / 2 + 6, side = (ai.side || 0) + lat, want = lat >= -3 ? side - need : side + need;
+        if (Math.abs(want) <= 46) {
+          ai.avoidS = ai.avoidT > 0 && Math.abs(ai.avoidS) > Math.abs(want) ? ai.avoidS : want; ai.avoidT = 0.8;
+          if (Math.abs(lat) < need - 4) ai.slow = true;   // not out far enough yet: ease off while swinging out
+          continue;
+        }
+      }
       if (along > 0 && along < c.t.L / 2 + o.t.L / 2 + look && Math.abs(lat) < latW) { blocked = true; break; }
     }
     if (!blocked && transitAhead(c, ca, sa, c.t.L / 2 + 30)) blocked = true;
@@ -1835,6 +1921,7 @@ function aiDrive(c, dt, ai = c.ai) {
       if (along > 0 && along < c.t.L / 2 + 40 && Math.abs(lat) < 16) blocked = true;
     }
   } else ai.ignore -= dt;
+  if (ai.slow) target = Math.min(target, 55);
   if (blocked) { target = ai.auto ? Math.min(target, 20) : 0; ai.blocked += dt; if (ai.blocked > 4) { ai.ignore = 1.6; ai.blocked = 0; } } else ai.blocked = 0;
   const vf = c.vx * ca + c.vy * sa;
   let thr = clamp((target - vf) / 70, -1, 1);
@@ -1876,6 +1963,10 @@ function updatePeds(dt) {
       }
       pedPlace(p);
       if (p.ox || p.oy) { p.ox *= Math.exp(-1.2 * dt); p.oy *= Math.exp(-1.2 * dt); p.x += p.ox; p.y += p.oy; }
+    } else if (p.state === 'goto') {
+      // a passenger walking from the helicopter to the address
+      const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
+      if (d < 6) p.gone = true; else { const st = Math.min(d, 80 * dt); p.x += dx / d * st; p.y += dy / d * st; p.a = Math.atan2(dy, dx); p.ph += dt * 10; }
     } else if (p.state === 'free' || p.state === 'down') {
       p.x += p.vx * dt; p.y += p.vy * dt;
       const k = p.state === 'down' ? 3 : 0.4; p.vx *= Math.exp(-k * dt); p.vy *= Math.exp(-k * dt);
@@ -1918,6 +2009,7 @@ function makeOffer() {
   return { x: s.x, y: s.y, nx: s.nx, ny: s.ny, addr: s.addr, dest, len: rt.len, fare, limit: Math.round(rt.len / 190 + 18), who: personName(mpick(PEOPLE)), shirt: mpick(SHIRTS), born: T, ph: mr(0, 6) };
 }
 function speedOf(c) { return Math.hypot(c.vx, c.vy); }
+const HELI_WALK = 450;   // how far a passenger walks to or from a landed helicopter (45 m)
 function startJob(o) {
   job = { ...o, t: 0, crashes: 0, lastOuch: -9, inCar: true, waitAt: null };
   offers = offers.filter(x => x !== o);
@@ -1938,7 +2030,8 @@ function finishJob() {
   popup(player.car.x, player.car.y - 30, '+' + zl(pay), '#f2c230');
   const bits = [L(`stawka ${base} zł`, `fare PLN ${base}`)]; if (tip) bits.push(L(`napiwek ${tip} zł`, `tip PLN ${tip}`)); if (job.crashes) bits.push(L(`stłuczki: ${job.crashes}`, `bumps: ${job.crashes}`)); if (taxi > 1) bits.push(L('taksówka +20%', 'taxi +20%'));
   toast(L(`${job.who} płaci ${pay} zł (${bits.join(', ')})`, `${job.who} pays PLN ${pay} (${bits.join(', ')})`));
-  peds.push({ ring: null, x: job.dest.x, y: job.dest.y, a: 0, state: 'free', t: 3, vx: job.dest.nx * -20, vy: job.dest.ny * -20, ph: 0, shirt: job.shirt, sp: 0, p: 0 });
+  if (player.car.t.heli) peds.push({ ring: null, x: player.car.x + 20, y: player.car.y + 20, tx: job.dest.x, ty: job.dest.y, a: 0, state: 'goto', ph: 0, shirt: job.shirt, sp: 0, p: 0 });
+  else peds.push({ ring: null, x: job.dest.x, y: job.dest.y, a: 0, state: 'free', t: 3, vx: job.dest.nx * -20, vy: job.dest.ny * -20, ph: 0, shirt: job.shirt, sp: 0, p: 0 });
   snd('cash', 0.7);
   job = null; routeCache = null;
 }
@@ -1976,6 +2069,7 @@ function enterExit() {
     for (const c of cars) { if (player.roof && c.onRoof !== player.roof) continue; if (!player.roof && c.onRoof) continue; const d = Math.hypot(c.x - player.x, c.y - player.y) - c.t.L / 2; if (d < 26 && d < bd) { bd = d; best2 = c; } }
     if (!best2) { toast(L('Podejdź bliżej do auta.', 'Walk closer to a car.')); return; }
     if (best2.towTruck) { toast(L('To laweta pomocy drogowej.', 'This is the roadside tow truck.')); return; }
+    if (best2.fireEngine) { toast(L('To wóz straży pożarnej.', 'This is a fire engine.')); return; }
     if (best2.towedBy) { toast(L('Auto jest na lawecie.', 'The car is on the tow truck.')); return; }
     if (best2.wreck) { toast(L('To auto jest rozbite.', 'This car is wrecked.')); return; }
     if (!canUse(best2)) { toast(L('To nie twoje auto. Auta na wynajem stoją w kolorowych kopertach (fioletowa linia).', 'Not your car. Rental cars stand in coloured bays (purple line).')); return; }
@@ -2007,6 +2101,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyO') toggleAuto();
   if (e.code === 'KeyK' && state === 'play') toggleLedger();
   if (e.code === 'KeyR') toggleRentNav();
+  if (e.code === 'KeyL') toggleLimit();
   if (e.code === 'KeyP' || e.code === 'Escape') { if (!$('mapov').hidden) toggleMap(); else togglePause(); }
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
@@ -2022,6 +2117,7 @@ pads.addEventListener('pointerdown', e => {
   if (b.dataset.act === 'horn') { honk(); return; }
   if (b.dataset.act === 'fuel') { refuelOpen(); return; }
   if (b.dataset.act === 'auto') { toggleAuto(); return; }
+  if (b.dataset.act === 'limit') { toggleLimit(); return; }
   touch.set(e.pointerId, b.dataset.k); padUpdate();
 });
 pads.addEventListener('pointermove', e => { if (!touch.has(e.pointerId)) return; const b = padTarget(e); if (b && b.dataset.k) { touch.set(e.pointerId, b.dataset.k); padUpdate(); } });
@@ -2119,7 +2215,7 @@ function engineSound() {
   SND.engG.gain.setTargetAtTime(on ? (heli ? 0.06 * (0.4 + (c.air || 0)) : 0.035 + sp * 0.03) : 0, SND.ac.currentTime, 0.1);
   SND.skid.gain.setTargetAtTime(SND.on && state === 'play' ? skidSound * 0.08 : 0, SND.ac.currentTime, 0.05);
   skidSound *= 0.85;
-  let dmin = Infinity; for (const c of cars) if (c.pol && c.pol.chase && c.driver === 'ai') dmin = Math.min(dmin, Math.hypot(c.x - player.x, c.y - player.y));
+  let dmin = Infinity; for (const c of cars) if ((c.pol && c.pol.chase && c.driver === 'ai') || (c.fireEngine && c.sig && fireJob && fireJob.phase === 'come')) dmin = Math.min(dmin, Math.hypot(c.x - player.x, c.y - player.y));
   SND.siren.frequency.setTargetAtTime(Math.floor(T * 2) % 2 ? 960 : 720, SND.ac.currentTime, 0.05);
   SND.sirenG.gain.setTargetAtTime(SND.on && state === 'play' && dmin < 1200 ? 0.05 * (1 - dmin / 1200) : 0, SND.ac.currentTime, 0.1);
 }
@@ -2157,7 +2253,7 @@ function newWorld(kind, sd) {
   for (let k = 0; k < 30; k++) spawnPed(taxi.x, taxi.y, 0, 1000);
   if (city.real || city.gen) for (let k = 0; k < 26; k++) spawnParked(taxi.x, taxi.y, 90, 1200);
   spawnMilitary(); spawnHelis(); setupPlanes();
-  towJob = null; billT = 0; $('bill').hidden = true; ledger = []; $('ledger').hidden = true; setRentNav(false);
+  towJob = null; fireJob = null; billT = 0; $('bill').hidden = true; ledger = []; claims = []; $('ledger').hidden = true; setRentNav(false);
   rentalSpots(city); updateRentals(0, true);
   money = START_MONEY; trips = 0; T = 0; wanted = 0; fines = 0; reasons = []; bustT = 0; escapeT = 0;
   buildMinimap();
@@ -2862,10 +2958,16 @@ function autopilot(c, dt) {
   const tgt = route && route.tgt;
   if (!tgt) return null;
   if (c.t.heli) {
-    // fly straight there and land next to it
+    // take off, fly straight there braking in time, and land close by (the passenger walks the last bit), never on a roof
     const dx = tgt.x - c.x, dy = tgt.y - c.y, d = Math.hypot(dx, dy), diff = wrapA(Math.atan2(dy, dx) - c.a), sp = speedOf(c);
-    if (d < 140) return { thr: sp > 30 ? -1 : -1, steer: 0, hb: true };
-    return { thr: Math.abs(diff) > 0.6 ? 0.2 : clamp(d / 900, 0.3, 1) - (sp > d * 0.9 ? 0.6 : 0), steer: clamp(diff * 2, -1, 1), hb: false };
+    const vf = c.vx * Math.cos(c.a) + c.vy * Math.sin(c.a);
+    if (d < 220) {
+      if (buildingAt(c.x, c.y) && (c.air || 0) > 0.05) return { thr: vf > 90 ? -1 : 0.35, steer: clamp(diff * 2, -1, 1), hb: false };   // drift off the roof first
+      return { thr: -1, steer: 0, hb: sp < 25 };
+    }
+    if ((c.air || 0) < 0.3) return { thr: 1, steer: 0, hb: false };
+    const vDes = Math.min(900, Math.sqrt(2 * 420 * Math.max(0, d - 160))) * (Math.abs(diff) > 0.5 ? 0.3 : 1);
+    return { thr: vf > vDes + 20 ? -1 : clamp((vDes - vf) / 150, 0, 1), steer: clamp(diff * 2, -1, 1), hb: false };
   }
   let ai = c.auto;
   const off = ai && ai.path[ai.idx] ? Math.hypot(ai.path[ai.idx].x - c.x, ai.path[ai.idx].y - c.y) : 1e9;
@@ -2882,6 +2984,22 @@ const PRESETS = {
   sport:  { name: 'Sportowy', en: 'Sporty', dead: 0.12, curve: 1.5, reach: 1.15, joy: 0.7, gas: 0.85, turnSlow: 0.25, vmax: 250 },
 };
 const DMG_PRESETS = [['0', 'Wyłączone', 'Off'], ['0.5', 'Słabe', 'Light'], ['1', 'Normalne', 'Normal'], ['2', 'Mocne', 'Strong']];
+
+// ---------- speed limiter (L): 50 km/h in town, 70 on the main arteries; always on under autopilot ----------
+let limOn = false, limT = 0, limV = 50;
+function roadLimit(x, y) { const n = nearestSeg(x, y, 200, s => s.e >= 0); return n && city.edges[n.s.e].cls <= 1 ? 70 : 50; }
+const limActive = () => (limOn || autoOn) && player.mode === 'car' && !player.car.t.heli;
+function toggleLimit() {
+  if (state !== 'play') return;
+  limOn = !limOn; $('limPad').classList.toggle('on', limOn); limT = 0;
+  toast(limOn ? L('Ogranicznik prędkości włączony: 50 km/h, na głównych arteriach 70 km/h.', 'Speed limiter on: 50 km/h, 70 km/h on main roads.') : autoOn ? L('Ogranicznik wyłączony (autopilot i tak trzyma limit).', 'Limiter off (the autopilot keeps to the limit anyway).') : L('Ogranicznik prędkości wyłączony.', 'Speed limiter off.'));
+}
+function applyLimit(c, ctl, dt) {
+  limT -= dt; if (limT <= 0) { limT = 0.4; limV = roadLimit(c.x, c.y); }
+  const vmax = limV / 0.36, vf = c.vx * Math.cos(c.a) + c.vy * Math.sin(c.a);
+  if (ctl.thr > 0) ctl.thr = Math.min(ctl.thr, clamp((vmax - vf) / 25, 0, 1));
+  if (vf > vmax + 8) { const k = Math.max(0, 1 - 0.7 * dt); c.vx *= k; c.vy *= k; }   // engine braking down to the limit
+}
 
 // ---------- simulation ----------
 const ctlS = { steer: 0, thr: 0 };
@@ -2905,6 +3023,7 @@ function step(dt) {
   if (player.mode === 'car') {
     const c = player.car;
     if (c.t.fuel && c.fuel <= 0 && ctl.thr > 0) ctl.thr = 0;   // empty tank: the engine stalls
+    if (limActive()) applyLimit(c, ctl, dt);
     const ox = c.x, oy = c.y;
     if (c.t.heli) heliPhysics(c, ctl, dt); else physics(c, ctl.thr, ctl.steer, ctl.hb, dt);
     if (state === 'play') { const d = Math.hypot(c.x - ox, c.y - oy); burnFuel(c, d, ctl.thr, dt); if (c.rentE && !c.towedBy) rentKm(c, d); }
@@ -2924,15 +3043,16 @@ function step(dt) {
   }
   // traffic
   for (const c of cars) {
-    if (c === player.car && player.mode === 'car' || c.towTruck || c.towedBy) continue;
+    if (c === player.car && player.mode === 'car' || c.svc || c.towedBy) continue;
     if (c.pol && c.pol.chase && c.driver === 'ai' && !c.wreck) { const u = policeDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
     else if (c.ai && !c.wreck) { const u = aiDrive(c, dt); physics(c, u.thr, u.steer, false, dt); }
     else if (c.t.heli) heliPhysics(c, { thr: 0, steer: 0, hb: false }, dt);
     else if (c.vx || c.vy || c.spin) { physics(c, 0, 0, false, dt); if (Math.abs(c.vx) + Math.abs(c.vy) < 0.05 && Math.abs(c.spin) < 0.001) c.vx = c.vy = c.spin = 0; }   // parked cars at rest need no physics
   }
   // collisions only matter near the player; far-away cars just drive
+  updateFire(dt);
   updateTow(dt);
-  const near = cars.filter(c => !c.towTruck && !c.towedBy && Math.abs(c.x - player.x) < 1100 && Math.abs(c.y - player.y) < 1100);
+  const near = cars.filter(c => !c.svc && !c.towedBy && Math.abs(c.x - player.x) < 1100 && Math.abs(c.y - player.y) < 1100);
   for (const c of near) if ((c.air || 0) < 0.2 && !c.onRoof && (speedOf(c) > 1 || c === player.car)) collideStatic(c);
   for (let a = 0; a < near.length; a++) for (let b = a + 1; b < near.length; b++) collideCars(near[a], near[b]);
   // cars that leave the road into the Warta (or the sea around a generated town) sink
@@ -2954,7 +3074,8 @@ function step(dt) {
       if (c === player.car && player.mode === 'car') { toast(L('Auto wpadło do wody!', 'The car fell into the water!')); snd('crash', 0.8); }
     }
   }
-  for (const c of cars) if (c.hp < c.t.hp * 0.35 && Math.random() < (c.wreck ? 0.4 : 0.15)) parts.push({ x: c.x + Math.cos(c.a) * c.t.L * 0.35, y: c.y + Math.sin(c.a) * c.t.L * 0.35, vx: mr(-10, 10), vy: mr(-25, -5), life: 1.6, max: 1.6, s: mr(5, 9), col: c.wreck ? '30,28,28' : '120,118,115' });
+  for (const c of cars) if (c.burning) for (let k = 0; k < 2; k++) parts.push({ x: c.x + mr(-c.t.L * 0.3, c.t.L * 0.3), y: c.y + mr(-c.t.W * 0.35, c.t.W * 0.35), vx: mr(-12, 12), vy: mr(-40, -15), life: mr(0.3, 0.6), max: 0.6, s: mr(4, 8), col: Math.random() < 0.5 ? '255,120,30' : '255,200,60', spark: true });
+  for (const c of cars) if (c.hp < c.t.hp * 0.35 && Math.random() < (c.burning ? 0.8 : c.fireOut ? 0.08 : c.wreck ? 0.4 : 0.15)) parts.push({ x: c.x + Math.cos(c.a) * c.t.L * 0.35, y: c.y + Math.sin(c.a) * c.t.L * 0.35, vx: mr(-10, 10), vy: mr(-25, -5), life: 1.6, max: 1.6, s: mr(5, 9), col: c.wreck ? '30,28,28' : '120,118,115' });
   // keep the streets populated near the player, forget far-away traffic
   const px = player.x, py = player.y;
   cars = cars.filter(c => !c.gone && (c.keep || c === player.car) || !c.gone && !c.keep && c !== player.car && Math.hypot(c.x - px, c.y - py) < (c.pol && c.pol.chase ? 2200 : 1500));
@@ -2974,9 +3095,21 @@ function step(dt) {
   // jobs
   if (state === 'play') {
     if (!job && offers.length < 6) { const o = makeOffer(); if (o) offers.push(o); }
-    offers = offers.filter(o => T - o.born < 150 || job);
+    offers = offers.filter(o => T - o.born < 150 || job || o.walking);
     const pc = player.mode === 'car' ? player.car : null, slow = pc && !pc.wreck && speedOf(pc) < 70 && !(pc.air > 0.05);
     if (!job && slow) for (const o of offers) if (Math.hypot(pc.x - o.x, pc.y - o.y) < 80) { startJob(o); break; }
+    // a helicopter can't stop at the kerb: once it lands nearby, the passenger walks over (and away at the destination)
+    const heliDown = pc && pc.t.heli && !pc.wreck && (pc.air || 0) < 0.05 && !pc.onRoof && speedOf(pc) < 30;
+    if (!job && heliDown) {
+      const o = offers.find(q => q.walking) || offers.filter(q => Math.hypot(q.x - pc.x, q.y - pc.y) < HELI_WALK).sort((a, b) => Math.hypot(a.x - pc.x, a.y - pc.y) - Math.hypot(b.x - pc.x, b.y - pc.y))[0];
+      if (o) {
+        if (!o.walking) { o.walking = true; toast(L(`${o.who} idzie do helikoptera…`, `${o.who} is walking to the helicopter…`)); }
+        const dx = pc.x - o.x, dy = pc.y - o.y, d = Math.hypot(dx, dy);
+        if (d < 34) startJob(o); else { const st = Math.min(d - 30, 85 * dt); o.x += dx / d * st; o.y += dy / d * st; o.nx = -dx / d; o.ny = -dy / d; o.ph += dt * 10; }
+      }
+    } else for (const o of offers) o.walking = false;
+    if (job && !job.inCar && heliDown && Math.hypot(pc.x - job.waitAt.x, pc.y - job.waitAt.y) < HELI_WALK) { job.inCar = true; say(L('No, lecimy dalej.', 'Right, let\'s fly on.')); snd('door', 0.5); }
+    if (job && job.inCar && heliDown && Math.hypot(pc.x - job.dest.x, pc.y - job.dest.y) < HELI_WALK) finishJob();
     if (job) {
       job.t += dt;
       if (!job.inCar && slow && Math.hypot(pc.x - job.waitAt.x, pc.y - job.waitAt.y) < 80) { job.inCar = true; say(L('No, jedziemy dalej.', 'Right, let\'s go on.')); snd('door', 0.5); }
@@ -3246,6 +3379,15 @@ function drawCar(c) {
     ctx.fillStyle = '#d6d2c8'; ctx.fillRect(-L / 2 + 1, -W / 2 + 1, L * 0.68, W - 2);
     ctx.strokeStyle = 'rgba(0,0,0,.18)'; for (let x = -L / 2 + 8; x < -L / 2 + L * 0.68; x += 8) { ctx.beginPath(); ctx.moveTo(x, -W / 2 + 2); ctx.lineTo(x, W / 2 - 2); ctx.stroke(); }
     ctx.fillStyle = glass; ctx.fillRect(L / 2 - 9, -W / 2 + 3, 5, W - 6);
+  } else if (t.key === 'fire') {
+    // ladder on the roof, blue beacons on the cab
+    ctx.fillStyle = '#c9ccd1'; ctx.fillRect(-L / 2 + 4, -5, L - 26, 2.5); ctx.fillRect(-L / 2 + 4, 2.5, L - 26, 2.5);
+    ctx.fillStyle = '#9aa0a8'; for (let x = -L / 2 + 7; x < L / 2 - 22; x += 6) ctx.fillRect(x, -3, 1.5, 6);
+    ctx.fillStyle = '#f3eee2'; ctx.fillRect(-L / 2 + 2, -W / 2, L - 24, 2); ctx.fillRect(-L / 2 + 2, W / 2 - 2, L - 24, 2);
+    ctx.fillStyle = glass; ctx.fillRect(L / 2 - 8, -W / 2 + 3, 5, W - 6);
+    const on = c.sig, ph = Math.floor(T * 7) % 2;
+    ctx.fillStyle = on && ph ? '#4aa3ff' : '#1b2f6a'; ctx.fillRect(L / 2 - 18, -W / 2 + 2, 5, W / 2 - 2);
+    ctx.fillStyle = on && !ph ? '#4aa3ff' : '#1b2f6a'; ctx.fillRect(L / 2 - 18, 0, 5, W / 2 - 2);
   } else if (t.key === 'tow') {
     // flatbed behind the cab, beacons on the cab roof
     ctx.fillStyle = '#5d6168'; ctx.fillRect(-L / 2 + 1, -W / 2 + 1, L - 24, W - 2);
@@ -3352,10 +3494,16 @@ function draw() {
     g.addColorStop(0, ph ? 'rgba(255,60,48,.55)' : 'rgba(60,120,255,.55)'); g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, 46, 0, 7); ctx.fill();
   }
-  if (towJob && towJob.tr.sig) {
-    const c = towJob.tr, k = 0.35 + 0.35 * Math.abs(Math.sin(T * 9)), g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, 54);
-    g.addColorStop(0, `rgba(255,170,20,${k})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  for (const J of [towJob, fireJob]) if (J && J.tr.sig) {
+    const c = J.tr, k = 0.35 + 0.35 * Math.abs(Math.sin(T * 9)), g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, 54);
+    g.addColorStop(0, c.fireEngine ? `rgba(60,140,255,${k})` : `rgba(255,170,20,${k})`); g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, 54, 0, 7); ctx.fill();
+  }
+  // a burning wreck lights up its surroundings
+  for (const c of cars) if (c.burning && c.x > v.x0 && c.x < v.x1 && c.y > v.y0 && c.y < v.y1) {
+    const k = 0.3 + 0.15 * Math.sin(T * 23) + 0.1 * Math.sin(T * 7), g = ctx.createRadialGradient(c.x, c.y, 2, c.x, c.y, 70);
+    g.addColorStop(0, `rgba(255,130,30,${k})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, 70, 0, 7); ctx.fill();
   }
   ctx.restore();
   if (player.mode === 'foot' && !player.roof) {
@@ -3430,7 +3578,7 @@ function draw() {
   if (player.mode === 'foot' && state === 'play') {
     let near = null, bd = Infinity;
     for (const c of cars) { const d = Math.hypot(c.x - player.x, c.y - player.y) - c.t.L / 2; if (d < 26 && d < bd) { bd = d; near = c; } }
-    if (near) { ctx.strokeStyle = near.wreck ? 'rgba(229,83,61,.8)' : canUse(near) && !near.towTruck && !near.towedBy ? 'rgba(242,194,48,.9)' : 'rgba(160,160,160,.6)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2; ctx.save(); ctx.translate(near.x, near.y); ctx.rotate(near.a); rr2(-near.t.L / 2 - 4, -near.t.W / 2 - 4, near.t.L + 8, near.t.W + 8, 6); ctx.stroke(); ctx.restore(); ctx.setLineDash([]); }
+    if (near) { ctx.strokeStyle = near.wreck ? 'rgba(229,83,61,.8)' : canUse(near) && !near.svc && !near.towedBy ? 'rgba(242,194,48,.9)' : 'rgba(160,160,160,.6)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2; ctx.save(); ctx.translate(near.x, near.y); ctx.rotate(near.a); rr2(-near.t.L / 2 - 4, -near.t.W / 2 - 4, near.t.L + 8, near.t.W + 8, 6); ctx.stroke(); ctx.restore(); ctx.setLineDash([]); }
     nearCar = near;
   } else nearCar = null;
   // edge pointer to an off-screen target
@@ -3513,6 +3661,7 @@ function drawOverlay(g, M, big, vb) {
     for (const r of city.rentals || []) if (inV(r.x, r.y) && !(r.car && r.car.owned)) { const [sx, sy] = M(r.x, r.y); g.fillStyle = RENT_COS[r.co].col; g.fillRect(sx - b, sy - b, 2 * b, 2 * b); }
   }
   if (towJob && towJob.tr.sig) dot(towJob.tr.x, towJob.tr.y, big ? 6 : 4, Math.floor(T * 4) % 2 ? '#ffc21a' : '#7a5a10');
+  if (fireJob && fireJob.tr.sig) dot(fireJob.tr.x, fireJob.tr.y, big ? 6 : 4, Math.floor(T * 4) % 2 ? '#e0412f' : '#4aa3ff');
   if (!job) for (const o of offers) dot(o.x, o.y, big ? 6 : 4, '#f2c230');
   if (job) { if (job.inCar) dot(job.dest.x, job.dest.y, big ? 7 : 4.5, '#6cc070'); else dot(job.waitAt.x, job.waitAt.y, big ? 6 : 4, '#f2c230'); }
   for (const c of cars) if (isCop(c)) dot(c.x, c.y, big ? 5 : 3, c.pol.chase ? (Math.floor(T * 6) % 2 ? '#ff3b30' : '#3b7bff') : '#9fb8ff');
@@ -3715,6 +3864,15 @@ function drawSpeedo() {
     g.lineWidth = big ? 2 : 1; g.beginPath(); g.moveTo(cx + Math.cos(t) * r1, cy + Math.sin(t) * r1); g.lineTo(cx + Math.cos(t) * r2, cy + Math.sin(t) * r2); g.stroke();
     if (big && R > 50) g.fillText(String(v), cx + Math.cos(t) * (R - 26), cy + Math.sin(t) * (R - 26));
   }
+  if (limActive()) {
+    const tl = ang(limV), sr = R * 0.24, sx = cx - R * 0.78, sy = cy - R * 0.78;
+    g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx + Math.cos(tl) * (R - 2), cy + Math.sin(tl) * (R - 2)); g.lineTo(cx + Math.cos(tl) * (R - 15), cy + Math.sin(tl) * (R - 15)); g.stroke();
+    // a round speed-limit sign next to the dial
+    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(sx, sy, sr, 0, 7); g.fill();
+    g.strokeStyle = '#d0201a'; g.lineWidth = sr * 0.28; g.beginPath(); g.arc(sx, sy, sr * 0.86, 0, 7); g.stroke();
+    g.fillStyle = '#121418'; g.font = `700 ${Math.round(sr * 0.95)}px "Barlow Semi Condensed", sans-serif`; g.fillText(String(limV), sx, sy + 0.5);
+    g.font = `600 ${R > 55 ? 10 : 9}px "Barlow Semi Condensed", sans-serif`;
+  }
   const t = ang(kmh);
   g.strokeStyle = '#e5533d'; g.lineWidth = 3; g.lineCap = 'round';
   g.beginPath(); g.moveTo(cx - Math.cos(t) * 8, cy - Math.sin(t) * 8); g.lineTo(cx + Math.cos(t) * (R - 12), cy + Math.sin(t) * (R - 12)); g.stroke();
@@ -3780,7 +3938,8 @@ function drawRouteLine() {
 // ---------- HUD ----------
 function hud(dt) {
   setT('money', zl(money2(money))); setT('costBtn', L('koszty: ', 'costs: ') + zl(money2(ledgerSum())));
-  if (!$('ledger').hidden && (ledgerT -= dt) <= 0) { ledgerT = 0.5; const sc = $('ledger').scrollTop; $('ledger').innerHTML = ledgerHtml(); $('ledgerClose').onclick = () => toggleLedger(false); $('ledger').scrollTop = sc; } setT('trips', L('kursy: ', 'trips: ') + trips); if (TR) setT('clock', L('godz. ', '') + fmtClock(clockSec));
+  if (!$('ledger').hidden && (ledgerT -= dt) <= 0) renderLedger();
+  setT('trips', L('kursy: ', 'trips: ') + trips); if (TR) setT('clock', L('godz. ', '') + fmtClock(clockSec));
   $('wanted').hidden = !wanted;
   if (wanted) {
     setT('stars', '★'.repeat(wanted) + '☆'.repeat(4 - wanted));
@@ -3801,7 +3960,13 @@ function hud(dt) {
     const dmg = player.mode === 'car' && player.car.hp < player.car.t.hp * 0.45 && route && route.kind === 'repair';
     const dist = route && route.tgt ? Math.round(Math.hypot(route.tgt.x - player.x, route.tgt.y - player.y) / 10) : 0;
     const tj = towJob && towJob.phase !== 'idle' && player.car === towJob.car ? towJob : null;
-    if (tj) {
+    const fj = fireJob && fireJob.phase !== 'leave' && player.car === fireJob.car ? fireJob : null;
+    if (fj) {
+      setT('jobWho', L('Straż pożarna', 'Fire brigade')); setT('jobFare', '');
+      setT('jobWhere', fj.phase === 'come' ? L(`Auto się pali. Wóz strażacki jedzie na sygnale: ${Math.round(Math.max(0, fj.end - fj.s) / 10)} m. Po ugaszeniu przyjedzie laweta.`, `The car is on fire. The fire engine is coming, ${Math.round(Math.max(0, fj.end - fj.s) / 10)} m. A tow truck follows once it is out.`) : L('Strażacy gaszą pożar…', 'Firefighters are putting out the fire…'));
+      $('jobBarW').hidden = true;
+    }
+    else if (tj) {
       const m = Math.round(Math.max(0, tj.end - tj.s) / 10);
       setT('jobWho', L('Pomoc drogowa', 'Roadside assistance')); setT('jobFare', '');
       setT('jobWhere', tj.phase === 'come' ? L(`Laweta jedzie na sygnale, ${m} m. Koszty pokrywa ${insurerFor(tj.car)}.`, `The tow truck is on its way with beacons on, ${m} m. ${insurerFor(tj.car)} pays.`)
@@ -3826,7 +3991,7 @@ function hud(dt) {
   if (billT > 0) { billT -= dt; if (billT <= 0) $('bill').hidden = true; }
   const c = player.mode === 'car' ? player.car : null;
   setT('spd', String(c ? Math.round(speedOf(c) * 0.36) : Math.round(Math.hypot(player.vx, player.vy) * 0.36)));
-  setT('street', (autoOn ? 'AUTOPILOT · ' : '') + streetAt(player.x, player.y));
+  setT('street', (autoOn ? 'AUTOPILOT · ' : '') + (limActive() ? `LIMIT ${limV} · ` : '') + streetAt(player.x, player.y));
   infoT -= dt; if (infoT <= 0) { infoT = 0.5; const slowish = player.mode === 'foot' || speedOf(player.car) < 120; infoTxt = slowish ? nearbyInfo() : ''; }
   setT('district', infoTxt ? L('obok: ', 'next to: ') + infoTxt : districtAt(player.x, player.y));
   if (player.mode === 'car' && player.car.t.heli) setT('district', player.car.air > 0.3 ? L('lot nad miastem · ', 'flying over the city · ') + districtAt(player.x, player.y) : L('helikopter: gaz, żeby wystartować', 'helicopter: throttle to take off'));
@@ -3837,7 +4002,7 @@ function hud(dt) {
   const eb = $('enterBtn');
   setT('enterBtn', towRide() && towJob.phase !== 'come' ? L('Pomiń', 'Skip') : player.mode === 'car' ? L('Wysiądź', 'Get out') : L('Wsiądź', 'Get in'));
   setT('hbBtn', L('Ręczny', 'Handbrake'));
-  eb.classList.toggle('glow', player.mode === 'foot' && !!nearCar && !nearCar.wreck && canUse(nearCar) && !nearCar.towTruck && !nearCar.towedBy);
+  eb.classList.toggle('glow', player.mode === 'foot' && !!nearCar && !nearCar.wreck && canUse(nearCar) && !nearCar.svc && !nearCar.towedBy);
 }
 
 // ---------- fuel ----------
@@ -4010,7 +4175,9 @@ function applyStatic() {
     ['mapClose', 'text', 'Wróć do jazdy', 'Back to driving'],
     ['mapNote', 'html', 'Dane mapy © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">autorzy OpenStreetMap</a>', 'Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'],
     ['bigmap', 'aria-label', 'Mapa miasta: przeciągnij, żeby przesunąć, szczypnij albo użyj + i −, żeby przybliżyć', 'City map: drag to pan, pinch or use + and − to zoom'],
-    ['keys', 'html', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>H</kbd> klakson · <kbd>T</kbd> tankuj · <kbd>M</kbd> mapa · <kbd>O</kbd> autopilot · <kbd>R</kbd> wynajem · <kbd>K</kbd> koszty', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> drive · <kbd>Space</kbd> handbrake · <kbd>E</kbd> get in / out · <kbd>H</kbd> horn · <kbd>T</kbd> refuel · <kbd>M</kbd> map · <kbd>O</kbd> autopilot · <kbd>R</kbd> rental · <kbd>K</kbd> costs'],
+    ['keys', 'html', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> jazda · <kbd>Spacja</kbd> ręczny · <kbd>E</kbd> wsiądź / wysiądź · <kbd>H</kbd> klakson · <kbd>T</kbd> tankuj · <kbd>M</kbd> mapa · <kbd>O</kbd> autopilot · <kbd>L</kbd> limit · <kbd>R</kbd> wynajem · <kbd>K</kbd> koszty', '<kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> / <kbd>WASD</kbd> drive · <kbd>Space</kbd> handbrake · <kbd>E</kbd> get in / out · <kbd>H</kbd> horn · <kbd>T</kbd> refuel · <kbd>M</kbd> map · <kbd>O</kbd> autopilot · <kbd>L</kbd> limiter · <kbd>R</kbd> rental · <kbd>K</kbd> costs'],
+    ['limPad', 'text', 'Limit', 'Limit'],
+    ['limPad', 'aria-label', 'Ogranicznik prędkości (L)', 'Speed limiter (L)'],
     ['costBtn', 'title', 'Rachunek kosztów: wynajem, ubezpieczenie, naprawy (K)', 'Cost sheet: rentals, insurance, repairs (K)'],
   ];
   for (const [id, what, pl, en] of T2) {
@@ -4091,13 +4258,14 @@ const HOWTO_PL = `
   <li><b>Paliwo:</b> każde auto ma swój bak i realne spalanie w mieście (np. sedan ok. 7,5 l/100 km, ciężarówka ok. 32 l). Zatrzymaj się na stacji (żółte P) i naciśnij T albo „Tankuj”. Ceny według średnich cen z ${PRICE_DATE}.</li>
   <li><b>Klakson (H):</b> auta przed tobą włączają kierunkowskaz, zjeżdżają do prawej krawędzi, zatrzymują się i przepuszczają cię. Piesi się odsuwają.</li>
   <li><b>Auta:</b> supersamochód i kabriolet są najszybsze, ciężarówka wytrzymała, maluch zwrotny i oszczędny. Na terenach wojskowych stoją terenówki, ciężarówki i czołgi (tylko do jazdy). Gdy auto dymi, warsztat (pomarańczowe W, fikcyjny) je naprawi, a koszty pokryje ubezpieczyciel.</li>
-  <li><b>Wynajem:</b> cudzych aut nie da się ukraść. Auta na wynajem stoją w całym mieście w kopertach w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia, a w aucie możesz ją włączyć klawiszem R albo przyciskiem „Wynajem”, gdy chcesz zmienić auto.</li>
-  <li><b>Laweta:</b> gdy auto się rozbije, przyjeżdża laweta na sygnale i odholowuje je do warsztatu. Holowanie, naprawę i obsługę pokrywa ubezpieczyciel (fikcyjny), a rachunek pojawia się na ekranie.</li>
-  <li><b>Koszty (K):</b> przycisk „koszty” obok stanu konta pokazuje pełny rachunek: wynajem (opłata startowa i za kilometr), pakiet ochrony, holowanie, naprawy i obsługę. Te kwoty nie są odejmowane od zarobku.</li>
-  <li><b>Helikopter:</b> stoi na lotnisku i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku.</li>
-  <li><b>Autopilot (O):</b> sam jedzie do pasażera, do celu albo na stację. Dotknięcie sterowania go wyłącza.</li>
+  <li><b>Wynajem:</b> auta na wynajem stoją w całym mieście w kopertach w kolorze firmy: Zielony Kluczyk (zielone, małe auta), Fioletowa Fura (fioletowe, sportowe), Pomarańczowe Koła (pomarańczowe, dostawcze i ciężarówki) i Błękitny Bak (błękitne, osobowe). Pieszo prowadzi do nich fioletowa linia, a w aucie możesz ją włączyć klawiszem R albo przyciskiem „Wynajem”, gdy chcesz zmienić auto.</li>
+  <li><b>Laweta:</b> gdy auto się rozbije i zapali, najpierw przyjeżdża straż pożarna i gasi pożar, a potem laweta na sygnale i odholowuje je do warsztatu. Holowanie, naprawę i obsługę pokrywa ubezpieczyciel (fikcyjny), a rachunek pojawia się na ekranie.</li>
+  <li><b>Koszty (K):</b> przycisk „koszty” obok stanu konta pokazuje koszty, które ponosisz: wynajem (opłata startowa i za kilometr) i pakiety ochrony. Naprawy, holowanie i obsługę opłacone przez ubezpieczyciela widać osobno, po rozwinięciu „Naprawy z ubezpieczenia”. Żadna z tych kwot nie jest odejmowana od zarobku.</li>
+  <li><b>Helikopter:</b> stoi na lotnisku i przy lądowiskach. Gaz to start, a żeby wylądować, zwolnij i przytrzymaj hamulec, także nad dachem budynku. Wyląduj do 45 m od pasażera albo celu, a pasażer sam podejdzie. Autopilot też umie latać.</li>
+  <li><b>Autopilot (O):</b> sam jedzie do pasażera, do celu albo na stację i omija zaparkowane auta. Jedzie zawsze z ogranicznikiem prędkości. Dotknięcie sterowania go wyłącza.</li>
+  <li><b>Ogranicznik prędkości (L):</b> trzyma 50 km/h w mieście i 70 km/h na głównych arteriach. Znak z limitem pojawia się przy prędkościomierzu.</li>
   <li><b>Komunikacja:</b> autobusy i tramwaje jeżdżą według rozkładu na aktualną godzinę, z numerami linii na dachach.</li>
-  <li><b>Policja:</b> reaguje, gdy widzi taranowanie radiowozu. Zatrzymaj się przy radiowozie i zapłać mandat albo uciekaj.</li>
+  <li><b>Policja:</b> reaguje, gdy widzi taranowanie radiowozu. Za lekką stłuczkę dostajesz tylko pouczenie, a gdy to radiowóz wjedzie w ciebie, mandatu nie ma. Zatrzymaj się przy radiowozie i zapłać mandat albo uciekaj.</li>
   <li><b>Telefon:</b> joystick do góry to gaz, w dół hamowanie i wsteczny, na boki skręt.</li>`;
 const HOWTO_EN = `
   <li><b>Passengers:</b> a yellow marker by the kerb. Stop next to it and they get in. The arrow and the map lead to the drop-off.</li>
@@ -4105,13 +4273,14 @@ const HOWTO_EN = `
   <li><b>Fuel:</b> every car has its own tank and realistic city consumption (e.g. a sedan about 7.5 l/100 km, a truck about 32 l). Stop at a petrol station (yellow F) and press T or "Refuel". Prices follow Polish averages of ${PRICE_DATE}.</li>
   <li><b>Horn (H):</b> cars ahead switch on their indicator, pull over to the right-hand kerb, stop and let you through. Pedestrians step aside.</li>
   <li><b>Cars:</b> the supercar and convertible are fastest, the truck is tough, the mini car is nimble and frugal. Military areas hold jeeps, trucks and tanks (driving only). When your car smokes, a garage (orange G, fictional) fixes it and the insurer pays.</li>
-  <li><b>Rentals:</b> other people's cars can't be stolen. Rental cars stand all over town in bays painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them; in a car, switch it on with R or the "Rental" button when you want to change cars.</li>
-  <li><b>Tow truck:</b> when your car is wrecked, a tow truck arrives with beacons flashing and takes it to a garage. Towing, repair and service are paid by a (fictional) insurer, and the bill shows on screen.</li>
-  <li><b>Costs (K):</b> the "costs" button next to your balance opens the full sheet: rentals (start fee and per km), cover, towing, repairs and service. These amounts are not taken from your earnings.</li>
-  <li><b>Helicopter:</b> parked at the airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included.</li>
-  <li><b>Autopilot (O):</b> drives to the passenger, the drop-off or a petrol station by itself. Touch the controls to take over.</li>
+  <li><b>Rentals:</b> rental cars stand all over town in bays painted in the company colour: Zielony Kluczyk (green, small cars), Fioletowa Fura (purple, sports cars), Pomarańczowe Koła (orange, vans and trucks) and Błękitny Bak (light blue, everyday cars). On foot, a purple line leads to them; in a car, switch it on with R or the "Rental" button when you want to change cars.</li>
+  <li><b>Tow truck:</b> when your car is wrecked and catches fire, the fire brigade comes first and puts it out, then a tow truck arrives with beacons flashing and takes it to a garage. Towing, repair and service are paid by a (fictional) insurer, and the bill shows on screen.</li>
+  <li><b>Costs (K):</b> the "costs" button next to your balance shows the costs you bear: rentals (start fee and per km) and cover packages. Repairs, towing and service paid by the insurer are listed separately under "Insurance repairs". None of these amounts is taken from your earnings.</li>
+  <li><b>Helicopter:</b> parked at the airport and on helipads. Throttle to take off; to land, slow down and hold the brake, rooftops included. Land within 45 m of the passenger or the drop-off and they walk the rest. The autopilot can fly it too.</li>
+  <li><b>Autopilot (O):</b> drives to the passenger, the drop-off or a petrol station by itself and steers around parked cars. It always keeps to the speed limit. Touch the controls to take over.</li>
+  <li><b>Speed limiter (L):</b> holds 50 km/h in town and 70 km/h on main roads. A limit sign shows next to the speedometer.</li>
   <li><b>Public transport:</b> buses and trams run to the timetable for the current time, with line numbers on their roofs.</li>
-  <li><b>Police:</b> react when they see a rammed patrol car. Stop next to the police car and pay the fine, or get away.</li>
+  <li><b>Police:</b> react when they see a rammed patrol car. A slow bump only earns a warning, and when the patrol car hits you there is no fine. Stop next to the police car and pay the fine, or get away.</li>
   <li><b>Phone:</b> joystick up is throttle, down is brake and reverse, sideways steers.</li>`;
 
 // ---------- legal notice, privacy, cookies ----------
