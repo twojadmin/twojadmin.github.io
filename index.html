@@ -1545,6 +1545,9 @@ function rentalSpots(w) {
 let rentT = 0;
 function updateRentals(dt, all) {
   rentT -= dt; if (rentT > 0 && !all) return; rentT = 0.5;
+  if (all) fillRentals(true); else later('rent', () => fillRentals(false));
+}
+function fillRentals(all) {
   const px = player.x, py = player.y;
   for (const r of city.rentals || []) {
     const d = Math.hypot(r.x - px, r.y - py);
@@ -1864,9 +1867,12 @@ function updatePolice(dt) {
   chaseDijT -= dt;
   if (chaseDijT <= 0) {
     // only the junctions around the chasing patrol cars are needed
-    chaseDijT = 1; const need = [];
-    for (const c of cars) if (c.pol && c.pol.chase && c.driver === 'ai') for (const nd of gQuery(city.nodeGrid, 600, c.x - 700, c.y - 700, c.x + 700, c.y + 700)) need.push(nd.id);
-    chaseDij = need.length ? dijkstra(nearestNode(player.x, player.y).id, { need }) : null;
+    chaseDijT = 1;
+    later('chase', () => {
+      const need = [];
+      for (const c of cars) if (c.pol && c.pol.chase && c.driver === 'ai') for (const nd of gQuery(city.nodeGrid, 600, c.x - 700, c.y - 700, c.x + 700, c.y + 700)) need.push(nd.id);
+      chaseDij = need.length ? dijkstra(nearestNode(player.x, player.y).id, { need }) : null;
+    });
   }
   const chasers = cops.filter(c => c.pol.chase);
   // only a patrol that is close by and sees you joins in
@@ -2280,7 +2286,7 @@ function newWorld(kind, sd) {
   for (let k = 0; k < 30; k++) spawnPed(taxi.x, taxi.y, 0, 1000);
   if (city.real || city.gen) for (let k = 0; k < 26; k++) spawnParked(taxi.x, taxi.y, 90, 1200);
   spawnMilitary(); spawnHelis(); setupPlanes();
-  clearTiles(); startTileProbe();
+  clearTiles(); startTileProbe(); workQ.clear();
   towJob = null; fireJob = null; billT = 0; $('bill').hidden = true; ledger = []; claims = []; $('ledger').hidden = true; setRentNav(false);
   rentalSpots(city); updateRentals(0, true);
   money = START_MONEY; trips = 0; T = 0; wanted = 0; fines = 0; reasons = []; bustT = 0; escapeT = 0;
@@ -3031,6 +3037,21 @@ function applyLimit(c, ctl, dt) {
   if (vf > vmax + 8) { const k = Math.max(0, 1 - 0.7 * dt); c.vx *= k; c.vy *= k; }   // engine braking down to the limit
 }
 
+// ---------- work spread over frames ----------
+// Jobs that may wait a frame or two (new passengers, route refreshes, spawning traffic and people, the police route) go into a queue
+// that runs after the frame is drawn, while the frame still has time, so no single frame has to do all of them at once.
+const workQ = new Map(), nearBuf = [];
+let cullT = 0;
+function later(key, fn) { if (!workQ.has(key)) workQ.set(key, fn); }
+function runLater(t0, budget) {
+  let first = true;
+  for (const [k, fn] of workQ) {
+    if (!first && performance.now() - t0 > budget) break;
+    workQ.delete(k); first = false;
+    try { fn(); } catch (err) { console.error(err); }
+  }
+}
+
 // ---------- simulation ----------
 const ctlS = { steer: 0, thr: 0 };
 function step(dt) {
@@ -3082,7 +3103,8 @@ function step(dt) {
   // collisions only matter near the player; far-away cars just drive
   updateFire(dt);
   updateTow(dt);
-  const near = cars.filter(c => !c.svc && !c.towedBy && Math.abs(c.x - player.x) < 1100 && Math.abs(c.y - player.y) < 1100);
+  const near = nearBuf; near.length = 0;
+  for (const c of cars) if (!c.svc && !c.towedBy && Math.abs(c.x - player.x) < 1100 && Math.abs(c.y - player.y) < 1100) near.push(c);
   for (const c of near) if ((c.air || 0) < 0.2 && !c.onRoof && (speedOf(c) > 1 || c === player.car)) collideStatic(c);
   for (let a = 0; a < near.length; a++) for (let b = a + 1; b < near.length; b++) collideCars(near[a], near[b]);
   // cars that leave the road into the Warta (or the sea around a generated town) sink
@@ -3108,14 +3130,16 @@ function step(dt) {
   for (const c of cars) if (c.hp < c.t.hp * 0.35 && Math.random() < (c.burning ? 0.8 : c.fireOut ? 0.08 : c.wreck ? 0.4 : 0.15)) parts.push({ x: c.x + Math.cos(c.a) * c.t.L * 0.35, y: c.y + Math.sin(c.a) * c.t.L * 0.35, vx: mr(-10, 10), vy: mr(-25, -5), life: 1.6, max: 1.6, s: mr(5, 9), col: c.wreck ? '30,28,28' : '120,118,115' });
   // keep the streets populated near the player, forget far-away traffic
   const px = player.x, py = player.y;
-  cars = cars.filter(c => !c.gone && (c.keep || c === player.car) || !c.gone && !c.keep && c !== player.car && Math.hypot(c.x - px, c.y - py) < (c.pol && c.pol.chase ? 2200 : 1500));
-  const nTraffic = cars.filter(c => c.ai).length, want = Math.round((innerWidth < 700 ? 20 : 28) * (1 - 0.65 * nightK));
+  cullT -= dt;
+  if (cullT <= 0) { cullT = 0.25; cars = cars.filter(c => !c.gone && (c.keep || c === player.car) || !c.gone && !c.keep && c !== player.car && Math.hypot(c.x - px, c.y - py) < (c.pol && c.pol.chase ? 2200 : 1500)); }
+  let nTraffic = 0, nParked = 0; for (const c of cars) { if (c.ai) nTraffic++; else if (c.parked && !c.driver) nParked++; }
+  const want = Math.round((innerWidth < 700 ? 20 : 28) * (1 - 0.65 * nightK));
   if (nTraffic > want + 3) { const far = cars.find(c => c.ai && !c.keep && !(c.pol && c.pol.chase) && Math.hypot(c.x - px, c.y - py) > 1000); if (far) far.gone = true; }
-  if (nTraffic < want && Math.random() < 0.3) spawnTraffic(px, py, 700, 1200);
+  if (nTraffic < want && Math.random() < 0.3) later('traffic', () => spawnTraffic(player.x, player.y, 700, 1200));
   const pedWant = Math.round((lowGfx() ? 22 : 34) * (1 - 0.6 * nightK));
   if (peds.length > pedWant + 4) { const far = peds.find(p => Math.hypot(p.x - px, p.y - py) > 900); if (far) far.gone = true; }
-  if (peds.length < pedWant && Math.random() < 0.3) spawnPed(px, py, 600, 1100);
-  if ((city.real || city.gen) && Math.random() < 0.15 && cars.filter(c => c.parked && !c.driver).length < (lowGfx() ? 14 : 26)) spawnParked(px, py, 700, 1200);
+  if (peds.length < pedWant && Math.random() < 0.3) later('ped', () => spawnPed(player.x, player.y, 600, 1100));
+  if ((city.real || city.gen) && Math.random() < 0.15 && nParked < (lowGfx() ? 14 : 26)) later('parked', () => spawnParked(player.x, player.y, 700, 1200));
   updateRentals(dt);
   updatePeds(dt);
   updatePolice(dt);
@@ -3124,8 +3148,8 @@ function step(dt) {
 
   // jobs
   if (state === 'play') {
-    if (!job && offers.length < 6) { const o = makeOffer(); if (o) offers.push(o); }
-    offers = offers.filter(o => T - o.born < 150 || job || o.walking);
+    if (!job && offers.length < 6) later('offer', () => { if (!job && offers.length < 6) { const o = makeOffer(); if (o) offers.push(o); } });
+    if (!job && offers.some(o => T - o.born >= 150 && !o.walking)) offers = offers.filter(o => T - o.born < 150 || o.walking);
     const pc = player.mode === 'car' ? player.car : null, slow = pc && !pc.wreck && speedOf(pc) < 70 && !(pc.air > 0.05);
     if (!job && slow) for (const o of offers) if (Math.hypot(pc.x - o.x, pc.y - o.y) < 80) { startJob(o); break; }
     // a helicopter can't stop at the kerb: once it lands nearby, the passenger walks over (and away at the destination)
@@ -3164,8 +3188,19 @@ function step(dt) {
   if (state === 'play') fuelStep();
   // route guidance, refreshed a few times per second
   routeT -= dt;
-  if (routeT <= 0 && city) {
-    routeT = 0.3;
+  if (routeT <= 0 && city) { routeT = 0.3; later('route', refreshRoute); }
+  // particles, skids, popups (dead particles removed in place, at most 500 kept)
+  for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.s += dt * (p.spark ? 0 : 6); }
+  { let w = 0; for (let k = Math.max(0, parts.length - 500); k < parts.length; k++) if (parts[k].life > 0) parts[w++] = parts[k]; parts.length = w; }
+  for (const s of skids) s.t += dt;
+  if (skids.length && skids[0].t > 25) skids = skids.filter(s => s.t < 25);
+  for (const p of pops) { p.t -= dt; p.y -= 20 * dt; }
+  if (pops.length && pops.some(p => p.t <= 0)) pops = pops.filter(p => p.t > 0);
+}
+// route guidance: the main line, then the extra ones (fuel, garage, rental) as a separate queued job
+function refreshRoute() {
+  const px = player.x, py = player.y;
+  {
     let tgt = null;
     let kind = job ? 'job' : 'offer';
     if (job) tgt = job.inCar ? job.dest : job.waitAt;
@@ -3187,6 +3222,12 @@ function step(dt) {
       route = flying ? { pts: [{ x: px, y: py }, { x: tgt.x, y: tgt.y }], len: Math.hypot(tgt.x - px, tgt.y - py) } : routeFrom(px, py, routeCache, tgt.x, tgt.y);
       route.tgt = tgt; route.kind = kind;
     } else route = null;
+  }
+  later('aux', refreshAux);
+}
+function refreshAux() {
+  const px = player.x, py = player.y;
+  {
     // extra guidance even with a passenger on board: blue to a petrol station when fuel is low, orange to a garage when the car is damaged
     auxRoutes = [];
     if (player.mode === 'car' && !player.car.t.heli) {
@@ -3200,13 +3241,6 @@ function step(dt) {
       if (n) auxRoutes.push(auxRoute('rent', { w: { sx: n.r.x, sy: n.r.y, rent: n.r }, d: n.d }));
     }
   }
-  // particles, skids, popups
-  for (const p of parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.s += dt * (p.spark ? 0 : 6); }
-  parts = parts.filter(p => p.life > 0).slice(-500);
-  for (const s of skids) s.t += dt;
-  if (skids.length && skids[0].t > 25) skids = skids.filter(s => s.t < 25);
-  for (const p of pops) { p.t -= dt; p.y -= 20 * dt; }
-  pops = pops.filter(p => p.t > 0);
 }
 
 // ---------- rendering ----------
@@ -3388,7 +3422,7 @@ function drawGroundTiles(v, q, RV) {
       const d = Math.hypot((ix + 0.5) * ws - ax, (iy + 0.5) * ws - ay);
       if (d < reach + ws && (!best || d < best.d)) best = { ix, iy, d };
     }
-    if (best && tileCache.size < TILE_MAX - 4) renderTile(lvl + ':' + best.ix + ':' + best.iy, lvl, best.ix, best.iy);
+    if (best && tileCache.size < TILE_MAX - 4) later('tile', () => { const k = lvl + ':' + best.ix + ':' + best.iy; if (tilesOn && !tileCache.has(k)) renderTile(k, lvl, best.ix, best.iy); });
   }
 }
 function drawBuilding(b) {
@@ -4544,6 +4578,7 @@ async function runSliced(gen, p0, p1) {
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
+  const t0 = performance.now();
   const raw = now - last, dt = Math.min(0.05, raw / 1000); last = now;
   if (SET.gfx === 'auto' && state === 'play' && raw < 200) {
     frameEma += (raw - frameEma) * 0.05;
@@ -4557,6 +4592,7 @@ function frame(now) {
     if (state === 'map') { if (MV.dirty) renderBigMap(); } else draw();
     if (SET.minimap) drawMinimap();
     hud(dt); engineSound();
+    runLater(t0, 12);
   } catch (err) { console.error(err); }
 }
 requestAnimationFrame(frame);
