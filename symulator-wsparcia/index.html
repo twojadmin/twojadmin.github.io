@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symulator cyklu wsparcia</title>
+<meta name="description" content="Symulacja wsparcia (EOS/EOL), aktualizacji i podatności CVE dla składników fikcyjnego produktu oraz prognoza pracochłonności.">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --accent: #2a78d6;
+  /* kategorie pracy (stała kolejność) */
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  /* statusy */
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b; --low: #898781;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+    --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --accent: #3987e5;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --surface-2: #232321;
+  --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --accent: #3987e5;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+.wrap { max-width: 1320px; margin: 0 auto; padding: 20px 16px 60px; }
+header.top { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; justify-content: space-between; margin-bottom: 16px; }
+h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
+h2 { font-size: 16px; margin: 0 0 4px; font-weight: 650; }
+.sub { color: var(--ink-2); margin: 0; max-width: 820px; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+button, select, input {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--axis); border-radius: 8px; padding: 6px 10px;
+}
+input[type=number] { width: 72px; }
+input[type=date] { width: 140px; }
+input[type=checkbox] { padding: 0; width: 16px; height: 16px; accent-color: var(--accent); }
+button { cursor: pointer; background: var(--surface-2); }
+button.primary { background: var(--accent); color: #fff; border-color: transparent; font-weight: 600; }
+button:hover { filter: brightness(0.97); }
+.params { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px 16px; }
+.params label { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; color: var(--ink-2); }
+.params label.inline { flex-direction: row; align-items: center; gap: 8px; }
+.params .val { color: var(--ink); font-weight: 600; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: middle; white-space: nowrap; }
+th { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.edit input[type=text] { width: 150px; }
+table.edit input.ver { width: 80px; }
+table.edit input[type=number] { width: 64px; }
+details.deps { position: relative; }
+details.deps summary { cursor: pointer; list-style: none; border: 1px solid var(--axis); border-radius: 8px; padding: 5px 8px; font-size: 12.5px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+details.deps summary::-webkit-details-marker { display: none; }
+details.deps .menu { position: absolute; z-index: 20; background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.18); max-height: 260px; overflow: auto; }
+details.deps .menu label { display: flex; gap: 6px; align-items: center; padding: 3px 4px; font-size: 13px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.kpi .k { font-size: 12px; color: var(--ink-2); }
+.kpi .v { font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
+.kpi .d { font-size: 12px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink-2); margin: 6px 0 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw.dot { border-radius: 50%; }
+.sw.line { height: 2px; border-radius: 0; width: 16px; }
+.sw.hatch { background: repeating-linear-gradient(45deg, var(--critical) 0 2px, transparent 2px 5px); border: 1px solid var(--critical); }
+svg text { fill: var(--ink-2); font-family: inherit; }
+svg .ink { fill: var(--ink); }
+svg .mut { fill: var(--muted); }
+.chart { width: 100%; }
+#tip {
+  position: fixed; z-index: 100; pointer-events: none; display: none;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--axis); border-radius: 8px;
+  padding: 8px 10px; font-size: 12.5px; box-shadow: 0 8px 24px rgba(0,0,0,.2); max-width: 320px;
+}
+#tip b { font-weight: 650; }
+#tip .tr { display: flex; justify-content: space-between; gap: 16px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); }
+.badge i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.muted { color: var(--muted); }
+.note { font-size: 12.5px; color: var(--ink-2); }
+.note li { margin-bottom: 4px; }
+.tabs { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
+.tabs button { border: 0; border-radius: 0; background: var(--surface); padding: 5px 10px; }
+.tabs button.on { background: var(--accent); color: #fff; }
+.headrow { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Symulator cyklu wsparcia składników produktu</h1>
+      <p class="sub">Określ, od czego zależy fikcyjny produkt (system, Java, Apache, MariaDB, Oracle Database, biblioteki…). Symulacja pokazuje okna wsparcia (EOS / EOL), planowe aktualizacje, losowe podatności CVE przy wybranym trendzie oraz przewidywaną pracochłonność: aktualizacje, testy, mitygacje, weryfikację podatności i migracje.</p>
+    </div>
+    <div class="row">
+      <button id="themeBtn" title="Motyw">Motyw: auto</button>
+      <button id="csvBtn">Eksport CSV</button>
+      <button id="runBtn" class="primary">▶ Symuluj</button>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Parametry symulacji</h2>
+    <p class="hint">Zmiana dowolnego parametru przelicza symulację. To samo ziarno daje te same losowania — zmień je, aby zobaczyć inny przebieg.</p>
+    <div class="params">
+      <label>Szablon produktu
+        <select id="preset">
+          <option value="java">Aplikacja Java + Oracle DB + MariaDB</option>
+          <option value="lamp">Portal: Ubuntu + Apache + MariaDB + Python</option>
+          <option value="mixed">Mieszany: Windows + Node.js + PostgreSQL</option>
+          <option value="custom">Bieżąca konfiguracja (bez zmian)</option>
+        </select>
+      </label>
+      <label>Początek symulacji <input type="date" id="start"></label>
+      <label>Horyzont: <span class="val" id="horizonV"></span>
+        <input type="range" id="horizon" min="2" max="10" step="1" value="6">
+      </label>
+      <label>Trend podatności (CVE)
+        <select id="trend">
+          <option value="const">Stały — jak obecnie</option>
+          <option value="exp">Rosnący wykładniczo</option>
+          <option value="lin">Rosnący liniowo</option>
+        </select>
+      </label>
+      <label>Wzrost liczby CVE rocznie: <span class="val" id="growthV"></span>
+        <input type="range" id="growth" min="5" max="80" step="5" value="25">
+      </label>
+      <label>Ziarno losowania
+        <span class="row"><input type="number" id="seed" value="2026" style="width:100px"><button id="reseed" title="Losuj nowe ziarno">🎲</button></span>
+      </label>
+      <label>SLA krytyczne / wysokie (dni)
+        <span class="row"><input type="number" id="slaC" value="7" min="1"> / <input type="number" id="slaH" value="30" min="1"></span>
+      </label>
+      <label>Zespół (FTE, 140 h/mies.)
+        <input type="number" id="fte" value="1.5" min="0.1" step="0.1">
+      </label>
+      <label>Regresja na zależny składnik: <span class="val" id="regV"></span>
+        <input type="range" id="reg" min="0" max="60" step="5" value="25">
+      </label>
+      <label class="inline"><input type="checkbox" id="plan" checked> Planuj migracje przed EOS</label>
+      <label>Wyprzedzenie migracji (mies.)
+        <input type="number" id="lead" value="6" min="0" max="24">
+      </label>
+      <label class="inline"><input type="checkbox" id="waves" checked> Fale 0‑day (zdarzenia jak Log4Shell)</label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="headrow">
+      <div>
+        <h2>Składniki i zależności</h2>
+        <p class="hint">Daty wsparcia to przybliżenia z publicznych cykli życia (stan na koniec 2026) lub prognozy — przed decyzjami sprawdź strony producentów. „CVE/rok” to liczba podatności istotnych dla produktu przy obecnym trendzie.</p>
+      </div>
+      <div class="row">
+        <select id="catalogSel"></select>
+        <button id="addBtn">+ Dodaj</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table class="edit" id="editTable"></table>
+    </div>
+  </section>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section class="card">
+    <h2>Oś czasu wsparcia, aktualizacji i podatności</h2>
+    <div class="legend" id="tlLegend"></div>
+    <div class="scroll"><div id="timeline"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="headrow">
+      <div>
+        <h2>Przewidywana pracochłonność</h2>
+        <p class="hint">Godziny pracy w okresie, z podziałem na rodzaj prac. Linia przerywana to pojemność zespołu.</p>
+      </div>
+      <div class="tabs" id="bucketTabs"><button data-b="q" class="on">Kwartały</button><button data-b="m">Miesiące</button></div>
+    </div>
+    <div class="legend" id="effLegend"></div>
+    <div id="effort"></div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Podatności w okresie</h2>
+      <p class="hint">Wylosowane CVE według ważności; linia przerywana — oczekiwana liczba przy trendzie stałym.</p>
+      <div class="legend" id="cveLegend"></div>
+      <div id="cves"></div>
+    </section>
+    <section class="card">
+      <h2>Porównanie trendów — skumulowane godziny</h2>
+      <p class="hint">Ten sam produkt i ziarno: trend stały kontra wybrany (lub rosnący 25%, gdy wybrano stały).</p>
+      <div class="legend" id="cmpLegend"></div>
+      <div id="cmp"></div>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Graf zależności</h2>
+      <p class="hint">Strzałka prowadzi od składnika do tego, od którego zależy. Aktualizacja niższej warstwy wymusza testy regresji warstw wyżej. Kolor obramowania — status wsparcia na początek symulacji.</p>
+      <div id="graph"></div>
+    </section>
+    <section class="card">
+      <h2>Kamienie milowe (najbliższe 24 miesiące)</h2>
+      <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="miles"></table></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Podsumowanie według składnika</h2>
+    <div class="scroll"><table id="summary"></table></div>
+  </section>
+
+  <section class="card note">
+    <h2>Jak liczy symulacja</h2>
+    <ul>
+      <li><b>Wsparcie:</b> do EOS — pełne wsparcie, między EOS a EOL — tylko poprawki bezpieczeństwa / wsparcie rozszerzone, po EOL — brak poprawek.</li>
+      <li><b>Aktualizacje planowe:</b> co „cykl” miesięcy aż do EOL; każda to godziny aktualizacji + testy (testy × (1 + współczynnik regresji × liczba składników zależnych, także pośrednio)).</li>
+      <li><b>CVE:</b> proces Poissona z intensywnością = CVE/rok × mnożnik trendu (stały: 1; wykładniczy: (1+g)<sup>t</sup>; liniowy: 1+g·t). Ważność: 12% krytyczne, 35% wysokie, 43% średnie, 10% niskie.</li>
+      <li><b>Obsługa CVE:</b> każda wymaga weryfikacji (analiza podatności i podatności produktu). Krytyczne i wysokie: jeśli poprawka producenta (losowe opóźnienie wokół średniej) nie zdąży w SLA — mitygacja; jeśli najbliższa aktualizacja planowa nie mieści się w SLA — aktualizacja awaryjna z testami. Średnie i niskie trafiają do najbliższej aktualizacji planowej.</li>
+      <li><b>Po EOL:</b> krytyczne i wysokie CVE wymagają mitygacji (1,5× godzin, bez poprawki), średnie — częściowej mitygacji.</li>
+      <li><b>Wersje z gwiazdką (*)</b> to prognozy — producent nie ogłosił jeszcze ich dat; przyjęto typową długość wsparcia dla kategorii.</li>
+      <li><b>Migracje:</b> przy włączonym planowaniu migracja do kolejnej wersji odbywa się „wyprzedzenie” miesięcy przed EOS (lub od razu, jeśli EOS minął) i rozkłada się na 3 miesiące; obejmuje pełną regresję (3× testy z mnożnikiem zależności).</li>
+      <li><b>Fale 0‑day:</b> średnio raz na ~3 lata krytyczna podatność masowa w losowym składniku — inwentaryzacja wszystkich składników, mitygacja i aktualizacja awaryjna.</li>
+    </ul>
+  </section>
+</div>
+<div id="tip"></div>
+
+<script>
+"use strict";
+/* ---------- daty ---------- */
+const DAY = 86400000, YEAR = 365.25 * DAY;
+const D = s => new Date(s + "T00:00:00Z").getTime();
+const fmt = t => new Date(t).toISOString().slice(0, 10);
+const fmtM = t => { const d = new Date(t); return String(d.getUTCMonth() + 1).padStart(2, "0") + "." + d.getUTCFullYear(); };
+function addMonths(t, n) {
+  const d = new Date(t); const whole = Math.floor(n); const frac = n - whole;
+  d.setUTCMonth(d.getUTCMonth() + whole);
+  return d.getTime() + frac * 30.44 * DAY;
+}
+const nf = new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 0 });
+const nf1 = new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 1 });
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------- katalog składników (przybliżone cykle życia) ---------- */
+// eosY/eolY: domyślna długość wsparcia kolejnych wersji (lata od migracji)
+const CAT_DEF = { os: [5, 10], runtime: [4, 7], db: [4, 6], web: [4, 5], lib: [2, 3] };
+const CATALOG = [
+  { key: "rhel9", name: "Red Hat Enterprise Linux", ver: "9", cat: "os", eos: "2027-05-31", eol: "2032-05-31", cad: 3, cve: 10, lag: 14, h: [6, 8, 6, 2, 160],
+    next: [{ ver: "10", eos: "2030-05-31", eol: "2035-05-31" }] },
+  { key: "ubuntu", name: "Ubuntu Server LTS", ver: "24.04", cat: "os", eos: "2029-05-31", eol: "2034-04-30", cad: 3, cve: 10, lag: 10, h: [5, 8, 6, 2, 120],
+    next: [{ ver: "26.04", eos: "2031-05-31", eol: "2036-04-30" }] },
+  { key: "win", name: "Windows Server", ver: "2022", cat: "os", eos: "2026-10-13", eol: "2031-10-14", cad: 1, cve: 14, lag: 25, h: [4, 6, 6, 2, 160],
+    next: [{ ver: "2025", eos: "2029-11-13", eol: "2034-11-14" }] },
+  { key: "java17", name: "Java (JDK)", ver: "17 LTS", cat: "runtime", eos: "2026-09-30", eol: "2029-09-30", cad: 3, cve: 5, lag: 45, h: [4, 10, 8, 2, 200],
+    next: [{ ver: "25 LTS", eos: "2030-09-30", eol: "2033-09-30" }, { ver: "29 LTS*", eos: "2034-09-30", eol: "2037-09-30" }] },
+  { key: "java21", name: "Java (JDK)", ver: "21 LTS", cat: "runtime", eos: "2028-09-30", eol: "2031-09-30", cad: 3, cve: 5, lag: 45, h: [4, 10, 8, 2, 120],
+    next: [{ ver: "25 LTS", eos: "2030-09-30", eol: "2033-09-30" }, { ver: "29 LTS*", eos: "2034-09-30", eol: "2037-09-30" }] },
+  { key: "httpd", name: "Apache HTTP Server", ver: "2.4", cat: "web", eos: "2029-12-31", eol: "2030-12-31", cad: 4, cve: 4, lag: 10, h: [3, 4, 4, 1.5, 40],
+    next: [{ ver: "2.6*", eos: "2034-12-31", eol: "2035-12-31" }] },
+  { key: "tomcat", name: "Apache Tomcat", ver: "10.1", cat: "web", eos: "2027-06-30", eol: "2027-12-31", cad: 2, cve: 4, lag: 14, h: [3, 6, 5, 1.5, 80],
+    next: [{ ver: "11.0", eos: "2030-06-30", eol: "2030-12-31" }] },
+  { key: "nginx", name: "nginx", ver: "1.28", cat: "web", eos: "2027-04-30", eol: "2027-04-30", cad: 3, cve: 2, lag: 7, h: [2, 4, 4, 1, 16], next: [] },
+  { key: "maria1011", name: "MariaDB", ver: "10.11 LTS", cat: "db", eos: "2028-02-16", eol: "2028-02-16", cad: 3, cve: 3, lag: 20, h: [4, 8, 6, 2, 100],
+    next: [{ ver: "11.4 LTS", eos: "2029-05-29", eol: "2029-05-29" }, { ver: "11.8 LTS", eos: "2030-06-04", eol: "2030-06-04" }] },
+  { key: "maria114", name: "MariaDB", ver: "11.4 LTS", cat: "db", eos: "2029-05-29", eol: "2029-05-29", cad: 3, cve: 3, lag: 20, h: [4, 8, 6, 2, 90],
+    next: [{ ver: "11.8 LTS", eos: "2030-06-04", eol: "2030-06-04" }] },
+  { key: "ora19", name: "Oracle Database", ver: "19c", cat: "db", eos: "2029-12-31", eol: "2032-12-31", cad: 3, cve: 4, lag: 60, h: [8, 16, 8, 3, 320],
+    next: [{ ver: "26ai", eos: "2031-12-31", eol: "2034-12-31" }] },
+  { key: "pg16", name: "PostgreSQL", ver: "16", cat: "db", eos: "2028-11-09", eol: "2028-11-09", cad: 3, cve: 2, lag: 14, h: [3, 6, 5, 1.5, 80],
+    next: [{ ver: "18", eos: "2030-11-14", eol: "2030-11-14" }] },
+  { key: "openssl30", name: "OpenSSL", ver: "3.0 LTS", cat: "lib", eos: "2025-09-07", eol: "2026-09-07", cad: 3, cve: 6, lag: 7, h: [3, 6, 6, 2, 60],
+    next: [{ ver: "3.5 LTS", eos: "2029-04-08", eol: "2030-04-08" }] },
+  { key: "spring", name: "Spring Boot", ver: "3.5", cat: "lib", eos: "2026-06-30", eol: "2032-06-30", cad: 1, cve: 3, lag: 10, h: [4, 8, 6, 2, 160],
+    next: [{ ver: "4.x", eos: "2029-11-30", eol: "2033-11-30" }] },
+  { key: "log4j", name: "Apache Log4j", ver: "2.x", cat: "lib", eos: "2029-12-31", eol: "2030-12-31", cad: 4, cve: 1.5, lag: 5, h: [2, 4, 4, 1, 24], next: [{ ver: "3.x*", eos: "2033-12-31", eol: "2034-12-31" }] },
+  { key: "jackson", name: "Jackson Databind", ver: "2.x", cat: "lib", eos: "2028-12-31", eol: "2029-12-31", cad: 4, cve: 1, lag: 7, h: [1.5, 4, 3, 1, 40], next: [{ ver: "3.x", eos: "2032-12-31", eol: "2033-12-31" }] },
+  { key: "hibernate", name: "Hibernate ORM", ver: "6.6", cat: "lib", eos: "2027-06-30", eol: "2028-06-30", cad: 3, cve: 1, lag: 10, h: [2, 6, 3, 1, 60], next: [{ ver: "7.x", eos: "2030-06-30", eol: "2031-06-30" }] },
+  { key: "node22", name: "Node.js", ver: "22 LTS", cat: "runtime", eos: "2025-10-21", eol: "2027-04-30", cad: 2, cve: 4, lag: 7, h: [3, 6, 4, 1.5, 60],
+    next: [{ ver: "24 LTS", eos: "2026-10-20", eol: "2028-04-30" }, { ver: "26 LTS", eos: "2028-10-20", eol: "2030-04-30" }] },
+  { key: "py312", name: "Python", ver: "3.12", cat: "runtime", eos: "2025-04-08", eol: "2028-10-31", cad: 3, cve: 2, lag: 10, h: [3, 6, 4, 1.5, 60],
+    next: [{ ver: "3.14", eos: "2027-10-31", eol: "2030-10-31" }] },
+  { key: "custom", name: "Własny składnik", ver: "1.0", cat: "lib", eos: "2028-12-31", eol: "2029-12-31", cad: 3, cve: 2, lag: 14, h: [3, 6, 4, 1.5, 60], next: [] },
+];
+const CAT_NAMES = { os: "System", runtime: "Środowisko", db: "Baza danych", web: "Serwer WWW/aplikacji", lib: "Biblioteka" };
+
+const PRESETS = {
+  java: [
+    ["rhel9", []], ["java17", ["rhel9"]], ["openssl30", ["rhel9"]], ["httpd", ["rhel9", "openssl30"]],
+    ["tomcat", ["java17"]], ["spring", ["java17"]], ["log4j", ["java17"]], ["hibernate", ["java17"]],
+    ["ora19", ["rhel9"]], ["maria1011", ["rhel9"]],
+  ],
+  lamp: [
+    ["ubuntu", []], ["openssl30", ["ubuntu"]], ["httpd", ["ubuntu", "openssl30"]], ["maria114", ["ubuntu"]], ["py312", ["ubuntu", "openssl30"]],
+  ],
+  mixed: [
+    ["win", []], ["node22", ["win"]], ["nginx", ["win"]], ["pg16", ["win"]], ["java21", ["win"]], ["jackson", ["java21"]],
+  ],
+};
+const PRODUCT_DIRECT = { java: ["tomcat", "spring", "httpd", "ora19", "maria1011", "log4j", "hibernate"], lamp: ["httpd", "maria114", "py312"], mixed: ["node22", "nginx", "pg16", "java21", "jackson"] };
+
+let comps = [];
+let uid = 1;
+function makeComp(key) {
+  const c = CATALOG.find(x => x.key === key);
+  return { id: "c" + (uid++), key: c.key, name: c.name, ver: c.ver, cat: c.cat, eos: c.eos, eol: c.eol, cad: c.cad, cve: c.cve, lag: c.lag,
+    upd: c.h[0], test: c.h[1], mit: c.h[2], verh: c.h[3], mig: c.h[4], next: c.next.map(n => ({ ...n })), deps: [], direct: true };
+}
+function loadPreset(p) {
+  comps = []; const map = {};
+  for (const [k] of PRESETS[p]) { const c = makeComp(k); map[k] = c.id; comps.push(c); }
+  PRESETS[p].forEach(([k, deps], i) => { comps[i].deps = deps.map(d => map[d]); comps[i].direct = PRODUCT_DIRECT[p].includes(k); });
+}
+
+/* ---------- stan / zapis ---------- */
+const $ = id => document.getElementById(id);
+const P = () => ({
+  start: D($("start").value || "2026-11-20"), horizon: +$("horizon").value, trend: $("trend").value, growth: +$("growth").value / 100,
+  seed: +$("seed").value || 1, slaC: +$("slaC").value || 7, slaH: +$("slaH").value || 30, fte: +$("fte").value || 1,
+  reg: +$("reg").value / 100, plan: $("plan").checked, lead: +$("lead").value || 0, waves: $("waves").checked,
+});
+function save() { try { localStorage.setItem("supsim", JSON.stringify({ comps, uid, ui: ["start", "horizon", "trend", "growth", "seed", "slaC", "slaH", "fte", "reg", "lead"].reduce((o, k) => (o[k] = $(k).value, o), { plan: $("plan").checked, waves: $("waves").checked, preset: $("preset").value }) })); } catch (e) {} }
+function restore() {
+  try {
+    const s = JSON.parse(localStorage.getItem("supsim") || "null"); if (!s || !s.comps || !s.comps.length) return false;
+    comps = s.comps; uid = s.uid || 100;
+    for (const k in s.ui) { if (k === "plan" || k === "waves") $(k).checked = s.ui[k]; else if ($(k)) $(k).value = s.ui[k]; }
+    return true;
+  } catch (e) { return false; }
+}
+
+/* ---------- RNG ---------- */
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/* ---------- zależności ---------- */
+function dependentsCount() {
+  // liczba składników (oraz produkt) zależnych bezpośrednio lub pośrednio od danego
+  const rev = {}; comps.forEach(c => rev[c.id] = []);
+  comps.forEach(c => c.deps.forEach(d => rev[d] && rev[d].push(c.id)));
+  const out = {};
+  comps.forEach(c => {
+    const seen = new Set(); const st = [...rev[c.id]];
+    while (st.length) { const x = st.pop(); if (seen.has(x)) continue; seen.add(x); st.push(...rev[x]); }
+    out[c.id] = seen.size + 1; // +1 produkt
+  });
+  return out;
+}
+
+/* ---------- symulacja ---------- */
+const SEV = [["crit", 0.12], ["high", 0.35], ["med", 0.43], ["low", 0.10]];
+const SEV_F = { crit: 1.5, high: 1.2, med: 0.8, low: 0.4 };
+const SEV_N = { crit: "krytyczna", high: "wysoka", med: "średnia", low: "niska" };
+const TYPES = [["ver", "Weryfikacja podatności", "--s1"], ["mit", "Mitygacja", "--s2"], ["upd", "Aktualizacje", "--s3"], ["test", "Testy", "--s4"], ["mig", "Migracje", "--s5"]];
+
+function simulate(p, trendOverride) {
+  const trend = trendOverride || p.trend;
+  const rnd = mulberry32(p.seed);
+  const t0 = p.start, tEnd = addMonths(t0, p.horizon * 12);
+  const mult = t => { const y = Math.max(0, (t - t0) / YEAR); return trend === "exp" ? Math.pow(1 + p.growth, y) : trend === "lin" ? 1 + p.growth * y : 1; };
+  const multMax = mult(tEnd);
+  const deps = dependentsCount();
+  const work = [], cves = [], updates = [], segs = [], migs = [];
+  const add = (t, c, ver, type, h, desc) => { if (h > 0 && t >= t0 && t < tEnd) work.push({ t, comp: c.id, ver, type, h, desc }); };
+  const expLag = mean => -Math.log(1 - rnd()) * mean;
+
+  for (const c of comps) {
+    const crnd = mulberry32((p.seed * 7919 + hash(c.id + c.name)) >>> 0);
+    const r = () => crnd();
+    const depN = deps[c.id];
+    const testF = 1 + p.reg * (depN - 1);
+    const [dEos, dEol] = CAT_DEF[c.cat] || [3, 5];
+    let ver = { label: c.ver, eos: D(c.eos), eol: Math.max(D(c.eol), D(c.eos)) };
+    let segStart = t0, nextIdx = 0, gen = 1, guard = 0;
+    while (segStart < tEnd && guard++ < 20) {
+      let mDate = null;
+      if (p.plan) {
+        mDate = Math.max(addMonths(ver.eos, -p.lead), addMonths(segStart, 3));
+        if (segStart === t0 && ver.eos <= addMonths(t0, 3)) mDate = addMonths(t0, 3);
+        if (mDate >= tEnd) mDate = null;
+      }
+      const segEnd = mDate || tEnd;
+      segs.push({ comp: c.id, label: ver.label, start: segStart, end: segEnd, eos: ver.eos, eol: ver.eol });
+      // aktualizacje planowe
+      const upd = [];
+      let u = addMonths(segStart, c.cad * (0.3 + 0.7 * r()));
+      while (u < segEnd && u < ver.eol) {
+        upd.push(u);
+        updates.push({ t: u, comp: c.id, ver: ver.label, kind: u < ver.eos ? "plan" : "sec" });
+        add(u, c, ver.label, "upd", c.upd, "Aktualizacja planowa");
+        add(u, c, ver.label, "test", c.test * testF, "Testy aktualizacji planowej");
+        u = addMonths(u, c.cad);
+      }
+      // CVE — proces Poissona z rozrzedzaniem
+      const lmax = c.cve * multMax / YEAR;
+      let t = segStart;
+      if (lmax > 0) while (true) {
+        t += -Math.log(1 - r()) / lmax;
+        if (t >= segEnd) break;
+        if (r() > (c.cve * mult(t) / YEAR) / lmax) continue;
+        const x = r(); let acc = 0, sev = "low";
+        for (const [s, pr] of SEV) { acc += pr; if (x < acc) { sev = s; break; } }
+        handleCve(t, c, ver, sev, upd, testF, r, false);
+      }
+      if (!mDate) break;
+      // migracja
+      migs.push({ comp: c.id, from: ver.label, start: addMonths(mDate, -3), end: mDate });
+      const migTest = c.test * testF * 3;
+      for (let k = 0; k < 3; k++) {
+        const tm = addMonths(mDate, -3 + k + 0.5);
+        add(Math.max(tm, t0), c, ver.label, "mig", c.mig / 3, "Migracja do kolejnej wersji");
+        add(Math.max(tm, t0), c, ver.label, "test", migTest / 3, "Pełna regresja migracji");
+      }
+      const nx = c.next[nextIdx++];
+      let nv;
+      if (nx && D(nx.eos) > addMonths(mDate, 9)) nv = { label: nx.ver, eos: D(nx.eos), eol: Math.max(D(nx.eol), D(nx.eos)) };
+      else nv = { label: nx ? nx.ver + "*" : "kolejna" + (gen > 1 ? " (" + gen + ")" : "") + "*", eos: addMonths(mDate, dEos * 12), eol: addMonths(mDate, dEol * 12) };
+      gen++;
+      ver = nv; segStart = mDate;
+    }
+  }
+
+  function handleCve(t, c, ver, sev, upd, testF, r, wave) {
+    const id = "CVE-" + new Date(t).getUTCFullYear() + "-" + String(10000 + Math.floor(r() * 89999));
+    const supported = t < ver.eol;
+    const ev = { t, comp: c.id, ver: ver.label, sev, id, wave, supported, mitig: false, emergency: false, bundled: false, patchAt: null };
+    add(t, c, ver.label, "ver", c.verh * SEV_F[sev], "Weryfikacja " + id);
+    const sla = sev === "crit" ? p.slaC : p.slaH;
+    if (supported) {
+      const patch = t + expLag(c.lag) * DAY; ev.patchAt = patch;
+      if (sev === "crit" || sev === "high") {
+        if (patch > t + sla * DAY) { ev.mitig = true; add(t + DAY, c, ver.label, "mit", c.mit * SEV_F[sev], "Mitygacja " + id + " (brak poprawki w SLA)"); }
+        const deadline = Math.max(patch, t + sla * DAY);
+        const nextPlan = upd.find(x => x >= patch);
+        if (nextPlan && nextPlan <= deadline) ev.bundled = true;
+        else if (patch < ver.eol) {
+          ev.emergency = true;
+          updates.push({ t: patch, comp: c.id, ver: ver.label, kind: "emerg" });
+          add(patch, c, ver.label, "upd", c.upd, "Aktualizacja awaryjna " + id);
+          add(patch, c, ver.label, "test", c.test * testF * 0.5, "Testy ukierunkowane " + id);
+        }
+      } else ev.bundled = true;
+    } else {
+      if (sev === "crit" || sev === "high") { ev.mitig = true; add(t + DAY, c, ver.label, "mit", c.mit * 1.5 * SEV_F[sev], "Mitygacja " + id + " — wersja po EOL, brak poprawki"); }
+      else if (sev === "med") { ev.mitig = true; add(t + DAY, c, ver.label, "mit", c.mit * 0.5, "Częściowa mitygacja " + id + " (EOL)"); }
+    }
+    cves.push(ev);
+  }
+
+  // fale 0-day
+  if (p.waves && comps.length) {
+    const wr = mulberry32((p.seed * 31 + 17) >>> 0);
+    const rate = 0.33 / YEAR; let t = t0;
+    while (true) {
+      t += -Math.log(1 - wr()) / (rate * multMax);
+      if (t >= tEnd) break;
+      if (wr() > mult(t) / multMax) continue;
+      const tot = comps.reduce((s, c) => s + c.cve, 0); let x = wr() * tot, c = comps[0];
+      for (const cc of comps) { x -= cc.cve; if (x <= 0) { c = cc; break; } }
+      const seg = segs.find(s => s.comp === c.id && t >= s.start && t < s.end) || segs.find(s => s.comp === c.id);
+      const ver = { label: seg.label, eos: seg.eos, eol: seg.eol };
+      comps.forEach(o => add(t, o, "—", "ver", 2, "Inwentaryzacja po fali 0-day"));
+      add(t + DAY, c, ver.label, "mit", c.mit * 2, "Mitygacja fali 0-day");
+      handleCve(t, c, ver, "crit", [], 1 + p.reg * (deps[c.id] - 1), wr, true);
+    }
+  }
+  work.sort((a, b) => a.t - b.t); cves.sort((a, b) => a.t - b.t);
+  const baseRate = comps.reduce((s, c) => s + c.cve, 0) + (p.waves ? 0.33 : 0);
+  return { t0, tEnd, work, cves, updates, segs, migs, deps, baseRate };
+}
+function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+/* ---------- agregacja ---------- */
+function buckets(res, kind) {
+  const step = kind === "q" ? 3 : 1, out = [];
+  let a = res.t0;
+  while (a < res.tEnd) {
+    const b = Math.min(addMonths(a, step), res.tEnd);
+    const d = new Date(a);
+    const label = kind === "q" ? "Q" + (Math.floor(d.getUTCMonth() / 3) + 1) + " " + d.getUTCFullYear() : fmtM(a);
+    out.push({ a, b, label, h: { ver: 0, mit: 0, upd: 0, test: 0, mig: 0 }, cv: { crit: 0, high: 0, med: 0, low: 0 }, total: 0, cvTotal: 0 });
+    a = b;
+  }
+  const find = t => out.find(x => t >= x.a && t < x.b);
+  res.work.forEach(w => { const bk = find(w.t); if (bk) { bk.h[w.type] += w.h; bk.total += w.h; } });
+  res.cves.forEach(c => { const bk = find(c.t); if (bk) { bk.cv[c.sev]++; bk.cvTotal++; } });
+  return out;
+}
+function statusAt(seg, t) { return t < seg.eos ? "full" : t < seg.eol ? "ext" : "eol"; }
+const ST_N = { full: "pełne wsparcie", ext: "tylko poprawki bezp. / rozszerzone", eol: "po EOL — brak wsparcia" };
+const ST_C = { full: "var(--good)", ext: "var(--warning)", eol: "var(--critical)" };
+
+/* ---------- tooltip ---------- */
+const tip = $("tip");
+function showTip(html, e) { tip.innerHTML = html; tip.style.display = "block"; moveTip(e); }
+function moveTip(e) {
+  const w = tip.offsetWidth, h = tip.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14;
+  tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+}
+function hideTip() { tip.style.display = "none"; }
+document.addEventListener("mouseover", e => { const el = e.target.closest("[data-tip]"); if (el) showTip(el.getAttribute("data-tip"), e); });
+document.addEventListener("mousemove", e => { if (tip.style.display === "block" && e.target.closest("[data-tip]")) moveTip(e); });
+document.addEventListener("mouseout", e => { const el = e.target.closest("[data-tip]"); if (el && !el.contains(e.relatedTarget)) hideTip(); });
+const T = s => esc(s); // tekst do atrybutu (html w tooltipie budowany ze zaufanych/escapowanych części)
+const attr = html => html.replace(/"/g, "&quot;");
+
+/* ---------- edytor ---------- */
+function renderCatalog() {
+  $("catalogSel").innerHTML = CATALOG.map(c => `<option value="${c.key}">${esc(c.name)} ${esc(c.ver)}</option>`).join("");
+}
+function renderEditor() {
+  const nameOf = id => { const c = comps.find(x => x.id === id); return c ? c.name + " " + c.ver : "?"; };
+  let h = `<tr><th>Składnik</th><th>Wersja</th><th>Kategoria</th><th>EOS (koniec pełnego wsparcia)</th><th>EOL (koniec wsparcia)</th>
+  <th class="num">Cykl akt. (mies.)</th><th class="num">CVE/rok</th><th class="num">Poprawka po (dni)</th>
+  <th class="num">h aktual.</th><th class="num">h testy</th><th class="num">h mityg.</th><th class="num">h weryf.</th><th class="num">h migracja</th>
+  <th>Zależy od</th><th>Produkt używa bezpośrednio</th><th></th></tr>`;
+  comps.forEach(c => {
+    const opts = comps.filter(o => o.id !== c.id).map(o => `<label><input type="checkbox" data-dep="${o.id}" ${c.deps.includes(o.id) ? "checked" : ""}> ${esc(o.name)} ${esc(o.ver)}</label>`).join("") || '<span class="muted">brak innych składników</span>';
+    const sumTxt = c.deps.length ? c.deps.map(nameOf).join(", ") : "—";
+    h += `<tr data-id="${c.id}">
+      <td><input type="text" data-f="name" value="${esc(c.name)}"></td>
+      <td><input type="text" class="ver" data-f="ver" value="${esc(c.ver)}"></td>
+      <td><select data-f="cat">${Object.entries(CAT_NAMES).map(([k, v]) => `<option value="${k}" ${k === c.cat ? "selected" : ""}>${v}</option>`).join("")}</select></td>
+      <td><input type="date" data-f="eos" value="${c.eos}"></td>
+      <td><input type="date" data-f="eol" value="${c.eol}"></td>
+      <td class="num"><input type="number" data-f="cad" min="1" step="1" value="${c.cad}"></td>
+      <td class="num"><input type="number" data-f="cve" min="0" step="0.5" value="${c.cve}"></td>
+      <td class="num"><input type="number" data-f="lag" min="0" step="1" value="${c.lag}"></td>
+      <td class="num"><input type="number" data-f="upd" min="0" step="0.5" value="${c.upd}"></td>
+      <td class="num"><input type="number" data-f="test" min="0" step="0.5" value="${c.test}"></td>
+      <td class="num"><input type="number" data-f="mit" min="0" step="0.5" value="${c.mit}"></td>
+      <td class="num"><input type="number" data-f="verh" min="0" step="0.5" value="${c.verh}"></td>
+      <td class="num"><input type="number" data-f="mig" min="0" step="1" value="${c.mig}"></td>
+      <td><details class="deps"><summary title="${esc(sumTxt)}">${esc(sumTxt)}</summary><div class="menu">${opts}</div></details></td>
+      <td style="text-align:center"><input type="checkbox" data-f="direct" ${c.direct ? "checked" : ""}></td>
+      <td><button data-del title="Usuń">✕</button></td></tr>`;
+  });
+  $("editTable").innerHTML = h;
+}
+$("editTable").addEventListener("change", e => {
+  const tr = e.target.closest("tr[data-id]"); if (!tr) return;
+  const c = comps.find(x => x.id === tr.dataset.id);
+  const f = e.target.dataset.f;
+  if (e.target.dataset.dep) {
+    const d = e.target.dataset.dep;
+    if (e.target.checked) { if (createsCycle(c.id, d)) { e.target.checked = false; alert("Ta zależność utworzyłaby cykl."); return; } c.deps.push(d); }
+    else c.deps = c.deps.filter(x => x !== d);
+    const s = tr.querySelector("summary"); const txt = c.deps.map(id => { const o = comps.find(x => x.id === id); return o.name + " " + o.ver; }).join(", ") || "—";
+    s.textContent = txt; s.title = txt;
+  } else if (f === "direct") c.direct = e.target.checked;
+  else if (f) {
+    const num = ["cad", "cve", "lag", "upd", "test", "mit", "verh", "mig"].includes(f);
+    c[f] = num ? Math.max(0, +e.target.value || 0) : e.target.value;
+    if (f === "cad") c.cad = Math.max(1, c.cad);
+  }
+  $("preset").value = "custom"; run();
+});
+$("editTable").addEventListener("click", e => {
+  if (!e.target.closest("[data-del]")) return;
+  const id = e.target.closest("tr").dataset.id;
+  comps = comps.filter(c => c.id !== id); comps.forEach(c => c.deps = c.deps.filter(d => d !== id));
+  $("preset").value = "custom"; renderEditor(); run();
+});
+document.addEventListener("click", e => { document.querySelectorAll("details.deps[open]").forEach(d => { if (!d.contains(e.target)) d.open = false; }); });
+function createsCycle(from, to) {
+  const st = [to], seen = new Set();
+  while (st.length) { const x = st.pop(); if (x === from) return true; if (seen.has(x)) continue; seen.add(x); const c = comps.find(y => y.id === x); if (c) st.push(...c.deps); }
+  return false;
+}
+$("addBtn").onclick = () => { comps.push(makeComp($("catalogSel").value)); $("preset").value = "custom"; renderEditor(); run(); };
+
+/* ---------- SVG helpers ---------- */
+const NS = "http://www.w3.org/2000/svg";
+const svgOpen = (w, h, extra = "") => `<svg xmlns="${NS}" class="chart" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" ${extra}>`;
+function niceMax(v) { if (v <= 0) return 1; const e = Math.pow(10, Math.floor(Math.log10(v))); const f = v / e; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * e; }
+const width = id => Math.max(300, $(id).clientWidth || 600);
+
+/* ---------- oś czasu ---------- */
+function renderTimeline(res, p) {
+  const el = $("timeline");
+  const W = Math.max(860, el.parentElement.clientWidth);
+  const L = 190, R = 16, top = 34, rowH = 38;
+  const rows = comps.length + 1;
+  const H = top + rows * rowH + 10;
+  const x = t => L + (t - res.t0) / (res.tEnd - res.t0) * (W - L - R);
+  let s = svgOpen(W, H, 'aria-label="Oś czasu wsparcia składników"');
+  s += `<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--critical)" opacity="0.18"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--critical)" stroke-width="2" opacity="0.7"/></pattern></defs>`;
+  // siatka lat / kwartałów
+  const d0 = new Date(res.t0);
+  let q = Date.UTC(d0.getUTCFullYear(), Math.floor(d0.getUTCMonth() / 3) * 3 + 3, 1);
+  for (; q < res.tEnd; q = addMonths(q, 3)) {
+    const isY = new Date(q).getUTCMonth() === 0, X = x(q);
+    s += `<line x1="${X}" x2="${X}" y1="${top - 6}" y2="${H - 6}" stroke="var(--grid)" stroke-width="${isY ? 1 : 0.5}" ${isY ? "" : 'stroke-dasharray="2 3"'}/>`;
+    if (isY) s += `<text x="${X + 4}" y="${top - 12}" font-size="12" class="ink">${new Date(q).getUTCFullYear()}</text>`;
+  }
+  const firstY = x(Date.UTC(d0.getUTCFullYear() + 1, 0, 1));
+  if (firstY - L > 80) s += `<text x="${L + 4}" y="${top - 12}" font-size="11">${fmt(res.t0)}</text>`;
+  // wiersz produktu: liczba składników po EOL / w rozszerzonym
+  const yP = top;
+  s += `<text x="8" y="${yP + 16}" font-size="12.5" class="ink" font-weight="650">Produkt</text><text x="8" y="${yP + 30}" font-size="11">ryzyko wsparcia</text>`;
+  for (let m = res.t0; m < res.tEnd; m = addMonths(m, 1)) {
+    const me = Math.min(addMonths(m, 1), res.tEnd), mid = (m + me) / 2;
+    let eol = 0, ext = 0; const names = [];
+    comps.forEach(c => { const sg = res.segs.find(g => g.comp === c.id && mid >= g.start && mid < g.end); if (!sg) return; const st = statusAt(sg, mid); if (st === "eol") { eol++; names.push(c.name + " " + sg.label + " (EOL)"); } else if (st === "ext") { ext++; names.push(c.name + " " + sg.label + " (rozszerzone)"); } });
+    const col = eol >= 2 ? "var(--critical)" : eol === 1 ? "var(--serious)" : ext > 0 ? "var(--warning)" : "var(--good)";
+    const op = eol ? 0.85 : ext ? 0.55 : 0.35;
+    const tt = `<b>${fmtM(m)} — produkt</b><br>Po EOL: ${eol}, wsparcie rozszerzone: ${ext}${names.length ? "<br><span class='muted'>" + names.map(esc).join("<br>") + "</span>" : "<br>Wszystkie składniki w pełnym wsparciu"}`;
+    s += `<rect x="${x(m)}" y="${yP + 8}" width="${Math.max(1, x(me) - x(m) - 1)}" height="18" fill="${col}" opacity="${op}" data-tip="${attr(tt)}"/>`;
+  }
+  // wiersze składników
+  comps.forEach((c, i) => {
+    const y = top + (i + 1) * rowH, cy = y + 19;
+    s += `<line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="0.5"/>`;
+    s += `<text x="8" y="${y + 16}" font-size="12.5" class="ink">${esc(trunc(c.name, 24))}</text><text x="8" y="${y + 30}" font-size="11">${esc(CAT_NAMES[c.cat])} · zależnych: ${res.deps[c.id] - 1}</text>`;
+    res.segs.filter(g => g.comp === c.id).forEach(g => {
+      const parts = [["full", g.start, Math.min(g.end, g.eos)], ["ext", Math.max(g.start, g.eos), Math.min(g.end, g.eol)], ["eol", Math.max(g.start, g.eol), g.end]];
+      parts.forEach(([st, a, b]) => {
+        if (b <= a) return;
+        const tt = `<b>${esc(c.name)} ${esc(g.label)}</b><br>${ST_N[st]}<br>${fmt(a)} → ${fmt(b)}<br><span class='muted'>EOS ${fmt(g.eos)} · EOL ${fmt(g.eol)}</span>`;
+        const fill = st === "eol" ? "url(#hatch)" : ST_C[st];
+        s += `<rect x="${x(a)}" y="${cy - 7}" width="${Math.max(1, x(b) - x(a) - 1)}" height="14" rx="3" fill="${fill}" opacity="${st === "eol" ? 1 : 0.42}" data-tip="${attr(tt)}"/>`;
+      });
+      const bw = x(g.end) - x(g.start);
+      if (bw > 30) s += `<text x="${x(g.start) + 4}" y="${cy + 4}" font-size="11" class="ink" pointer-events="none">${esc(trunc(g.label, Math.floor(bw / 7)))}</text>`;
+    });
+    // migracje
+    res.migs.filter(m => m.comp === c.id).forEach(m => {
+      const a = x(Math.max(m.start, res.t0)), b = x(m.end);
+      const tt = `<b>Migracja: ${esc(c.name)}</b><br>z wersji ${esc(m.from)}<br>${fmt(m.start)} → ${fmt(m.end)}<br>${nf.format(c.mig)} h migracji + pełna regresja`;
+      s += `<rect x="${a}" y="${cy - 12}" width="${Math.max(3, b - a)}" height="24" rx="4" fill="var(--s5)" opacity="0.18" stroke="var(--s5)" stroke-dasharray="3 2" data-tip="${attr(tt)}"/>`;
+      s += `<path d="M${b} ${cy - 8} l6 8 l-6 8 l-6 -8z" fill="var(--s5)" stroke="var(--surface)" stroke-width="1.5" data-tip="${attr(tt)}"/>`;
+    });
+    // aktualizacje
+    res.updates.filter(u => u.comp === c.id).forEach(u => {
+      const X = x(u.t), em = u.kind === "emerg";
+      const tt = `<b>${em ? "Aktualizacja awaryjna" : u.kind === "sec" ? "Aktualizacja bezpieczeństwa (rozszerzone)" : "Aktualizacja planowa"}</b><br>${esc(c.name)} ${esc(u.ver)}<br>${fmt(u.t)}`;
+      s += `<line x1="${X}" x2="${X}" y1="${em ? cy - 17 : cy - 13}" y2="${cy - 8}" stroke="${em ? "var(--s3)" : "var(--muted)"}" stroke-width="${em ? 2.5 : 1.5}"/>`;
+      s += `<rect x="${X - 3}" y="${cy - 18}" width="6" height="11" fill="transparent" data-tip="${attr(tt)}"/>`;
+    });
+    // CVE
+    res.cves.filter(v => v.comp === c.id).forEach(v => {
+      const r = { crit: 5.5, high: 4.5, med: 3.5, low: 3 }[v.sev];
+      const col = { crit: "var(--critical)", high: "var(--serious)", med: "var(--warning)", low: "var(--low)" }[v.sev];
+      const status = !v.supported ? "wersja po EOL — brak poprawki, mitygacja" : [v.mitig ? "mitygacja (poprawka poza SLA)" : null, v.emergency ? "aktualizacja awaryjna " + fmt(v.patchAt) : null, v.bundled ? "w najbliższej aktualizacji planowej" : null].filter(Boolean).join("; ");
+      const tt = `<b>${esc(v.id)}${v.wave ? " — fala 0‑day" : ""}</b><br>${esc(c.name)} ${esc(v.ver)}<br>Ważność: ${SEV_N[v.sev]} · ${fmt(v.t)}<br>${status}`;
+      const yy = cy + 12;
+      s += v.wave ? `<path d="M${x(v.t)} ${yy - 7} l7 12 h-14z" fill="${col}" stroke="var(--surface)" stroke-width="1.5" data-tip="${attr(tt)}"/>`
+        : `<circle cx="${x(v.t)}" cy="${yy}" r="${r}" fill="${col}" stroke="var(--surface)" stroke-width="2" data-tip="${attr(tt)}"/>`;
+    });
+  });
+  // dziś
+  const today = Date.now();
+  if (today > res.t0 && today < res.tEnd) s += `<line x1="${x(today)}" x2="${x(today)}" y1="${top - 6}" y2="${H}" stroke="var(--accent)" stroke-width="1.5"/>`;
+  s += `<line x1="${L}" x2="${L}" y1="${top - 6}" y2="${H}" stroke="var(--axis)"/>`;
+  s += "</svg>";
+  el.innerHTML = s;
+  $("tlLegend").innerHTML = [
+    `<span><i class="sw" style="background:var(--good);opacity:.5"></i>Pełne wsparcie (do EOS)</span>`,
+    `<span><i class="sw" style="background:var(--warning);opacity:.6"></i>Poprawki bezp. / rozszerzone (EOS→EOL)</span>`,
+    `<span><i class="sw hatch"></i>Po EOL</span>`,
+    `<span><i class="sw line" style="background:var(--muted);width:2px;height:10px"></i>Aktualizacja planowa</span>`,
+    `<span><i class="sw line" style="background:var(--s3);width:3px;height:12px"></i>Aktualizacja awaryjna</span>`,
+    `<span><i class="sw" style="background:var(--s5);transform:rotate(45deg);width:9px;height:9px"></i>Migracja (go‑live)</span>`,
+    `<span><i class="sw dot" style="background:var(--critical)"></i>CVE krytyczna</span>`,
+    `<span><i class="sw dot" style="background:var(--serious)"></i>wysoka</span>`,
+    `<span><i class="sw dot" style="background:var(--warning)"></i>średnia</span>`,
+    `<span><i class="sw dot" style="background:var(--low)"></i>niska</span>`,
+    `<span>▲ fala 0‑day</span>`,
+  ].join("");
+}
+const trunc = (s, n) => s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…" : s;
+
+/* ---------- wykres pracochłonności ---------- */
+function renderEffort(res, p, bk) {
+  const W = width("effort"), H = 300, L = 48, R = 12, top = 16, bot = 40;
+  const cap = p.fte * 140 * (bucketKind === "q" ? 3 : 1);
+  const maxV = niceMax(Math.max(cap * 1.05, ...bk.map(b => b.total)));
+  const y = v => top + (1 - v / maxV) * (H - top - bot);
+  const bw = (W - L - R) / bk.length, barW = Math.max(3, Math.min(42, bw * 0.7));
+  let s = svgOpen(W, H, 'aria-label="Pracochłonność w okresach"');
+  for (let i = 0; i <= 4; i++) { const v = maxV * i / 4; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${i ? "var(--grid)" : "var(--axis)"}"/><text x="${L - 6}" y="${y(v) + 4}" font-size="11" text-anchor="end">${nf.format(v)}</text>`; }
+  s += `<text x="4" y="${top - 4}" font-size="11">h</text>`;
+  const every = Math.ceil(bk.length / Math.max(1, Math.floor((W - L) / 64)));
+  bk.forEach((b, i) => {
+    const cx = L + bw * i + bw / 2; let acc = 0;
+    TYPES.forEach(([k, , col]) => {
+      const v = b.h[k]; if (v <= 0) return;
+      const y1 = y(acc + v), y0 = y(acc); acc += v;
+      const hh = Math.max(0, y0 - y1 - 2);
+      if (hh > 0) s += `<rect x="${cx - barW / 2}" y="${y1}" width="${barW}" height="${hh}" rx="${hh > 6 ? 2 : 0}" fill="var(${col})"/>`;
+    });
+    if (b.total > cap) s += `<text x="${cx}" y="${y(b.total) - 4}" font-size="11" text-anchor="middle" fill="var(--critical)">▲</text>`;
+    const tt = `<b>${b.label}</b>` + TYPES.map(([k, n, col]) => `<div class="tr"><span><i class="sw" style="background:var(${col})"></i> ${n}</span><span>${nf1.format(b.h[k])} h</span></div>`).join("") +
+      `<div class="tr"><b>Razem</b><b>${nf1.format(b.total)} h</b></div><div class="tr"><span>Pojemność zespołu</span><span>${nf.format(cap)} h</span></div><div class="tr"><span>Wymagane FTE</span><span>${nf1.format(b.total / (140 * (bucketKind === "q" ? 3 : 1)))}</span></div>`;
+    s += `<rect x="${L + bw * i}" y="${top}" width="${bw}" height="${H - top - bot}" fill="transparent" data-tip="${attr(tt)}"/>`;
+    if (i % every === 0) s += `<text x="${cx}" y="${H - bot + 16}" font-size="11" text-anchor="middle">${b.label}</text>`;
+  });
+  s += `<line x1="${L}" x2="${W - R}" y1="${y(cap)}" y2="${y(cap)}" stroke="var(--ink-2)" stroke-width="1.5" stroke-dasharray="5 4" pointer-events="none"/>`;
+  s += `<text x="${W - R}" y="${y(cap) - 5}" font-size="11" text-anchor="end" class="ink">Pojemność zespołu: ${nf.format(cap)} h</text>`;
+  s += "</svg>";
+  $("effort").innerHTML = s;
+  $("effLegend").innerHTML = TYPES.map(([, n, col]) => `<span><i class="sw" style="background:var(${col})"></i>${n}</span>`).join("") + `<span><i class="sw line" style="background:var(--ink-2)"></i>Pojemność</span><span style="color:var(--critical)">▲</span><span>przekroczenie pojemności</span>`;
+}
+
+/* ---------- wykres CVE ---------- */
+function renderCves(res, p, bk) {
+  const W = width("cves"), H = 260, L = 36, R = 10, top = 14, bot = 36;
+  const exp = bk.map(b => res.baseRate * (b.b - b.a) / YEAR);
+  const maxV = niceMax(Math.max(...bk.map(b => b.cvTotal), ...exp, 1));
+  const y = v => top + (1 - v / maxV) * (H - top - bot);
+  const bw = (W - L - R) / bk.length, barW = Math.max(2, Math.min(30, bw * 0.7));
+  const SC = [["crit", "var(--critical)"], ["high", "var(--serious)"], ["med", "var(--warning)"], ["low", "var(--low)"]];
+  let s = svgOpen(W, H, 'aria-label="Liczba CVE w okresach"');
+  for (let i = 0; i <= 4; i++) { const v = maxV * i / 4; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${i ? "var(--grid)" : "var(--axis)"}"/><text x="${L - 6}" y="${y(v) + 4}" font-size="11" text-anchor="end">${nf1.format(v)}</text>`; }
+  const every = Math.ceil(bk.length / Math.max(1, Math.floor((W - L) / 64)));
+  bk.forEach((b, i) => {
+    const cx = L + bw * i + bw / 2; let acc = 0;
+    SC.forEach(([k, col]) => { const v = b.cv[k]; if (!v) return; const y1 = y(acc + v), y0 = y(acc); acc += v; const hh = Math.max(0, y0 - y1 - 2); if (hh > 0) s += `<rect x="${cx - barW / 2}" y="${y1}" width="${barW}" height="${hh}" fill="${col}"/>`; });
+    const tt = `<b>${b.label}</b>` + SC.map(([k, col]) => `<div class="tr"><span><i class="sw dot" style="background:${col}"></i> ${SEV_N[k]}</span><span>${b.cv[k]}</span></div>`).join("") + `<div class="tr"><b>Razem</b><b>${b.cvTotal}</b></div><div class="tr"><span>Oczekiwane (trend stały)</span><span>${nf1.format(exp[i])}</span></div>`;
+    s += `<rect x="${L + bw * i}" y="${top}" width="${bw}" height="${H - top - bot}" fill="transparent" data-tip="${attr(tt)}"/>`;
+    if (i % every === 0) s += `<text x="${cx}" y="${H - bot + 16}" font-size="11" text-anchor="middle">${b.label}</text>`;
+  });
+  s += `<polyline fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-dasharray="5 4" pointer-events="none" points="${bk.map((b, i) => `${L + bw * i + bw / 2},${y(exp[i])}`).join(" ")}"/>`;
+  s += "</svg>";
+  $("cves").innerHTML = s;
+  $("cveLegend").innerHTML = SC.map(([k, col]) => `<span><i class="sw" style="background:${col}"></i>${SEV_N[k]}</span>`).join("") + `<span><i class="sw line" style="background:var(--ink-2)"></i>oczekiwane przy trendzie stałym</span>`;
+}
+
+/* ---------- porównanie trendów ---------- */
+function renderCompare(res, resConst, p, altName) {
+  const W = width("cmp"), H = 260, L = 52, R = 90, top = 14, bot = 36;
+  const series = [
+    { name: "Trend stały", col: "var(--s1)", r: resConst },
+    { name: altName, col: "var(--s2)", r: res },
+  ];
+  const months = []; for (let m = res.t0; m <= res.tEnd + DAY; m = addMonths(m, 1)) months.push(Math.min(m, res.tEnd));
+  series.forEach(se => { let acc = 0, wi = 0; const w = se.r.work; se.pts = months.map(m => { while (wi < w.length && w[wi].t <= m) acc += w[wi++].h; return acc; }); });
+  const maxV = niceMax(Math.max(...series.map(s => s.pts[s.pts.length - 1]), 1));
+  const x = t => L + (t - res.t0) / (res.tEnd - res.t0) * (W - L - R);
+  const y = v => top + (1 - v / maxV) * (H - top - bot);
+  let s = svgOpen(W, H, 'aria-label="Skumulowane godziny — porównanie trendów"');
+  for (let i = 0; i <= 4; i++) { const v = maxV * i / 4; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${i ? "var(--grid)" : "var(--axis)"}"/><text x="${L - 6}" y="${y(v) + 4}" font-size="11" text-anchor="end">${nf.format(v)}</text>`; }
+  const d0 = new Date(res.t0);
+  for (let yv = d0.getUTCFullYear() + 1; Date.UTC(yv, 0, 1) < res.tEnd; yv++) { const X = x(Date.UTC(yv, 0, 1)); s += `<text x="${X}" y="${H - bot + 16}" font-size="11" text-anchor="middle">${yv}</text><line x1="${X}" x2="${X}" y1="${H - bot}" y2="${H - bot + 4}" stroke="var(--axis)"/>`; }
+  series.forEach(se => {
+    s += `<polyline fill="none" stroke="${se.col}" stroke-width="2" points="${se.pts.map((v, i) => `${x(months[i])},${y(v)}`).join(" ")}"/>`;
+    const lv = se.pts[se.pts.length - 1];
+    s += `<text x="${W - R + 6}" y="${y(lv) + 4}" font-size="11" class="ink">${nf.format(lv)} h</text>`;
+  });
+  s += `<g id="cmpHover" pointer-events="none" style="display:none"><line id="cmpLine" y1="${top}" y2="${H - bot}" stroke="var(--axis)"/>${series.map((se, i) => `<circle id="cmpDot${i}" r="4.5" fill="${se.col}" stroke="var(--surface)" stroke-width="2"/>`).join("")}</g>`;
+  s += `<rect id="cmpOverlay" x="${L}" y="${top}" width="${W - L - R}" height="${H - top - bot}" fill="transparent"/>`;
+  s += "</svg>";
+  $("cmp").innerHTML = s;
+  const ov = $("cmpOverlay"), g = $("cmpHover");
+  ov.addEventListener("mousemove", e => {
+    const rect = ov.ownerSVGElement.getBoundingClientRect();
+    const px = (e.clientX - rect.left) * (W / rect.width);
+    const t = res.t0 + (px - L) / (W - L - R) * (res.tEnd - res.t0);
+    let i = 0, best = Infinity; months.forEach((m, k) => { const d = Math.abs(m - t); if (d < best) { best = d; i = k; } });
+    g.style.display = ""; $("cmpLine").setAttribute("x1", x(months[i])); $("cmpLine").setAttribute("x2", x(months[i]));
+    series.forEach((se, k) => { const c = $("cmpDot" + k); c.setAttribute("cx", x(months[i])); c.setAttribute("cy", y(se.pts[i])); });
+    const diff = series[1].pts[i] - series[0].pts[i];
+    showTip(`<b>${fmtM(months[i])}</b>` + series.map(se => `<div class="tr"><span><i class="sw line" style="background:${se.col}"></i> ${esc(se.name)}</span><span>${nf.format(se.pts[i])} h</span></div>`).join("") + `<div class="tr"><span>Różnica</span><span>${diff >= 0 ? "+" : ""}${nf.format(diff)} h</span></div>`, e);
+  });
+  ov.addEventListener("mouseleave", () => { g.style.display = "none"; hideTip(); });
+  $("cmpLegend").innerHTML = series.map(se => `<span><i class="sw line" style="background:${se.col}"></i>${esc(se.name)}</span>`).join("");
+}
+
+/* ---------- graf zależności ---------- */
+function renderGraph(res) {
+  const W = width("graph");
+  const depth = {}; const calc = (id, st = new Set()) => { if (depth[id] != null) return depth[id]; if (st.has(id)) return 0; st.add(id); const c = comps.find(x => x.id === id); const d = c.deps.length ? 1 + Math.max(...c.deps.map(dd => calc(dd, st))) : 0; depth[id] = d; return d; };
+  comps.forEach(c => calc(c.id));
+  const maxD = comps.length ? Math.max(...Object.values(depth)) : 0;
+  const layers = []; for (let i = 0; i <= maxD; i++) layers.push(comps.filter(c => depth[c.id] === i));
+  const nodeH = 40, gapY = 34, nodeW = Math.min(150, Math.max(92, (W - 20) / Math.max(1, ...layers.map(l => l.length)) - 10));
+  const nL = maxD + 2, H = nL * (nodeH + gapY) + 10;
+  const pos = {};
+  const place = (list, li) => { const yy = H - 10 - (li + 1) * (nodeH + gapY) + gapY; const step = (W - 10) / list.length; list.forEach((c, k) => pos[c.id] = { x: 5 + step * k + step / 2, y: yy }); };
+  layers.forEach((l, i) => place(l, i));
+  pos.__prod = { x: W / 2, y: 10 };
+  let s = svgOpen(W, H, 'aria-label="Graf zależności"');
+  s += `<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>`;
+  const edge = (a, b) => { const A = pos[a], B = pos[b]; s += `<line x1="${A.x}" y1="${A.y + nodeH}" x2="${B.x}" y2="${B.y}" stroke="var(--muted)" stroke-width="1.2" marker-end="url(#arr)" opacity="0.8"/>`; };
+  comps.forEach(c => c.deps.forEach(d => pos[d] && edge(c.id, d)));
+  comps.filter(c => c.direct).forEach(c => edge("__prod", c.id));
+  const node = (id, title, sub, col, tt) => { const p0 = pos[id]; s += `<g data-tip="${attr(tt)}"><rect x="${p0.x - nodeW / 2}" y="${p0.y}" width="${nodeW}" height="${nodeH}" rx="8" fill="var(--surface-2)" stroke="${col}" stroke-width="2"/><text x="${p0.x}" y="${p0.y + 17}" text-anchor="middle" font-size="12" class="ink">${esc(trunc(title, Math.floor(nodeW / 7)))}</text><text x="${p0.x}" y="${p0.y + 31}" text-anchor="middle" font-size="11">${esc(trunc(sub, Math.floor(nodeW / 6.5)))}</text></g>`; };
+  node("__prod", "Fikcyjny produkt", "zależności: " + comps.filter(c => c.direct).length, "var(--accent)", "<b>Fikcyjny produkt</b><br>Bezpośrednio używa: " + comps.filter(c => c.direct).map(c => esc(c.name)).join(", "));
+  comps.forEach(c => {
+    const seg = res.segs.find(g => g.comp === c.id);
+    const st = seg ? statusAt(seg, res.t0) : "full";
+    node(c.id, c.name, c.ver + " · " + (st === "full" ? "wspierany" : st === "ext" ? "rozszerzone" : "EOL"), ST_C[st], `<b>${esc(c.name)} ${esc(c.ver)}</b><br>Status na start: ${ST_N[st]}<br>Składników zależnych (z produktem): ${res.deps[c.id]}<br>Zależy od: ${c.deps.map(d => esc(comps.find(x => x.id === d).name)).join(", ") || "—"}`);
+  });
+  s += "</svg>";
+  $("graph").innerHTML = s;
+}
+
+/* ---------- KPI, tabele ---------- */
+function renderKpis(res, p, bk) {
+  const tot = res.work.reduce((s, w) => s + w.h, 0);
+  const months = p.horizon * 12;
+  const crit = res.cves.filter(c => c.sev === "crit").length;
+  const mits = res.cves.filter(c => c.mitig).length;
+  const em = res.updates.filter(u => u.kind === "emerg").length;
+  let eolMonths = 0;
+  for (let m = res.t0; m < res.tEnd; m = addMonths(m, 1)) comps.forEach(c => { const g = res.segs.find(g => g.comp === c.id && m >= g.start && m < g.end); if (g && m >= g.eol) eolMonths++; });
+  const cap = p.fte * 140 * (bucketKind === "q" ? 3 : 1);
+  const over = bk.filter(b => b.total > cap).length;
+  const peak = bk.reduce((a, b) => b.total > a.total ? b : a, bk[0] || { total: 0, label: "—" });
+  const K = [
+    ["Łączna praca", nf.format(tot) + " h", `${p.horizon} lat · średnio ${nf1.format(tot / months / 140)} FTE`],
+    ["Podatności (CVE)", nf.format(res.cves.length), `w tym krytycznych: ${crit}`],
+    ["Mitygacje", nf.format(mits), "poprawka poza SLA lub wersja po EOL"],
+    ["Aktualizacje awaryjne", nf.format(em), `planowe: ${res.updates.length - em}`],
+    ["Migracje wersji", nf.format(res.migs.length), p.plan ? `wyprzedzenie ${p.lead} mies. przed EOS` : "planowanie wyłączone"],
+    ["Składniko‑miesiące po EOL", nf.format(eolMonths), eolMonths ? "czas pracy bez poprawek producenta" : "brak — pełne pokrycie wsparciem"],
+    ["Szczyt obciążenia", nf.format(peak.total) + " h", `${peak.label} · przekroczeń pojemności: ${over}`],
+  ];
+  $("kpis").innerHTML = K.map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${esc(d)}</div></div>`).join("");
+}
+function renderSummary(res) {
+  let h = `<tr><th>Składnik</th><th>Wersje w horyzoncie</th><th>Status na start</th><th class="num">Akt. planowe</th><th class="num">Akt. awaryjne</th><th class="num">CVE kryt./wys./śr./nis.</th>` + TYPES.map(([, n]) => `<th class="num">${n} (h)</th>`).join("") + `<th class="num">Razem (h)</th></tr>`;
+  const rows = comps.map(c => {
+    const segs = res.segs.filter(g => g.comp === c.id);
+    const w = res.work.filter(x => x.comp === c.id);
+    const byT = {}; TYPES.forEach(([k]) => byT[k] = w.filter(x => x.type === k).reduce((s, x) => s + x.h, 0));
+    const tot = Object.values(byT).reduce((a, b) => a + b, 0);
+    const cv = res.cves.filter(x => x.comp === c.id);
+    const cnt = k => cv.filter(x => x.sev === k).length;
+    const st = segs.length ? statusAt(segs[0], res.t0) : "full";
+    const up = res.updates.filter(u => u.comp === c.id);
+    return { tot, html: `<tr><td>${esc(c.name)}</td><td>${segs.map(g => esc(g.label)).join(" → ")}</td><td><span class="badge"><i style="background:${ST_C[st]}"></i>${st === "full" ? "wspierany" : st === "ext" ? "rozszerzone" : "po EOL"}</span></td>
+      <td class="num">${up.filter(u => u.kind !== "emerg").length}</td><td class="num">${up.filter(u => u.kind === "emerg").length}</td>
+      <td class="num">${cnt("crit")} / ${cnt("high")} / ${cnt("med")} / ${cnt("low")}</td>` + TYPES.map(([k]) => `<td class="num">${nf.format(byT[k])}</td>`).join("") + `<td class="num"><b>${nf.format(tot)}</b></td></tr>` };
+  }).sort((a, b) => b.tot - a.tot);
+  const inv = res.work.filter(x => x.ver === "—").reduce((s, x) => s + x.h, 0);
+  if (inv) rows.push({ html: `<tr><td colspan="${6 + TYPES.length}" class="muted">W godzinach składników zawarta jest inwentaryzacja po falach 0‑day: ${nf.format(inv)} h</td><td></td></tr>` });
+  $("summary").innerHTML = h + rows.map(r => r.html).join("");
+}
+function renderMiles(res) {
+  const lim = addMonths(res.t0, 24); const ev = [];
+  const nm = id => comps.find(c => c.id === id).name;
+  const seen = new Set();
+  res.segs.forEach(g => {
+    [["eos", g.eos, "Koniec pełnego wsparcia (EOS)", "var(--warning)"], ["eol", g.eol, "Koniec wsparcia (EOL)", "var(--critical)"]].forEach(([k, t, n, col]) => {
+      const key = g.comp + k + t; if (seen.has(key)) return; seen.add(key);
+      if (t >= addMonths(res.t0, -12) && t <= lim && (g.eos !== g.eol || k === "eol")) ev.push({ t, txt: n, comp: nm(g.comp) + " " + g.label, col, past: t < res.t0 });
+    });
+  });
+  res.migs.forEach(m => { if (m.start <= lim) ev.push({ t: Math.max(m.start, res.t0), txt: "Start migracji (z " + m.from + ")", comp: nm(m.comp), col: "var(--s5)" }); if (m.end <= lim) ev.push({ t: m.end, txt: "Go‑live nowej wersji", comp: nm(m.comp), col: "var(--s5)" }); });
+  res.cves.filter(c => c.t <= lim && (c.sev === "crit" || c.wave)).forEach(c => ev.push({ t: c.t, txt: (c.wave ? "Fala 0‑day " : "CVE krytyczna ") + c.id + (c.supported ? "" : " (po EOL)"), comp: nm(c.comp), col: "var(--critical)" }));
+  ev.sort((a, b) => a.t - b.t);
+  $("miles").innerHTML = `<tr><th>Data</th><th>Zdarzenie</th><th>Składnik</th></tr>` + (ev.map(e => `<tr${e.past ? ' class="muted"' : ""}><td>${fmt(e.t)}${e.past ? " (minęło)" : ""}</td><td><span class="badge"><i style="background:${e.col}"></i>${esc(e.txt)}</span></td><td>${esc(e.comp)}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">Brak zdarzeń</td></tr>`);
+}
+
+/* ---------- uruchomienie ---------- */
+let bucketKind = "q", lastRes = null;
+function syncLabels() {
+  $("horizonV").textContent = $("horizon").value + " lat";
+  $("growthV").textContent = $("growth").value + "%";
+  $("regV").textContent = $("reg").value + "%";
+  $("growth").disabled = $("trend").value === "const";
+  $("lead").disabled = !$("plan").checked;
+}
+function run() {
+  syncLabels();
+  const p = P();
+  if (!comps.length) { ["timeline", "effort", "cves", "cmp", "graph"].forEach(i => $(i).innerHTML = '<p class="muted">Dodaj co najmniej jeden składnik.</p>'); $("kpis").innerHTML = ""; return; }
+  const res = simulate(p);
+  const resConst = simulate(p, "const");
+  let alt = res, altName = $("trend").selectedOptions[0].text + " (" + Math.round(p.growth * 100) + "%/rok)";
+  if (p.trend === "const") { alt = simulate({ ...p, growth: 0.25 }, "exp"); altName = "Rosnący wykładniczo (25%/rok)"; }
+  lastRes = res;
+  const bk = buckets(res, bucketKind);
+  renderKpis(res, p, bk);
+  renderTimeline(res, p);
+  renderEffort(res, p, bk);
+  renderCves(res, p, bk);
+  renderCompare(alt, resConst, p, altName);
+  renderGraph(res);
+  renderMiles(res);
+  renderSummary(res);
+  save();
+}
+["start", "horizon", "trend", "growth", "seed", "slaC", "slaH", "fte", "reg", "plan", "lead", "waves"].forEach(id => $(id).addEventListener("input", run));
+$("preset").addEventListener("change", () => { if ($("preset").value !== "custom") { loadPreset($("preset").value); renderEditor(); } run(); });
+$("reseed").onclick = () => { $("seed").value = Math.floor(Math.random() * 99999); run(); };
+$("runBtn").onclick = run;
+$("bucketTabs").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; bucketKind = b.dataset.b; document.querySelectorAll("#bucketTabs button").forEach(x => x.classList.toggle("on", x === b)); run(); });
+$("csvBtn").onclick = () => {
+  if (!lastRes) return;
+  const nm = id => { const c = comps.find(x => x.id === id); return c ? c.name : id; };
+  const lines = [["data", "skladnik", "wersja", "typ_pracy", "godziny", "opis"].join(";")];
+  const tn = Object.fromEntries(TYPES.map(([k, n]) => [k, n]));
+  lastRes.work.forEach(w => lines.push([fmt(w.t), nm(w.comp), w.ver, tn[w.type], String(w.h.toFixed(2)).replace(".", ","), w.desc].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(";")));
+  const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "symulacja-prac.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+// motyw
+const THEMES = ["auto", "light", "dark"], TN = { auto: "auto", light: "jasny", dark: "ciemny" };
+let theme = "auto"; try { theme = localStorage.getItem("supsim-theme") || "auto"; } catch (e) {}
+function applyTheme() { if (theme === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", theme); $("themeBtn").textContent = "Motyw: " + TN[theme]; }
+$("themeBtn").onclick = () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; try { localStorage.setItem("supsim-theme", theme); } catch (e) {} applyTheme(); };
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(run, 150); });
+
+// start
+applyTheme(); renderCatalog();
+$("start").value = new Date().toISOString().slice(0, 10);
+if (!restore()) loadPreset("java");
+else $("preset").value = "custom";
+renderEditor(); run();
+</script>
+</body>
+</html>
