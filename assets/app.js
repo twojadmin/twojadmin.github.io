@@ -703,14 +703,23 @@ function dangerSeries(res, p) {
     }
     return { l: late.length || Object.keys(unp).length ? 1 : 0, n: 0, late: late.length, u: Object.keys(unp).length };
   });
-  return { months, lv, first, reason, dangerMonths };
+  // okresy, w których produkt jest niebezpieczny: [od, do) — do = pierwszy miesiąc bez zagrożenia albo koniec horyzontu
+  const intervals = [];
+  lv.forEach((d, i) => {
+    if (d.l === 2 && (i === 0 || lv[i - 1].l !== 2)) intervals.push({ from: months[i], to: res.tEnd, open: true });
+    if (d.l !== 2 && i > 0 && lv[i - 1].l === 2) { const it = intervals[intervals.length - 1]; it.to = months[i]; it.open = false; }
+  });
+  return { months, lv, first, reason, dangerMonths, intervals };
 }
+// „MM.RRRR – MM.RRRR” (ostatni niebezpieczny miesiąc) lub „do końca horyzontu”
+const dzRange = it => `${fmtM(it.from)} – ${it.open ? "do końca horyzontu" : fmtM(addMonths(it.to, -1))}`;
 
 /* ================= oś czasu: wiersz na każdą wersję ================= */
 function renderTimeline(res, dz) {
   const el = $("timeline"), W_ = Math.max(900, el.parentElement.clientWidth);
   const rows = []; comps.forEach(c => res.segs.filter(g => g.comp === c.id).forEach((g, k) => rows.push({ c, g, k })));
-  const L = 200, R = 16, top = 34, rowH = 34, prodH = 44, H = top + prodH + rows.length * rowH + 10;
+  const L = 200, R = 16, top = 34, rowH = 34, prodH = 44, bandH = dz.intervals.length ? 30 : 0, pt = top + bandH;
+  const H = pt + prodH + rows.length * rowH + 10;
   const x = t => L + (Math.min(Math.max(t, res.t0), res.tEnd) - res.t0) / (res.tEnd - res.t0) * (W_ - L - R);
   const s = [svgOpen(W_, H, "Oś czasu wsparcia — wiersz na każdą wersję")];
   s.push(`<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--critical)" opacity="0.18"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--critical)" stroke-width="2" opacity="0.7"/></pattern>
@@ -723,15 +732,34 @@ function renderTimeline(res, dz) {
   }
   if (x(Date.UTC(d0.getUTCFullYear() + 1, 0, 1)) - L > 80) s.push(`<text x="${L + 4}" y="${top - 12}" font-size="11">${fmt(res.t0)}</text>`);
   // wiersz produktu: poziom zagrożenia
-  s.push(`<text x="8" y="${top + 17}" font-size="12.5" class="ink" font-weight="650">Produkt</text><text x="8" y="${top + 31}" font-size="11">bezpieczeństwo</text>`);
+  // pas „produkt niebezpieczny” nad wierszem produktu: okresy z datą początku i końca
+  if (bandH) {
+    s.push(`<text x="8" y="${top + 18}" font-size="12" font-weight="650" fill="var(--critical)">Produkt niebezpieczny</text>`);
+    let lastEnd = -Infinity;
+    dz.intervals.forEach((it, i) => {
+      const a = x(it.from), b = x(it.to), txt = (i === 0 && b - a > 230 ? "niebezpieczny " : "") + dzRange(it);
+      const tt = `<b>Produkt niebezpieczny</b><br>${dzRange(it)}${it.open ? "" : "<br>od " + fmtM(it.to) + " ponownie bez niezałatanych krytycznych/wysokich podatności po terminie SLA"}`;
+      s.push(`<g data-tip="${attr(tt)}"><rect x="${a}" y="${top + 4}" width="${Math.max(2, b - a)}" height="${bandH - 6}" fill="transparent"/>
+        <line x1="${a}" x2="${Math.max(a + 2, b - 1)}" y1="${top + 21}" y2="${top + 21}" stroke="var(--critical)" stroke-width="3"/>
+        <line x1="${a}" x2="${a}" y1="${top + 16}" y2="${top + 26}" stroke="var(--critical)" stroke-width="2"/>${it.open ? "" : `<line x1="${b - 1}" x2="${b - 1}" y1="${top + 16}" y2="${top + 26}" stroke="var(--critical)" stroke-width="2"/>`}</g>`);
+      // etykieta nad kreską, jeśli mieści się bez nachodzenia na poprzednią
+      const w = txt.length * 6.4, lx = Math.min(Math.max(a, lastEnd + 8), W_ - R - w);
+      if (lx >= lastEnd + 6 && lx >= L) { s.push(`<text x="${lx}" y="${top + 12}" font-size="11.5" font-weight="650" fill="var(--critical)" pointer-events="none">${txt}</text>`); lastEnd = lx + w; }
+    });
+  }
+  s.push(`<text x="8" y="${pt + 17}" font-size="12.5" class="ink" font-weight="650">Produkt</text><text x="8" y="${pt + 31}" font-size="11">bezpieczeństwo</text>`);
   const LV = [["var(--good)", 0.4, "bezpieczny — poprawki dostępne i instalowane"], ["var(--warning)", 0.6, "podwyższone ryzyko"], ["var(--critical)", 0.9, "NIEBEZPIECZNY — krytyczne/wysokie podatności bez możliwości załatania"]];
   dz.months.forEach((m, i) => {
     const me = Math.min(addMonths(m, 1), res.tEnd), d = dz.lv[i], [col, op, n] = LV[d.l];
     const tt = `<b>${fmtM(m)} — ${n}</b>` + (d.l === 2 ? `<br>Otwarte krytyczne/wysokie po terminie SLA w składnikach bez poprawek: ${d.n}` : d.l === 1 ? `<br>${d.late ? "Poprawki spóźnione względem SLA: " + d.late + "<br>" : ""}Składniki bez poprawek: ${d.u}` : "");
-    s.push(`<rect x="${x(m)}" y="${top + 8}" width="${Math.max(1, x(me) - x(m) - 1)}" height="22" fill="${col}" opacity="${op}" data-tip="${attr(tt)}"/>`);
+    s.push(`<rect x="${x(m)}" y="${pt + 8}" width="${Math.max(1, x(me) - x(m) - 1)}" height="22" fill="${col}" opacity="${op}" data-tip="${attr(tt)}"/>`);
   });
-  if (dz.first != null) { const X = x(dz.first); s.push(`<line x1="${X}" x2="${X}" y1="${top + 4}" y2="${H - 6}" stroke="var(--critical)" stroke-width="2" stroke-dasharray="6 4"/>`); const lx = Math.min(X + 5, W_ - 175); s.push(`<rect x="${lx - 3}" y="${top + 10}" width="162" height="18" rx="4" fill="var(--surface)" stroke="var(--critical)"/><text x="${lx + 3}" y="${top + 23}" font-size="12" font-weight="650" fill="var(--critical)">niebezpieczny od ${fmtM(dz.first)}</text>`); }
-  let y = top + prodH;
+  // pionowe linie początku i końca okresów zagrożenia
+  dz.intervals.forEach(it => {
+    s.push(`<line x1="${x(it.from)}" x2="${x(it.from)}" y1="${top + 26}" y2="${H - 6}" stroke="var(--critical)" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.8" pointer-events="none"/>`);
+    if (!it.open) s.push(`<line x1="${x(it.to)}" x2="${x(it.to)}" y1="${top + 26}" y2="${H - 6}" stroke="var(--critical)" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.6" pointer-events="none"/>`);
+  });
+  let y = pt + prodH;
   rows.forEach(({ c, g, k }) => {
     const cy = y + rowH / 2;
     s.push(`<line x1="0" x2="${W_}" y1="${y}" y2="${y}" stroke="${k ? "var(--grid)" : "var(--axis)"}" stroke-width="${k ? 0.5 : 1}"/>`);
@@ -794,7 +822,7 @@ function renderTimeline(res, dz) {
     `<span><i class="sw" style="background:var(--s5);transform:rotate(45deg);width:9px;height:9px"></i>Migracja (go‑live)</span>`,
     `<span><i class="sw dot" style="background:var(--critical)"></i>podatność krytyczna</span>`, `<span><i class="sw dot" style="background:var(--serious)"></i>wysoka</span>`,
     `<span><i class="sw dot" style="background:var(--warning)"></i>średnia</span>`, `<span><i class="sw dot" style="background:var(--low)"></i>niska</span>`,
-    `<span><i class="sw ring"></i>niezałatana do końca</span>`, `<span>▲ fala 0‑day</span>`, `<span><i class="sw line" style="background:var(--critical)"></i>produkt niebezpieczny od</span>`].join("");
+    `<span><i class="sw ring"></i>niezałatana do końca</span>`, `<span>▲ fala 0‑day</span>`, `<span><i class="sw line" style="background:var(--critical);height:3px"></i>okres, w którym produkt jest niebezpieczny (od – do)</span>`].join("");
 }
 
 /* ================= zakupy, licencje, płatne wsparcie ================= */
@@ -830,7 +858,7 @@ function purchases(res, p, plan) {
 }
 function renderPurchases(res, p, plan, dz, dzAlt) {
   const { buys, paid } = purchases(res, p, plan);
-  const dTxt = d => d.first != null ? `<b style="color:var(--critical)">od ${fmtM(d.first)}</b> — ${esc(d.reason)}; łącznie ${d.dangerMonths} mies. w horyzoncie` : `<b style="color:var(--good)">nie w horyzoncie symulacji</b>`;
+  const dTxt = d => d.first != null ? `<b style="color:var(--critical)">${dzRange(d.intervals[0])}</b>${d.intervals.length > 1 ? ` (oraz ${d.intervals.slice(1).map(dzRange).join(", ")})` : ""} — ${esc(d.reason)}; łącznie ${d.dangerMonths} mies. w horyzoncie` : `<b style="color:var(--good)">nie w horyzoncie symulacji</b>`;
   $("dangerBox").innerHTML = `<div><b>Bieżący scenariusz${res.buy ? " (płatne wsparcie wykupione)" : " (płatne wsparcie niewykupione)"}:</b> produkt niebezpieczny ${dTxt(dz)}</div>` +
     (res.buy ? `<div style="margin-top:4px"><b>Bez płatnego wsparcia, z migracjami:</b> ${dTxt(dzAlt.noBuy)}</div>` : "") +
     `<div style="margin-top:4px"><b>Bez płatnego wsparcia i bez zakupu nowych wersji</b> (tylko darmowe poprawki, bez migracji): ${dTxt(dzAlt.none)}</div>
@@ -967,7 +995,7 @@ function renderKpis(res, p, bk, plan, issues, dz, dzAlt) {
     ["Mitygacje", nf.format(res.cves.filter(c => c.mitig).length), p.mitOn ? `skuteczne: ${res.cves.filter(c => c.mitigatedAt != null).length} · nieskuteczne lub niemożliwe: ${res.cves.filter(c => c.mitigFail).length}` : "wyłączone w parametrach"],
     ["Aktualizacje awaryjne", nf.format(em), `planowe: ${res.updates.filter(u => u.kind !== "emerg").length}`],
     ["Migracje wersji", nf.format(res.migs.length), plan && p.mode === "plan" ? `plan: ${nf.format(plan.total)} h do ${fmtM(plan.end)}` : p.mode === "noupd" ? "brak — serwer bez aktualizacji" : p.autoMig ? `${p.lead} mies. przed końcem poprawek` : "automatyczne wyłączone"],
-    ["Produkt niebezpieczny od", dz.first != null ? fmtM(dz.first) : "—", "bez płatnego wsparcia i nowych wersji: " + (dzAlt.none.first != null ? fmtM(dzAlt.none.first) : "nie w horyzoncie")],
+    ["Produkt niebezpieczny", dz.first != null ? fmtM(dz.first) : "—", (dz.first != null ? (dz.intervals[0].open ? "do końca horyzontu" : "do " + fmtM(addMonths(dz.intervals[0].to, -1))) + (dz.intervals.length > 1 ? ` (+${dz.intervals.length - 1} okr.)` : "") + " · " : "") + "bez płatnego wsparcia i nowych wersji: " + (dzAlt.none.first != null ? "od " + fmtM(dzAlt.none.first) : "nie w horyzoncie")],
     ["Składniko‑miesiące bez poprawek", nf.format(eolMonths), eolMonths ? "EOL, niewykupione wsparcie lub brak aktualizacji" : "pełne pokrycie poprawkami"],
     ["Problemy zgodności", `${ih} / ${im}`, "wysokie / średnie"],
     ["Szczyt obciążenia", nf.format(peak.total) + " h", `${peak.label} · przekroczeń pojemności: ${over}`]);
