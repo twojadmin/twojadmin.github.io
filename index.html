@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Symulator cyklu wsparcia</title>
-<meta name="description" content="Symulacja wsparcia (EOS/EOL), aktualizacji i podatności CVE dla składników produktu: nowe wdrożenie lub stary serwer, plan modernizacji i problemy zgodności.">
+<meta name="description" content="Symulacja wsparcia (EOS/EOL), aktualizacji i fikcyjnych podatności dla składników produktu: nowe wdrożenie lub stary serwer, plan modernizacji i problemy zgodności.">
 <style>
 :root {
   color-scheme: light;
@@ -131,6 +131,7 @@ svg .ink { fill: var(--ink); }
   <header class="top">
     <div>
       <h1>Symulator cyklu wsparcia składników produktu</h1>
+      <p class="sub" style="font-size:12.5px;color:var(--muted);margin-bottom:4px">Symulacja poglądowa: produkt i wszystkie podatności (SIM‑RRRR‑NNNN) są fikcyjne. Szczegóły w sekcji „Informacje prawne”.</p>
       <p class="sub">Wybierz system i składniki, zdecyduj, czy to nowe wdrożenie czy stary serwer, i zobacz okna wsparcia (EOS / EOL), aktualizacje, losowe podatności CVE przy wybranym trendzie, plan modernizacji, problemy zgodności i przewidywaną pracochłonność.</p>
     </div>
     <div class="row">
@@ -213,14 +214,14 @@ svg .ink { fill: var(--ink); }
 
   <div class="grid2">
     <section class="card">
-      <h2>Niezałatane podatności w czasie</h2>
+      <h2>Niezałatane podatności w czasie (symulowane)</h2>
       <p class="hint" id="expHint"></p>
       <div class="legend" id="expLegend"></div>
       <div id="exposure"></div>
     </section>
     <section class="card">
-      <h2>Podatności w okresie</h2>
-      <p class="hint">Nowe CVE według ważności; linia przerywana — oczekiwana liczba przy trendzie stałym.</p>
+      <h2>Podatności w okresie (symulowane)</h2>
+      <p class="hint">Nowe symulowane podatności według ważności; linia przerywana — oczekiwana liczba przy trendzie stałym.</p>
       <div class="legend" id="cveLegend"></div>
       <div id="cves"></div>
     </section>
@@ -299,10 +300,19 @@ svg .ink { fill: var(--ink); }
       <li><b>Stary serwer — z planem:</b> etap 0 (inwentaryzacja, analiza zgodności, triage zaległych CVE), etap 1 (doinstalowanie zaległych poprawek w seriach jeszcze wspieranych), następnie migracje według planu. <i>W miejscu</i> — kolejno, z krokami pośrednimi tam, gdzie producent wymaga (np. RHEL 7→8→9, MySQL 5.7→8.0→8.4, Oracle przez 19c). <i>Nowy serwer</i> — budowa nowego środowiska z wersjami docelowymi i jedno przełączenie.</li>
       <li><b>CVE:</b> proces Poissona o intensywności CVE/rok × mnożnik trendu (stały 1; wykładniczy (1+g)<sup>t</sup>; liniowy 1+g·t). Ważność: 12% krytyczne, 35% wysokie, 43% średnie, 10% niskie. Każda wymaga weryfikacji. Krytyczne/wysokie: mitygacja, jeśli poprawka nie zdąży w SLA; aktualizacja awaryjna, jeśli najbliższa planowa nie mieści się w SLA. Po EOL — tylko mitygacja, podatność pozostaje otwarta do migracji.</li>
       <li><b>Testy:</b> × (1 + współczynnik regresji × liczba składników zależnych, także pośrednio). Migracja = godziny migracji + pełna regresja.</li>
-      <li><b>Płatne wsparcie:</b> okresy oznaczone jako płatne (np. Windows Server/SQL Server ESU, RHEL ELS, Ubuntu Pro ESM, Oracle Extended Support, Oracle Java SE, komercyjny Spring) dają poprawki tylko po wykupieniu. Przy opcji „Niewykupione” poprawki kończą się wraz z darmowym wsparciem. Aktualizacje RHEL wymagają aktywnej subskrypcji.</li>
-      <li><b>Zakupy:</b> Windows Server i SQL Server — nowa wersja to nowa licencja (chyba że jest Software Assurance); Oracle Database — nowa wersja w ramach aktywnego wsparcia; RHEL — w ramach subskrypcji; pozostałe składniki są bezpłatne.</li>
+      <li><b>Płatne wsparcie:</b> okresy oznaczone jako płatne (np. Windows 10 ESU, Windows Server/SQL Server ESU, RHEL ELS, Ubuntu Pro ESM, Oracle Extended Support, Oracle Java SE) dają poprawki tylko po wykupieniu. Przy opcji „Niewykupione” poprawki kończą się wraz z darmowym wsparciem. Aktualizacje RHEL wymagają aktywnej subskrypcji.</li>
+      <li><b>Zakupy:</b> Windows Server i SQL Server — nowa wersja to nowa licencja (chyba że jest Software Assurance); Windows 10/11 Pro — nowe wersje bezpłatnie, LTSC i zmiana kanału — nowa licencja; Oracle XE/Free — bezpłatna, bez wsparcia; Oracle Database — nowa wersja w ramach aktywnego wsparcia; RHEL — w ramach subskrypcji; pozostałe składniki są bezpłatne.</li>
       <li><b>Produkt niebezpieczny:</b> krytyczna lub wysoka podatność otwarta dłużej niż SLA w składniku, którego nie da się załatać (EOL, niewykupione wsparcie, brak aktualizacji). Mitygacje ograniczają ryzyko, ale go nie usuwają.</li>
       <li><b>Zgodność:</b> reguły dla typowych pułapek (javax→jakarta, wymagana wersja Javy, VC++ dla Apache/PHP na Windows, certyfikacja Oracle/SQL Server na danym OS, OpenSSL 3, wersje PHP/Python w repozytoriach, glibc dla Node.js itp.). To lista kontrolna, nie gwarancja — sprawdź dokumentację producentów.</li>
+    </ul>
+  </section>
+  <section class="card note" id="legal">
+    <h2>Informacje prawne</h2>
+    <ul>
+      <li><b>Charakter strony.</b> Strona ma charakter poglądowy i edukacyjny. Produkt, którego dotyczy symulacja, jest fikcyjny, a wyniki zależą od przyjętych założeń i losowania — nie gwarantują bezpieczeństwa, kosztów ani harmonogramu.</li>
+      <li><b>Podatności są zmyślone.</b> Wszystkie podatności pokazane w symulacji (identyfikatory w formacie SIM‑RRRR‑NNNN, daty, ważność, fale 0‑day) są generowane losowo. Nie są to wpisy CVE ani informacje o rzeczywistych lukach w wymienionych produktach.</li>
+      <li><b>Dane o cyklach życia i licencjach.</b> Daty wsparcia, programy płatnego wsparcia, ścieżki aktualizacji, wymagania zgodności i modele licencjonowania są uproszczone i przybliżone, mogą być nieaktualne lub niepełne i nie stanowią porady prawnej, licencyjnej ani zakupowej. Przed decyzją sprawdź aktualną dokumentację i warunki licencyjne producentów.</li>
+      <li><b>Znaki towarowe.</b> Microsoft, Windows, Windows Server, SQL Server, Visual C++ i .NET są znakami towarowymi Microsoft Corporation. Oracle, Java, MySQL i Oracle Database są znakami towarowymi Oracle Corporation i/lub jej podmiotów powiązanych. Red Hat i Red Hat Enterprise Linux są znakami towarowymi Red Hat, Inc. Ubuntu jest znakiem towarowym Canonical Ltd. Debian jest znakiem towarowym Software in the Public Interest, Inc. Apache, Apache HTTP Server, Apache Tomcat i Apache Log4j są znakami towarowymi The Apache Software Foundation. Eclipse Temurin jest znakiem towarowym Eclipse Foundation. WildFly jest znakiem towarowym Red Hat, Inc. Linux jest znakiem towarowym Linusa Torvaldsa. Node.js, Python, PHP, PostgreSQL, MariaDB, nginx i OpenSSL są znakami towarowymi lub nazwami należącymi do ich właścicieli. Wszystkie nazwy użyto wyłącznie w celu identyfikacji produktów; strona nie jest powiązana z ich właścicielami, nie jest przez nich sponsorowana ani zatwierdzona.</li>
     </ul>
   </section>
 </div>
@@ -351,7 +361,31 @@ const FAM = {
     breaks: [{ at: "12", s: "med", t: "OpenSSL 3, PHP 8.2, Python 3.11 z PEP 668 (pip poza venv blokowany)." }, { at: "13", s: "low", t: "/tmp domyślnie w tmpfs (czyszczony przy restarcie) — sprawdź aplikacje trzymające tam pliki." }],
     mnote: "EOS = koniec wsparcia bezpieczeństwa Debiana, EOL = koniec Debian LTS. Aktualizacja tylko o jedną wersję naraz." },
 
-  java: { name: "Java (JDK)", cat: "runtime", os: "any", cad: 3, cve: 5, lag: 45, h: [4, 10, 8, 2, 200], old: "8",
+  winclient: { name: "Windows 10 / 11", cat: "os", os: "win", cad: 1, cve: 14, lag: 25, h: [3, 5, 6, 2, 80], old: "10 Pro 22H2",
+    gen: { pro: [2, 2], ltsc: [5, 5], iot: [5, 10] },
+    v: [V("10 Enterprise LTSC 2019", "2018-11-13", "2024-01-09", "2029-01-09", { ch: "ltsc" }), V("10 Enterprise LTSC 2021", "2021-11-16", "2027-01-12", "2027-01-12", { ch: "ltsc" }),
+      V("10 IoT Enterprise LTSC 2021", "2021-11-16", "2027-01-12", "2032-01-13", { ch: "iot", norec: true }), V("10 Pro 22H2", "2022-10-18", "2025-10-14", "2025-10-14", { ch: "pro", esu: "2028-10-10" }),
+      V("11 Pro 23H2", "2023-10-31", "2025-11-11", "2025-11-11", { ch: "pro" }), V("11 Pro 24H2", "2024-10-01", "2026-10-13", "2026-10-13", { ch: "pro" }),
+      V("11 Enterprise LTSC 2024", "2024-10-01", "2029-10-09", "2029-10-09", { ch: "ltsc" }), V("11 IoT Enterprise LTSC 2024", "2024-10-01", "2029-10-09", "2034-10-10", { ch: "iot", norec: true }),
+      V("11 Pro 25H2", "2025-09-30", "2027-10-12", "2027-10-12", { ch: "pro" })],
+    breaks: [{ at: "11 Pro 23H2", s: "high", t: "Windows 11 wymaga TPM 2.0, Secure Boot i obsługiwanego procesora — starszy sprzęt może wymagać wymiany." }],
+    mnote: "Pro: nowa wersja funkcji co rok, wsparcie 24 mies. — coroczna aktualizacja. Enterprise LTSC: 5 lat bez nowych funkcji; IoT Enterprise LTSC: 10 lat, tylko z urządzeniem (OEM)." },
+  openjdk: { name: "OpenJDK (Eclipse Temurin)", cat: "runtime", os: "any", cad: 3, cve: 5, lag: 30, h: [4, 10, 8, 2, 180], old: "11",
+    v: [V("8", "2014-03-18", "2026-11-30"), V("11", "2018-09-25", "2027-10-31"), V("17", "2021-09-14", "2027-10-31"), V("21", "2023-09-19", "2029-12-31"), V("25", "2025-09-16", "2031-09-30", null, FC)],
+    mnote: "Daty wg deklaracji Adoptium (Eclipse Temurin) — „co najmniej do”; inni dostawcy OpenJDK mają własne terminy." },
+  jre: { name: "Java Runtime (JRE)", cat: "runtime", os: "any", cad: 3, cve: 5, lag: 30, h: [2, 8, 6, 2, 120], old: "8",
+    v: [V("8", "2014-03-18", "2026-11-30"), V("11", "2018-09-25", "2027-10-31"), V("17", "2021-09-14", "2027-10-31"), V("21", "2023-09-19", "2029-12-31"), V("25", "2025-09-16", "2031-09-30", null, FC)],
+    mnote: "Od Java 11 Oracle nie wydaje osobnego JRE — dane wg Eclipse Temurin JRE. Oracle JRE 8 w zastosowaniach komercyjnych wymaga subskrypcji." },
+  wildfly: { name: "WildFly", cat: "web", os: "any", cad: 3, cve: 3, lag: 21, h: [4, 8, 5, 1.5, 120], old: "26.1 (javax)",
+    v: [V("10.1", "2016-08-19", "2017-10-23", null, { java: "8" }), V("26.1 (javax)", "2022-04-28", "2022-11-09", null, { java: "8" }), V("27+ (jakarta)*", "2022-11-09", "2030-12-31", null, { fc: true, java: "17" })],
+    breaks: [{ at: "27+ (jakarta)*", s: "high", t: "Jakarta EE 10: przestrzeń nazw javax.* → jakarta.* — przebudowa aplikacji; usunięte przestarzałe podsystemy (np. legacy security); nowsze wydania wymagają Java 17." }],
+    mnote: "Społeczność wspiera tylko najnowsze wydanie (co ok. 3 miesiące) — trzeba aktualizować na bieżąco; wsparcie długoterminowe tylko w komercyjnym JBoss EAP." },
+  oraclexe: { name: "Oracle Database XE / Free", cat: "db", os: "any", cad: 12, cve: 3, lag: 120, h: [6, 12, 8, 2, 160], old: "11g XE",
+    v: [V("11g XE", "2011-09-24", "2018-10-19"), V("18c XE", "2018-10-19", "2021-09-08"), V("21c XE", "2021-09-08", "2024-05-02"), V("23ai Free", "2024-05-02", "2029-12-31", null, FC)],
+    breaks: [{ at: "18c XE", s: "high", t: "XE 18c+ to architektura multitenant (CDB + PDB XEPDB1) — inne parametry połączenia; brak aktualizacji w miejscu, migracja przez eksport/import (Data Pump)." },
+      { at: "23ai Free", s: "med", t: "Brak aktualizacji w miejscu z XE — eksport/import; nowa nazwa usługi (FREEPDB1)." }],
+    mnote: "Edycja bezpłatna bez wsparcia producenta (forum społeczności); poprawki tylko przez nowe wydania. Limity: 11g XE 1 CPU / 1 GB RAM / 11 GB danych; 18c–23ai: 2 CPU / 2 GB RAM / 12 GB danych." },
+  java: { name: "Java (Oracle JDK)", cat: "runtime", os: "any", cad: 3, cve: 5, lag: 45, h: [4, 10, 8, 2, 200], old: "8",
     v: [V("8", "2014-03-18", "2022-03-31", "2030-12-31"), V("11", "2018-09-25", "2023-09-30", "2032-01-31"), V("17", "2021-09-14", "2026-09-30", "2029-09-30"),
       V("21", "2023-09-19", "2028-09-30", "2031-09-30"), V("25", "2025-09-16", "2030-09-30", "2033-09-30"), V("29*", "2027-09-15", "2032-09-30", "2035-09-30", FC)],
     breaks: [
@@ -434,15 +468,8 @@ const FAM = {
   log4j: { name: "Apache Log4j", cat: "lib", os: "any", cad: 4, cve: 1.5, lag: 5, h: [2, 4, 4, 1, 24], old: "1.2",
     v: [V("1.2", "2012-05-26", "2015-08-05"), V("2.x", "2014-07-12", "2029-12-31", "2030-12-31", FC)],
     breaks: [{ at: "2.x", s: "high", t: "Inne API i format konfiguracji (log4j.properties → log4j2.xml); przejściowo most log4j-1.2-api. Wersja ≥ 2.17.1 (Log4Shell)." }] },
-  springboot: { name: "Spring Boot", cat: "lib", os: "any", cad: 1, cve: 3, lag: 10, h: [4, 8, 6, 2, 160], old: "2.7",
-    v: [V("2.7", "2022-05-19", "2023-11-24", "2025-08-24", { fc: true, java: "8" }), V("3.5", "2025-05-22", "2026-06-30", "2032-06-30", { fc: true, java: "17" }), V("4.x", "2025-11-20", "2029-11-30", "2033-11-30", { fc: true, java: "17" })],
-    breaks: [{ at: "3.5", s: "high", t: "Spring Boot 3: Java 17+, Jakarta EE (javax → jakarta), Hibernate 6, Spring Security 6 — znaczące zmiany konfiguracji." },
-      { at: "4.x", s: "med", t: "Jakarta EE 11 / Servlet 6.1 (Tomcat 11), modularne startery, null‑safety JSpecify." }],
-    mnote: "EOL = koniec wsparcia komercyjnego (prognoza)." },
-  jackson: { name: "Jackson Databind", cat: "lib", os: "any", cad: 4, cve: 1, lag: 7, h: [1.5, 4, 3, 1, 40], old: "2.x",
-    v: [V("2.x", "2014-01-01", "2028-12-31", "2029-12-31", FC), V("3.x", "2025-10-03", "2032-12-31", "2033-12-31", { fc: true, java: "17" })],
-    breaks: [{ at: "3.x", s: "med", t: "Nowe pakiety tools.jackson.*, zmienione ustawienia domyślne, wymagana Java 17." }] },
 };
+FAM.openjdk.breaks = FAM.java.breaks; FAM.jre.breaks = FAM.java.breaks;
 /* licencje i płatne wsparcie */
 const LIC_N = { perp: "Nowa wersja = zakup nowej licencji (bez Software Assurance)", supp: "Nowa wersja w ramach aktywnego wsparcia producenta", sub: "Nowa wersja w ramach aktywnej subskrypcji", free: "Bez opłat licencyjnych" };
 Object.assign(FAM.winsrv, { lic: "perp", licNote: "Licencje rdzeniowe + CAL; z Software Assurance nowa wersja w cenie.", esuName: "Windows Server ESU (płatne)" });
@@ -454,33 +481,47 @@ Object.assign(FAM.java, { paidExt: "Oracle Java SE Subscription (wsparcie rozsze
 Object.assign(FAM.oracle, { lic: "supp", paidExt: "Oracle Extended Support (dopłata)", licNote: "Licencja wieczysta + roczne wsparcie; po przerwie we wsparciu — opłata za przywrócenie i zaległe opłaty." });
 Object.assign(FAM.mssql, { lic: "perp", licNote: "Licencje na rdzenie lub serwer + CAL; z Software Assurance nowa wersja w cenie.", esuName: "SQL Server ESU (płatne)" });
 FAM.mssql.v[0].esu = "2025-07-08"; FAM.mssql.v[1].esu = "2027-07-13";
-Object.assign(FAM.springboot, { paidExt: "Komercyjne wsparcie Spring (Tanzu)" });
+Object.assign(FAM.winclient, { lic: "perp", licNote: "Pro: licencja OEM/detaliczna, nowe wersje funkcji bezpłatnie. LTSC: licencja zbiorcza — nowe LTSC wymaga Software Assurance lub zakupu. IoT LTSC: licencja tylko z urządzeniem.", esuName: "Windows 10 ESU (płatne)",
+  licOf: (a, b) => a.ch === "pro" && b.ch === "pro" ? ["free", "Bezpłatna aktualizacja wersji Pro (wymaga zgodnego sprzętu)."] : a.ch !== b.ch ? ["buy", "Zmiana kanału (" + a.ch + " → " + b.ch + ") — nowa licencja."] : ["buy", "Nowa wersja LTSC — licencja zbiorcza lub Software Assurance."] });
 Object.assign(FAM.mysql, { licNote: "Community bezpłatnie; MySQL Enterprise to płatna subskrypcja." });
 for (const k in FAM) if (!FAM[k].lic) FAM[k].lic = "free";
-const OS_FAMS = ["winsrv", "rhel", "ubuntu", "debian"];
-const GROUPS = [["Środowiska uruchomieniowe", ["java", "dotnet", "vcredist", "python", "node", "php"]], ["Serwery WWW i aplikacji", ["httpd", "tomcat", "nginx"]],
-  ["Bazy danych", ["postgresql", "mariadb", "mysql", "oracle", "mssql"]], ["Biblioteki i frameworki", ["openssl", "log4j", "springboot", "jackson"]]];
+const OS_CARDS = [{ k: "winsrv", f: "winsrv", n: "Windows Server" }, { k: "win10", f: "winclient", n: "Windows 10", pre: "10 " }, { k: "win11", f: "winclient", n: "Windows 11", pre: "11 " },
+  { k: "rhel", f: "rhel", n: "Red Hat Enterprise Linux" }, { k: "ubuntu", f: "ubuntu", n: "Ubuntu Server LTS" }, { k: "debian", f: "debian", n: "Debian" }];
+const cardFilt = k => { const c = OS_CARDS.find(x => x.k === k); return c && c.pre ? (x => x.l.startsWith(c.pre)) : null; };
+const cardOf = (f, l) => (OS_CARDS.find(c => c.f === f && (!c.pre || (l || "").startsWith(c.pre))) || OS_CARDS.find(c => c.f === f)).k;
+const GROUPS = [["Środowiska uruchomieniowe", ["java", "openjdk", "jre", "dotnet", "vcredist", "python", "node", "php"]], ["Serwery WWW i aplikacji", ["httpd", "tomcat", "wildfly", "nginx"]],
+  ["Bazy danych", ["postgresql", "mariadb", "mysql", "oracle", "oraclexe", "mssql"]], ["Biblioteki", ["openssl", "log4j"]]];
+const JAVAS = ["java", "openjdk", "jre"];
 const CAT_NAMES = { os: "System", runtime: "Środowisko", db: "Baza danych", web: "Serwer WWW/aplikacji", lib: "Biblioteka" };
 const CAT_DEF = { os: [5, 10], runtime: [4, 7], db: [4, 6], web: [4, 5], lib: [2, 3] };
 
 const TPL = [
-  { k: "javaee", n: "Aplikacja Java (RHEL + Tomcat + Apache + Oracle)", os: ["rhel", "7"], c: [["java", "8"], ["tomcat", "8.5"], ["httpd", "2.4"], ["openssl", "1.0.2"], ["oracle", "12.2"], ["log4j", "1.2"], ["springboot", "2.7"]] },
-  { k: "javawin", n: "Java na Windows (Tomcat + Apache + VC++ + PostgreSQL)", os: ["winsrv", "2012 R2"], c: [["java", "8"], ["tomcat", "8.5"], ["httpd", "2.4"], ["vcredist", "2012"], ["postgresql", "11"], ["log4j", "1.2"]] },
-  { k: "spring", n: "Mikroserwis Spring Boot (RHEL + PostgreSQL)", os: ["rhel", "8"], c: [["java", "11"], ["springboot", "2.7"], ["jackson", "2.x"], ["postgresql", "13"], ["log4j", "2.x"], ["openssl", "1.1.1"]] },
+  { k: "javaee", n: "Aplikacja Java (RHEL + Tomcat + Apache + Oracle)", os: ["rhel", "7"], c: [["java", "8"], ["tomcat", "8.5"], ["httpd", "2.4"], ["openssl", "1.0.2"], ["oracle", "12.2"], ["log4j", "1.2"]] },
+  { k: "wildfly", n: "Aplikacja Jakarta EE na WildFly (RHEL + OpenJDK + PostgreSQL)", os: ["rhel", "8"], c: [["openjdk", "11"], ["wildfly", "26.1 (javax)"], ["postgresql", "13"], ["log4j", "2.x"], ["openssl", "1.1.1"]] },
+  { k: "javawin", n: "Java na Windows Server (Tomcat + Apache + VC++ + PostgreSQL)", os: ["winsrv", "2012 R2"], c: [["openjdk", "8"], ["tomcat", "8.5"], ["httpd", "2.4"], ["vcredist", "2012"], ["postgresql", "11"], ["log4j", "1.2"]] },
+  { k: "desk", n: "Aplikacja desktopowa (Windows 10/11 + JRE + Oracle XE + VC++)", os: ["winclient", "10 Pro 22H2"], c: [["jre", "8"], ["oraclexe", "11g XE"], ["vcredist", "2013"]] },
+  { k: "kiosk", n: "Kiosk / urządzenie (Windows IoT LTSC + .NET + VC++)", os: ["winclient", "10 IoT Enterprise LTSC 2021"], c: [["dotnet", "6"], ["vcredist", "2015–2022 (v14)"]] },
   { k: "lamp", n: "Portal PHP — LAMP (Ubuntu + Apache + PHP + MariaDB)", os: ["ubuntu", "18.04"], c: [["httpd", "2.4"], ["php", "7.4"], ["mariadb", "10.3"], ["openssl", "1.1.1"]] },
   { k: "wamp", n: "PHP na Windows (Apache + PHP + VC++ + MySQL)", os: ["winsrv", "2012 R2"], c: [["httpd", "2.2"], ["php", "5.6"], ["vcredist", "2012"], ["mysql", "5.7"]] },
-  { k: "dotnet", n: ".NET na Windows (SQL Server + VC++)", os: ["winsrv", "2016"], c: [["dotnet", "6"], ["mssql", "2016"], ["vcredist", "2013"]] },
+  { k: "dotnet", n: ".NET na Windows Server (SQL Server + VC++)", os: ["winsrv", "2016"], c: [["dotnet", "6"], ["mssql", "2016"], ["vcredist", "2013"]] },
   { k: "cpp", n: "Aplikacja C++ na Windows (VC++ + SQL Server + OpenSSL)", os: ["winsrv", "2008 R2"], c: [["vcredist", "2010"], ["mssql", "2012"], ["openssl", "1.0.2"]] },
   { k: "python", n: "Python/Django (Debian + nginx + PostgreSQL)", os: ["debian", "10"], c: [["nginx", "1.20"], ["python", "3.8"], ["postgresql", "12"], ["openssl", "1.1.1"]] },
   { k: "node", n: "Node.js (Ubuntu + nginx + PostgreSQL)", os: ["ubuntu", "20.04"], c: [["nginx", "1.20"], ["node", "16"], ["postgresql", "13"]] },
   { k: "oradwh", n: "Hurtownia danych Oracle (RHEL + Java + Python)", os: ["rhel", "7"], c: [["oracle", "11gR2"], ["java", "8"], ["python", "2.7"]] },
-  { k: "winmix", n: "Serwer Windows: Java + Apache + VC++ + SQL Server", os: ["winsrv", "2016"], c: [["java", "11"], ["tomcat", "9"], ["httpd", "2.4"], ["vcredist", "2015–2022 (v14)"], ["mssql", "2017"], ["log4j", "2.x"]] },
+  { k: "xedev", n: "Mała aplikacja na Oracle XE (Ubuntu + OpenJDK + Tomcat)", os: ["ubuntu", "20.04"], c: [["openjdk", "11"], ["tomcat", "9"], ["oraclexe", "18c XE"]] },
 ];
 
 /* ================= pomocnicze dla wersji ================= */
 const famV = (f, l) => FAM[f] ? FAM[f].v.findIndex(x => x.l === l) : -1;
-function recIdx(f, t0) { const vs = FAM[f].v; let b = -1; vs.forEach((x, i) => { if (D(x.rel) <= t0 && (b < 0 || D(x.eos) >= D(vs[b].eos))) b = i; }); return b < 0 ? vs.length - 1 : b; }
-function oldIdx(f, t0) { const i = famV(f, FAM[f].old); return i >= 0 ? i : Math.max(0, recIdx(f, t0) - 2); }
+function recIdx(f, t0, filt) {
+  const vs = FAM[f].v; let b = -1;
+  vs.forEach((x, i) => { if (filt && !filt(x)) return; if (D(x.rel) <= t0 && !x.norec && (b < 0 || D(x.eos) >= D(vs[b].eos))) b = i; });
+  if (b < 0) vs.forEach((x, i) => { if (!filt || filt(x)) b = i; });
+  return b < 0 ? vs.length - 1 : b;
+}
+function oldIdx(f, t0, filt) { const i = famV(f, FAM[f].old); if (i >= 0 && (!filt || filt(FAM[f].v[i]))) return i; const j = FAM[f].v.findIndex(x => !filt || filt(x)); return j >= 0 ? j : Math.max(0, recIdx(f, t0) - 2); }
+// cel modernizacji: najlepsza wersja w tym samym kanale (Pro/LTSC/IoT), jeśli taki istnieje
+function tgtIdx(f, cur, t0) { const ch = FAM[f].v[cur] && FAM[f].v[cur].ch; const i = ch ? recIdx(f, t0, x => x.ch === ch) : recIdx(f, t0); return FAM[f].v[i] && (!ch || FAM[f].v[i].ch === ch) ? i : recIdx(f, t0); }
 const stOf = (eos, eol, t) => t < eos ? "full" : t < eol ? "ext" : "eol";
 const ST_N = { full: "pełne wsparcie", ext: "tylko poprawki bezp. / rozszerzone", eol: "po EOL — brak poprawek" };
 const ST_S = { full: "wspierana", ext: "rozszerzone", eol: "po EOL" };
@@ -501,7 +542,7 @@ function route(f, a, b) {
 }
 function mkVer(F, x, over) {
   const v = { label: x ? x.l : over.label, eos: over && over.eos != null ? over.eos : D(x.eos), eol: over && over.eol != null ? over.eol : D(x.eol), fc: x ? !!x.fc : true,
-    paidExt: F && F.paidExt && x ? F.paidExt : null, esu: x && x.esu ? D(x.esu) : null, esuName: F ? F.esuName : null, paidAll: F && x ? F.paidAll || null : null };
+    paidExt: F && F.paidExt && x ? F.paidExt : null, esu: x && x.esu ? D(x.esu) : null, esuName: F ? F.esuName : null, paidAll: F && x ? F.paidAll || null : null, ch: x ? x.ch || null : over && over.ch || null };
   v.eol = Math.max(v.eol, v.eos);
   return v;
 }
@@ -529,12 +570,12 @@ function applyTemplate(k) {
 }
 function toLatest() {
   const t0 = startT();
-  W.os.v = FAM[W.os.f].v[recIdx(W.os.f, t0)].l;
+  W.os.v = FAM[W.os.f].v[recIdx(W.os.f, t0, cardFilt(cardOf(W.os.f, W.os.v)))].l;
   for (const f in W.sel) W.sel[f] = FAM[f].v[recIdx(f, t0)].l;
 }
 function toOld() {
   const t = TPL.find(x => x.k === W.tpl), t0 = startT();
-  if (t && t.os[0] === W.os.f) W.os.v = t.os[1]; else W.os.v = FAM[W.os.f].v[oldIdx(W.os.f, t0)].l;
+  if (t && t.os[0] === W.os.f) W.os.v = t.os[1]; else W.os.v = FAM[W.os.f].v[oldIdx(W.os.f, t0, cardFilt(cardOf(W.os.f, W.os.v)))].l;
   for (const f in W.sel) { const tc = t && t.c.find(x => x[0] === f); W.sel[f] = tc ? tc[1] : FAM[f].v[oldIdx(f, t0)].l; }
 }
 
@@ -543,7 +584,7 @@ function autoDeps(f, has, osF) {
   const win = isWinOs(osF), d = [];
   const push = x => { if (x && (x === "os" || has(x))) d.push(x === "os" ? osF : x); };
   switch (f) {
-    case "tomcat": case "springboot": case "log4j": case "jackson": push("java"); if (!has("java")) push("os"); break;
+    case "tomcat": case "wildfly": case "log4j": { const j = JAVAS.find(has); if (j) push(j); else push("os"); break; }
     case "httpd": push("os"); push(win ? "vcredist" : "openssl"); break;
     case "nginx": push("os"); if (!win) push("openssl"); break;
     case "php": if (has("httpd")) push("httpd"); else push("os"); if (win) push("vcredist"); break;
@@ -599,7 +640,7 @@ function computePlan(p) {
   const tf = c => 1 + p.reg * (deps[c.id] - 1);
   const order = topo();
   const tgts = {};
-  order.forEach(c => { if (c.fam === "custom") return; const ti = recIdx(c.fam, t0); if (ti > c.vi) tgts[c.id] = ti; });
+  order.forEach(c => { if (c.fam === "custom") return; const ti = tgtIdx(c.fam, c.vi, t0); if (ti > c.vi) tgts[c.id] = ti; });
   const supported = comps.filter(c => patchEnd(compVer(c), p.buy) > t0);
   const P0 = { kind: "phase", name: "Etap 0: inwentaryzacja, analiza zgodności, triage zaległych podatności", start: t0, end: addMonths(t0, 1), hours: 8 + 4 * comps.length, notes: [] };
   const P1 = { kind: "phase", name: "Etap 1: doinstalowanie zaległych poprawek w seriach jeszcze wspieranych", start: addMonths(t0, 1), end: addMonths(t0, 2),
@@ -687,7 +728,7 @@ function simulate(p, o = {}) {
   const isPaid = (v, t) => !!v.paidAll || (!!v.paidExt && t >= v.eos) || t >= v.eol;
   function handleCve(e, c, ver, seg, r, testF) {
     const { t, sev } = e;
-    const id = "CVE-" + new Date(t).getUTCFullYear() + "-" + String(10000 + Math.floor(r() * 89999));
+    const id = "SIM-" + new Date(t).getUTCFullYear() + "-" + String(1000 + Math.floor(r() * 9000));
     const supported = t < ver.pe, frozen = t < seg.frozenUntil, migrates = seg.end < tEnd;
     const ev = { t, comp: c.id, ver: ver.label, sev, id, wave: !!e.wave, backlog: !!e.backlog, supported, mitig: false, emergency: false, bundled: false, patchAt: null, closedAt: null };
     const nextUpd = from => seg.upd.find(x => x >= from);
@@ -786,9 +827,9 @@ function simulate(p, o = {}) {
       const oldI = vi, oldL = ver.label; let nv;
       if (mig.toIdx === "auto") {
         let best = -1;
-        if (F && vi !== Infinity) F.v.forEach((x, j) => { if (j > vi && D(x.rel) <= mig.at && patchEnd(mkVer(F, x), buy) > addMonths(mig.at, 12) && (best < 0 || D(x.eos) >= D(F.v[best].eos))) best = j; });
+        if (F && vi !== Infinity) F.v.forEach((x, j) => { if ((!ver.ch || x.ch === ver.ch) && !x.norec && j > vi && D(x.rel) <= mig.at && patchEnd(mkVer(F, x), buy) > addMonths(mig.at, 12) && (best < 0 || D(x.eos) >= D(F.v[best].eos))) best = j; });
         if (best >= 0) { vi = best; nv = mkVer(F, F.v[vi]); }
-        else { vi = Infinity; nv = mkVer(null, null, { label: "kolejna" + (gen > 1 ? " (" + gen + ")" : "") + "*", eos: addMonths(mig.at, dEos * 12), eol: addMonths(mig.at, dEol * 12) }); gen++; }
+        else { const [ge, gl] = F && F.gen && ver.ch ? F.gen[ver.ch] : [dEos, dEol]; vi = Infinity; nv = mkVer(null, null, { label: "kolejna" + (gen > 1 ? " (" + gen + ")" : "") + "*", eos: addMonths(mig.at, ge * 12), eol: addMonths(mig.at, gl * 12), ch: ver.ch }); gen++; }
       } else { vi = mig.toIdx; nv = mkVer(F, F.v[vi]); }
       nv.pe = patchEnd(nv, buy);
       migs.push({ comp: c.id, from: oldL, to: nv.label, start: Math.max(mig.hStart, t0), end: mig.at, planned: mig.toIdx !== "auto", famI: vi });
@@ -830,13 +871,16 @@ function compatState(which, plan) {
   comps.forEach(c => { if (c.fam === "custom") return; const i = which === "tgt" && plan && plan.tgts[c.id] != null ? plan.tgts[c.id] : c.vi; st.c[c.fam] = { i, l: FAM[c.fam].v[i].l, name: c.name }; if (c.cat === "os") { st.osF = c.fam; st.osI = i; st.osL = FAM[c.fam].v[i].l; } });
   return st;
 }
+const jv = s => { const f = JAVAS.find(x => s.c[x]); return f ? { ...s.c[f], name: FAM[f].name } : null; };
 const RULES = [
-  (s, A) => { const t = s.c.tomcat; if (!t) return; const req = FAM.tomcat.v[t.i].java; if (!s.c.java) A("med", "Tomcat", "Tomcat wymaga Javy — dodaj składnik Java."); else if (req && s.c.java.i < famV("java", req)) A("high", "Tomcat", `Tomcat ${t.l} wymaga Java ≥ ${req} (jest ${s.c.java.l}) — najpierw zaktualizuj Javę.`); },
-  (s, A) => { const b = s.c.springboot; if (!b) return; const req = FAM.springboot.v[b.i].java; if (!s.c.java) A("med", "Spring Boot", "Spring Boot wymaga Javy — dodaj składnik Java."); else if (req && s.c.java.i < famV("java", req)) A("high", "Spring Boot", `Spring Boot ${b.l} wymaga Java ≥ ${req} (jest ${s.c.java.l}).`); },
-  (s, A) => { const b = s.c.springboot, t = s.c.tomcat; if (!b || !t) return; const bj = b.i >= famV("springboot", "3.5"), tj = t.i >= famV("tomcat", "10.1"); if (bj !== tj) A("high", "Spring Boot + Tomcat", `Spring Boot ${b.l} (${bj ? "jakarta" : "javax"}) i Tomcat ${t.l} (${tj ? "jakarta" : "javax"}) są niezgodne przy wdrożeniu WAR — aktualizuj obie warstwy razem.`); else if (b.l === "4.x" && t.i < famV("tomcat", "11")) A("med", "Spring Boot + Tomcat", "Spring Boot 4 wymaga Servlet 6.1 — Tomcat 11."); },
-  (s, A) => { const j = s.c.jackson; if (j && j.l === "3.x" && s.c.java && s.c.java.i < famV("java", "17")) A("high", "Jackson", `Jackson 3 wymaga Java 17+ (jest ${s.c.java.l}).`); },
-  (s, A) => { ["log4j", "jackson"].forEach(f => { if (s.c[f] && !s.c.java) A("low", FAM[f].name, FAM[f].name + " to biblioteka Javy — dodaj składnik Java."); }); },
-  (s, A) => { if (s.c.log4j && s.c.log4j.l === "1.2") A("high", "Apache Log4j", "Log4j 1.x — EOL od 2015, znane podatności (np. CVE-2019-17571, CVE-2021-4104). Zastąp Log4j 2.x lub reload4j."); },
+  (s, A) => { ["tomcat", "wildfly"].forEach(f => { const t = s.c[f]; if (!t) return; const req = FAM[f].v[t.i].java, j = jv(s); if (!j) A("med", FAM[f].name, FAM[f].name + " wymaga Javy — dodaj OpenJDK, Oracle JDK lub JRE."); else if (req && parseInt(j.l) < parseInt(req)) A("high", FAM[f].name, `${FAM[f].name} ${t.l} wymaga Java ≥ ${req} (jest ${j.name} ${j.l}) — najpierw zaktualizuj Javę.`); }); },
+  (s, A) => { if (s.c.log4j && !jv(s)) A("low", "Apache Log4j", "Log4j to biblioteka Javy — dodaj środowisko Java."); },
+  (s, A) => { const n = JAVAS.filter(f => s.c[f]); if (n.length > 1) A("low", "Java", "Wybrano kilka środowisk Java (" + n.map(f => FAM[f].name).join(", ") + ") — każde wymaga osobnych aktualizacji; upewnij się, którego używa aplikacja."); },
+  (s, A) => { if (s.c.java && s.c.java.l === "8") A("low", "Java (Oracle JDK)", "Oracle JDK/JRE 8 w zastosowaniach komercyjnych wymaga subskrypcji Oracle Java SE — rozważ OpenJDK."); },
+  (s, A) => { const x = s.c.oraclexe; if (!x) return; A("med", "Oracle Database XE / Free", "Edycja bezpłatna bez wsparcia producenta i bez poprawek bezpieczeństwa między wydaniami — do produkcji z danymi wrażliwymi rozważ edycję płatną lub inną bazę."); if (s.osF === "ubuntu" || s.osF === "debian") A("med", "Oracle Database XE / Free", "XE/Free dla Linuksa jest dostarczana dla Oracle Linux/RHEL — na Ubuntu/Debian tylko nieoficjalnie (np. kontener)."); },
+  (s, A) => { if (s.c.mssql && s.osF === "winclient") A("med", "SQL Server", "SQL Server w produkcji tylko na Windows Server — na Windows 10/11 wyłącznie edycje Developer/Express."); },
+  (s, A) => { if (s.osF === "winclient" && (s.c.httpd || s.c.tomcat || s.c.wildfly || s.c.oracle)) A("low", FAM.winclient.name, "System kliencki jako serwer: limit 20 jednoczesnych połączeń przychodzących (SMB/IIS), brak wsparcia producentów serwerowych — rozważ Windows Server."); },
+  (s, A) => { if (s.c.log4j && s.c.log4j.l === "1.2") A("high", "Apache Log4j", "Log4j 1.x — EOL od 2015, z publicznie znanymi poważnymi podatnościami. Zastąp Log4j 2.x lub reload4j."); },
   (s, A) => { if (!isWinOs(s.osF) || !s.c.httpd || s.c.httpd.l !== "2.4") return; const v = s.c.vcredist, need = famV("vcredist", "2015–2022 (v14)"); if (!v) A("med", "Apache HTTP Server", "Apache dla Windows (kompilacje Apache Lounge, VS17) wymaga Visual C++ 2015–2022 — dodaj składnik VC++."); else if (v.i < need) A("high", "Apache HTTP Server", `Apache 2.4 dla Windows wymaga VC++ 2015–2022 — zainstalowany VC++ ${v.l} nie wystarczy.`); },
   (s, A) => { if (!isWinOs(s.osF) || !s.c.php) return; const v = s.c.vcredist, p = s.c.php; const need = p.l === "5.6" ? "2012" : "2015–2022 (v14)"; if (!v) A("med", "PHP", `PHP ${p.l} dla Windows wymaga Visual C++ ${need} — dodaj składnik VC++.`); else if (p.l === "5.6" ? v.l !== "2012" && v.i < famV("vcredist", "2012") : v.i < famV("vcredist", need)) A("high", "PHP", `PHP ${p.l} dla Windows wymaga VC++ ${need} (jest ${v.l}).`); },
   (s, A) => { if (s.c.php && !s.c.httpd && !s.c.nginx) A("low", "PHP", "PHP wymaga serwera WWW (Apache z mod_php/FPM lub nginx z PHP‑FPM)."); },
@@ -900,8 +944,9 @@ document.addEventListener("mousemove", e => { if (tip.style.display === "block" 
 document.addEventListener("mouseout", e => { const el = e.target.closest && e.target.closest("[data-tip]"); if (el && !el.contains(e.relatedTarget)) hideTip(); });
 
 /* ================= kreator: render ================= */
-function verOptions(f, sel, t0) {
-  return FAM[f].v.map((x, i) => { const s = stOf(D(x.eos), D(x.eol), t0); return `<option value="${esc(x.l)}" ${x.l === sel ? "selected" : ""}>${esc(x.l)} — ${ST_S[s]}${i === recIdx(f, t0) ? " (zalecana)" : ""}</option>`; }).join("");
+function verOptions(f, sel, t0, filt) {
+  const rec = recIdx(f, t0, filt);
+  return FAM[f].v.map((x, i) => { if (filt && !filt(x)) return ""; const s = stOf(D(x.eos), D(x.eol), t0); return `<option value="${esc(x.l)}" ${x.l === sel ? "selected" : ""}>${esc(x.l)} — ${ST_S[s]}${i === rec ? " (zalecana)" : ""}</option>`; }).join("");
 }
 function stBadge(f, l, t0) { const i = famV(f, l); if (i < 0) return ""; const s = verSt(f, i, t0); const v = FAM[f].v[i]; return `<span class="st"><i style="background:${ST_C[s]}"></i>${ST_S[s]} · EOS ${v.eos.slice(0, 7)} · EOL ${v.eol.slice(0, 7)}</span>`; }
 function renderWizard() {
@@ -916,10 +961,11 @@ function renderWizard() {
     : W.oldMode === "noupd"
       ? `<b>Stary serwer bez aktualizacji:</b> wybrane stare wersje, ostatnie poprawki ${esc(W.lastPatch)}. Podatności narastają, bo nikt nie instaluje poprawek. Plan modernizacji poniżej jest rekomendacją — przełącz „Z planem modernizacji”, aby go zasymulować.`
       : `<b>Stary serwer z planem modernizacji:</b> stare wersje (ostatnie poprawki ${esc(W.lastPatch)}) → plan: ${W.strat === "inplace" ? "aktualizacje w miejscu krok po kroku" : "budowa nowego serwera i jedno przełączenie"}.`) + buyTxt;
-  $("osPicks").innerHTML = OS_FAMS.map(f => {
-    const on = W.os.f === f, l = on ? W.os.v : FAM[f].v[W.scen === "new" ? recIdx(f, t0) : oldIdx(f, t0)].l;
-    return `<label class="pick ${on ? "on" : ""}"><span class="top"><input type="radio" name="os" data-os="${f}" ${on ? "checked" : ""}>${esc(FAM[f].name)}</span>
-      <select data-osv="${f}" ${on ? "" : "disabled"}>${verOptions(f, l, t0)}</select>${on ? stBadge(f, l, t0) : '<span class="st muted">kliknij, aby wybrać</span>'}</label>`;
+  const curCard = cardOf(W.os.f, W.os.v);
+  $("osPicks").innerHTML = OS_CARDS.map(cd => {
+    const f = cd.f, filt = cardFilt(cd.k), on = curCard === cd.k, l = on ? W.os.v : FAM[f].v[W.scen === "new" ? recIdx(f, t0, filt) : oldIdx(f, t0, filt)].l;
+    return `<label class="pick ${on ? "on" : ""}"><span class="top"><input type="radio" name="os" data-os="${cd.k}" ${on ? "checked" : ""}>${esc(cd.n)}</span>
+      <select data-osv="${cd.k}" ${on ? "" : "disabled"}>${verOptions(f, l, t0, filt)}</select>${on ? stBadge(f, l, t0) : '<span class="st muted">kliknij, aby wybrać</span>'}</label>`;
   }).join("");
   $("compPicks").innerHTML = GROUPS.map(([g, fams]) => `<h3>${g}</h3><div class="picks">` + fams.map(f => {
     const allowed = famAllowed(f, W.os.f), on = allowed && W.sel[f] != null;
@@ -939,7 +985,7 @@ $("wizard").addEventListener("change", e => {
   const t = e.target, t0 = startT();
   if (t.id === "tpl") { if (t.value) applyTemplate(t.value); }
   else if (t.id === "lastPatch") W.lastPatch = t.value || W.lastPatch;
-  else if (t.dataset.os) { const f = t.dataset.os; W.os = { f, v: FAM[f].v[W.scen === "new" ? recIdx(f, t0) : oldIdx(f, t0)].l }; }
+  else if (t.dataset.os) { const cd = OS_CARDS.find(x => x.k === t.dataset.os), filt = cardFilt(cd.k); W.os = { f: cd.f, v: FAM[cd.f].v[W.scen === "new" ? recIdx(cd.f, t0, filt) : oldIdx(cd.f, t0, filt)].l }; }
   else if (t.dataset.osv) W.os.v = t.value;
   else if (t.dataset.fam) { const f = t.dataset.fam; if (t.checked) W.sel[f] = FAM[f].v[W.scen === "new" ? recIdx(f, t0) : oldIdx(f, t0)].l; else delete W.sel[f]; }
   else if (t.dataset.famv) W.sel[t.dataset.famv] = t.value;
@@ -1133,7 +1179,7 @@ function renderTimeline(res, dz) {
     `<span><i class="sw line" style="background:var(--muted);width:2px;height:10px"></i>Aktualizacja</span>`, `<span><i class="sw dot" style="background:var(--s2);width:8px;height:8px"></i>Aktualizacja płatna</span>`,
     `<span><i class="sw line" style="background:var(--s3);width:3px;height:12px"></i>awaryjna</span>`, `<span><i class="sw line" style="background:var(--s1);width:3px;height:12px"></i>zaległe poprawki</span>`,
     `<span><i class="sw" style="background:var(--s5);transform:rotate(45deg);width:9px;height:9px"></i>Migracja (go‑live)</span>`,
-    `<span><i class="sw dot" style="background:var(--critical)"></i>CVE krytyczna</span>`, `<span><i class="sw dot" style="background:var(--serious)"></i>wysoka</span>`,
+    `<span><i class="sw dot" style="background:var(--critical)"></i>podatność krytyczna</span>`, `<span><i class="sw dot" style="background:var(--serious)"></i>wysoka</span>`,
     `<span><i class="sw dot" style="background:var(--warning)"></i>średnia</span>`, `<span><i class="sw dot" style="background:var(--low)"></i>niska</span>`,
     `<span><i class="sw ring"></i>niezałatana do końca</span>`, `<span>▲ fala 0‑day</span>`, `<span><i class="sw line" style="background:var(--critical)"></i>produkt niebezpieczny od</span>`].join("");
 }
@@ -1146,6 +1192,7 @@ function purchases(res, p, plan) {
   if (plan && p.mode === "plan" && p.strat === "newsrv" && plan.steps[0]) buys.push({ t: plan.steps[0].start, c: comps.find(c => c.cat === "os"), change: "nowy serwer", need: "buy", note: "Sprzęt lub maszyna wirtualna oraz licencja/subskrypcja systemu dla nowego serwera." });
   res.migs.forEach(m => {
     const c = nm(m.comp), F = FAM[c.fam]; if (!F || F.lic === "free") return;
+    if (F.licOf) { const g0 = res.segs.find(g => g.comp === m.comp && g.end === m.end), g1 = res.segs.find(g => g.comp === m.comp && g.start === m.end); if (g0 && g1) { const [need, note] = F.licOf(g0.ver, g1.ver); if (need === "free") return; buys.push({ t: m.end, c, change: `${m.from} → ${m.to}`, need, note: note + " " + (F.licNote || "") }); return; } }
     buys.push({ t: m.end, c, change: `${m.from} → ${m.to}`, need: F.lic === "perp" ? "buy" : "contract", note: LIC_N[F.lic] + ". " + (F.licNote || "") });
   });
   res.segs.forEach(g => {
@@ -1170,7 +1217,7 @@ function renderPurchases(res, p, plan, dz, dzAlt) {
     `<div style="margin-top:4px"><b>Bez płatnego wsparcia i bez zakupu nowych wersji</b> (tylko darmowe poprawki, bez migracji): ${dTxt(dzAlt.none)}</div>
     <div class="muted" style="margin-top:6px;font-size:12px">„Niebezpieczny” = istnieje krytyczna lub wysoka podatność otwarta dłużej niż SLA w składniku, dla którego nie można zainstalować poprawki (EOL, niewykupione wsparcie albo serwer bez aktualizacji).</div>`;
   $("buyTable").innerHTML = `<tr><th>Data</th><th>Składnik</th><th>Zmiana</th><th>Zakup</th><th>Uwagi</th></tr>` + (buys.map(b => `<tr><td>${fmtM(b.t)}</td><td>${esc(b.c.name)}</td><td>${esc(b.change)}</td><td>${b.need === "buy" ? `<span class="badge"><i style="background:var(--critical)"></i>nowa licencja / produkt</span>` : `<span class="badge"><i style="background:var(--warning)"></i>w ramach aktywnej umowy</span>`}</td><td class="wrapc">${esc(b.note)}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">Brak zmian wymagających zakupu — składniki są bezpłatne.</td></tr>`);
-  $("paidTable").innerHTML = `<tr><th>Składnik i wersja</th><th>Program wsparcia</th><th>Okres</th><th>Status w symulacji</th><th class="num">CVE kryt./wys. w okresie</th></tr>` + (paid.map(r => `<tr><td>${esc(r.c.name)} ${esc(r.ver)}</td><td>${esc(r.prog)}<div class="muted" style="font-size:11.5px">${esc(r.kind)}</div></td><td>${fmtM(r.a)} – ${fmtM(r.b)}</td><td>${r.sub ? `<span class="badge"><i style="background:var(--warning)"></i>wymagana subskrypcja</span>` : res.buy ? `<span class="badge"><i style="background:var(--good)"></i>wykupione — poprawki dostępne</span>` : `<span class="badge"><i style="background:var(--critical)"></i>niewykupione — brak poprawek</span>`}</td><td class="num">${r.crit} <span class="muted">/ ${r.all}</span></td></tr>`).join("") || `<tr><td colspan="5" class="muted">W horyzoncie żaden używany składnik nie wymaga płatnego wsparcia.</td></tr>`);
+  $("paidTable").innerHTML = `<tr><th>Składnik i wersja</th><th>Program wsparcia</th><th>Okres</th><th>Status w symulacji</th><th class="num">Podatności kryt./wys. w okresie</th></tr>` + (paid.map(r => `<tr><td>${esc(r.c.name)} ${esc(r.ver)}</td><td>${esc(r.prog)}<div class="muted" style="font-size:11.5px">${esc(r.kind)}</div></td><td>${fmtM(r.a)} – ${fmtM(r.b)}</td><td>${r.sub ? `<span class="badge"><i style="background:var(--warning)"></i>wymagana subskrypcja</span>` : res.buy ? `<span class="badge"><i style="background:var(--good)"></i>wykupione — poprawki dostępne</span>` : `<span class="badge"><i style="background:var(--critical)"></i>niewykupione — brak poprawek</span>`}</td><td class="num">${r.crit} <span class="muted">/ ${r.all}</span></td></tr>`).join("") || `<tr><td colspan="5" class="muted">W horyzoncie żaden używany składnik nie wymaga płatnego wsparcia.</td></tr>`);
 }
 
 /* ================= ekspozycja (otwarte podatności) ================= */
@@ -1295,7 +1342,7 @@ function renderKpis(res, p, bk, plan, issues, dz, dzAlt) {
   const peak = bk.reduce((a, b) => b.total > a.total ? b : a, bk[0] || { total: 0, label: "—" });
   const ih = issues.filter(i => i.sev === "high").length, im = issues.filter(i => i.sev === "med").length;
   const K = [["Łączna praca", nf.format(tot) + " h", `${p.horizon} lat · średnio ${nf1.format(tot / months / 140)} FTE`],
-    ["Nowe podatności (CVE)", nf.format(nw.length), `w tym krytycznych: ${nw.filter(c => c.sev === "crit").length}`]];
+    ["Nowe podatności (symulowane)", nf.format(nw.length), `w tym krytycznych: ${nw.filter(c => c.sev === "crit").length}`]];
   if (p.scen === "old") K.push(["Zaległe podatności na start", nf.format(backlog.length), `od ${W.lastPatch}; krytyczne: ${backlog.filter(c => c.sev === "crit").length}`]);
   K.push(["Otwarte na koniec horyzontu", nf.format(openEnd.length), `krytyczne i wysokie: ${openEnd.filter(v => v.sev === "crit" || v.sev === "high").length}`],
     ["Mitygacje", nf.format(res.cves.filter(c => c.mitig).length), "poprawka poza SLA, brak aktualizacji lub EOL"],
@@ -1334,7 +1381,7 @@ function renderPlan(p, plan, res, issues) {
   $("issues").innerHTML = issues.length ? issues.map(i => `<li>${sevBadge(i.sev)}<div><b>${esc(i.comp)}</b> <span class="who">— ${esc(i.where)}</span><div>${esc(i.text)}</div></div></li>`).join("") : `<li><span class="muted">Nie wykryto znanych problemów zgodności dla wybranej konfiguracji.</span></li>`;
 }
 function renderSummary(res) {
-  let h = `<tr><th>Składnik</th><th>Wersje w horyzoncie</th><th>Status na start</th><th class="num">Akt. planowe</th><th class="num">Akt. awaryjne</th><th class="num">CVE kryt./wys./śr./nis.</th><th class="num">Otwarte na koniec</th>` + TYPES.map(([, n]) => `<th class="num">${n} (h)</th>`).join("") + `<th class="num">Razem (h)</th></tr>`;
+  let h = `<tr><th>Składnik</th><th>Wersje w horyzoncie</th><th>Status na start</th><th class="num">Akt. planowe</th><th class="num">Akt. awaryjne</th><th class="num">Podatności kryt./wys./śr./nis.</th><th class="num">Otwarte na koniec</th>` + TYPES.map(([, n]) => `<th class="num">${n} (h)</th>`).join("") + `<th class="num">Razem (h)</th></tr>`;
   const rows = comps.map(c => {
     const segs = res.segs.filter(g => g.comp === c.id), w = res.work.filter(x => x.comp === c.id), byT = {};
     TYPES.forEach(([k]) => byT[k] = w.filter(x => x.type === k).reduce((s, x) => s + x.h, 0));
@@ -1356,7 +1403,7 @@ function renderMiles(res, plan, p) {
   res.segs.forEach(g => { const e = g.ver.esu; if (e && e >= addMonths(res.t0, -12) && e <= lim && !seen.has(g.comp + "esu" + e)) { seen.add(g.comp + "esu" + e); ev.push({ t: e, txt: "Koniec płatnego wsparcia: " + (g.ver.esuName || ""), comp: nm(g.comp) + " " + g.label, col: "var(--critical)", past: e < res.t0 }); } });
   if (plan && p.mode === "plan") plan.steps.forEach(st => { if (st.start <= lim) ev.push({ t: st.start, txt: "Plan: " + st.name.replace(/:.*$/, "") + (st.to ? " → " + st.to : ""), comp: st.comp ? nm(st.comp) : "Całość", col: "var(--s5)" }); });
   else res.migs.forEach(m => { if (m.start <= lim) ev.push({ t: m.start, txt: "Start migracji " + m.from + " → " + m.to, comp: nm(m.comp), col: "var(--s5)" }); });
-  res.cves.filter(c => c.t <= lim && !c.backlog && (c.sev === "crit" || c.wave)).forEach(c => ev.push({ t: c.t, txt: (c.wave ? "Fala 0‑day " : "CVE krytyczna ") + c.id + (c.supported ? "" : " (po EOL)"), comp: nm(c.comp), col: "var(--critical)" }));
+  res.cves.filter(c => c.t <= lim && !c.backlog && (c.sev === "crit" || c.wave)).forEach(c => ev.push({ t: c.t, txt: (c.wave ? "Fala 0‑day " : "Podatność krytyczna ") + c.id + (c.supported ? "" : " (po EOL)"), comp: nm(c.comp), col: "var(--critical)" }));
   ev.sort((a, b) => a.t - b.t);
   $("miles").innerHTML = `<tr><th>Data</th><th>Zdarzenie</th><th>Składnik</th></tr>` + (ev.map(e => `<tr${e.past ? ' class="muted"' : ""}><td>${fmt(e.t)}${e.past ? " (minęło)" : ""}</td><td><span class="badge"><i style="background:${e.col}"></i>${esc(e.txt)}</span></td><td>${esc(e.comp)}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">Brak zdarzeń</td></tr>`);
 }
@@ -1373,11 +1420,11 @@ function syncLabels() {
   $("growth").disabled = $("trend").value === "const"; $("lead").disabled = !$("autoMig").checked;
 }
 function save() {
-  try { localStorage.setItem("supsim2", JSON.stringify({ W, comps, uid, ui: ["start", "horizon", "trend", "growth", "seed", "slaC", "slaH", "fte", "reg", "lead"].reduce((o, k) => (o[k] = $(k).value, o), { autoMig: $("autoMig").checked, waves: $("waves").checked }) })); } catch (e) {}
+  try { localStorage.setItem("supsim3", JSON.stringify({ W, comps, uid, ui: ["start", "horizon", "trend", "growth", "seed", "slaC", "slaH", "fte", "reg", "lead"].reduce((o, k) => (o[k] = $(k).value, o), { autoMig: $("autoMig").checked, waves: $("waves").checked }) })); } catch (e) {}
 }
 function restore() {
   try {
-    const s = JSON.parse(localStorage.getItem("supsim2") || "null"); if (!s || !s.W || !s.comps) return false;
+    const s = JSON.parse(localStorage.getItem("supsim3") || "null"); if (!s || !s.W || !s.comps) return false;
     W = s.W; comps = s.comps; uid = s.uid || 100;
     for (const k in s.ui) { if (k === "autoMig" || k === "waves") $(k).checked = s.ui[k]; else if ($(k)) $(k).value = s.ui[k]; }
     if (!FAM[W.os.f]) return false;
@@ -1436,7 +1483,8 @@ let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(run
 
 applyTheme();
 $("start").value = todayStr();
-if (!restore()) { W = defaultW(); applyTemplate("javaee"); buildComps(); }
+if (!restore()) { W = defaultW(); applyTemplate("javaee"); }
+buildComps();
 renderWizard(); renderEditor(); run();
 </script>
 </body>
