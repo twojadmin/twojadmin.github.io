@@ -17,6 +17,9 @@ podatności, mitygacje, plan modernizacji z darmowymi odpowiednikami i przewidyw
 | `tools/update-data.mjs` | skrypt aktualizacji danych |
 | `.github/workflows/update-data.yml` | cotygodniowa automatyczna aktualizacja (pull request) |
 
+Po każdej zmianie plików w `assets/` zmień numer wersji `?v=…` w `index.html` (dwa miejsca) — inaczej przeglądarki
+mogą przez pewien czas używać starych plików z pamięci podręcznej. Numer wersji jest widoczny w sekcji „Dane i ich aktualizacja”.
+
 Strona wczytuje pliki `data/*.json`, więc lokalnie trzeba ją uruchomić przez serwer WWW:
 
 ```sh

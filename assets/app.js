@@ -11,7 +11,9 @@ const attr = html => html.replace(/"/g, "&quot;");
 const trunc = (s, n) => s.length > n ? s.slice(0, Math.max(1, n - 1)) + "…" : s;
 
 /* ================= dane (ładowane z data/*.json) ================= */
-import { syncLifecycle, formatJson, EOL_API } from "./datasync.js";
+// wersja strony z adresu skryptu (index.html: assets/app.js?v=…) — ta sama wersja dla modułów pomocniczych, aby ominąć stare pliki w pamięci podręcznej
+const APP_VERSION = new URL(import.meta.url).searchParams.get("v") || "dev";
+const { syncLifecycle, formatJson } = await import("./datasync.js?v=" + encodeURIComponent(APP_VERSION));
 // Katalog produktów, daty wsparcia i podatności są w data/*.json — tutaj tylko je wczytujemy.
 let FAM = {}, OS_CARDS = [], GROUPS = [], TPL = [], CAT_NAMES = {}, CAT_DEF = {}, LIC_N = {}, JAVAS = [], DATA = {};
 const DATA_FILES = ["products", "lifecycle", "vulnerabilities"];
@@ -1294,6 +1296,7 @@ $("themeBtn").onclick = () => { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3];
 let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(run, 150); });
 
 applyTheme();
+$("appVer").textContent = "· wersja strony " + APP_VERSION;
 $("start").value = todayStr();
 try {
   buildFam(await loadData());

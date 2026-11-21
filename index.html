@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Symulator cyklu wsparcia</title>
 <meta name="description" content="Symulacja wsparcia (EOS/EOL), aktualizacji i fikcyjnych podatności dla składników produktu: nowe wdrożenie lub stary serwer, plan modernizacji i problemy zgodności.">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v=2026.11.21-4">
 </head>
 <body>
 <div class="wrap">
@@ -178,7 +178,7 @@
   </section>
 
   <section class="card" id="dataSec">
-    <h2>Dane i ich aktualizacja</h2>
+    <h2>Dane i ich aktualizacja <span class="muted" style="font-weight:400;font-size:12.5px" id="appVer"></span></h2>
     <p class="hint">Strona jest oddzielona od danych. Informacje o produktach, daty końca wsparcia i podatności są w osobnych plikach w katalogu <code>data/</code> — można je edytować ręcznie albo aktualizować automatycznie skryptem <code>tools/update-data.mjs</code> (endoflife.date i CISA KEV), także cotygodniowo przez GitHub Actions.</p>
     <div class="scroll"><table id="dataTable"></table></div>
     <div class="row" style="margin-top:10px">
@@ -235,6 +235,7 @@
 </div>
 <div id="tip"></div>
 
-<script type="module" src="assets/app.js"></script>
+<!-- Wersja strony: zmień „v=” przy każdej zmianie plików w assets/, aby przeglądarki pobrały nowe pliki -->
+<script type="module" src="assets/app.js?v=2026.11.21-4"></script>
 </body>
 </html>
