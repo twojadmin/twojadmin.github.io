@@ -1,0 +1,851 @@
+{
+  "schema": 1,
+  "updated": "2026-11-21",
+  "note": "Opis produktów: kategorie, licencje, płatne wsparcie, zmiany niekompatybilne, darmowe odpowiedniki, mapowania do źródeł danych. Daty wsparcia są w lifecycle.json, podatności w vulnerabilities.json.",
+  "categories": {
+    "os": "System",
+    "runtime": "Środowisko",
+    "db": "Baza danych",
+    "web": "Serwer WWW/aplikacji",
+    "lib": "Biblioteka"
+  },
+  "genericSupportYears": {
+    "os": [5,10],
+    "runtime": [4,7],
+    "db": [4,6],
+    "web": [4,5],
+    "lib": [2,3]
+  },
+  "licenseModels": {
+    "perp": "Nowa wersja = zakup nowej licencji (bez Software Assurance)",
+    "supp": "Nowa wersja w ramach aktywnego wsparcia producenta",
+    "sub": "Nowa wersja w ramach aktywnej subskrypcji",
+    "free": "Bez opłat licencyjnych"
+  },
+  "javaRuntimes": ["java","openjdk","jre","corretto"],
+  "osCards": [
+    {"k":"winsrv","f":"winsrv","n":"Windows Server"},
+    {"k":"win10","f":"winclient","n":"Windows 10","pre":"10 "},
+    {"k":"win11","f":"winclient","n":"Windows 11","pre":"11 "},
+    {"k":"rhel","f":"rhel","n":"Red Hat Enterprise Linux"},
+    {"k":"almalinux","f":"almalinux","n":"AlmaLinux"},
+    {"k":"ubuntu","f":"ubuntu","n":"Ubuntu Server LTS"},
+    {"k":"debian","f":"debian","n":"Debian"}
+  ],
+  "groups": [
+    [
+      "Środowiska uruchomieniowe",
+      ["java","openjdk","corretto","jre","dotnet","vcredist","python","node","php"]
+    ],
+    [
+      "Serwery WWW i aplikacji",
+      ["httpd","tomcat","wildfly","nginx"]
+    ],
+    [
+      "Bazy danych",
+      ["postgresql","mariadb","mysql","oracle","oraclexe","mssql"]
+    ],
+    [
+      "Biblioteki",
+      ["openssl","log4j"]
+    ]
+  ],
+  "templates": [
+    {
+      "k": "javaee",
+      "n": "Aplikacja Java (RHEL + Tomcat + Apache + Oracle)",
+      "os": ["rhel","7"],
+      "c": [
+        ["java","8"],
+        ["tomcat","8.5"],
+        ["httpd","2.4"],
+        ["openssl","1.0.2"],
+        ["oracle","12.2"],
+        ["log4j","1.2"]
+      ]
+    },
+    {
+      "k": "wildfly",
+      "n": "Aplikacja Jakarta EE na WildFly (RHEL + OpenJDK + PostgreSQL)",
+      "os": ["rhel","8"],
+      "c": [
+        ["openjdk","11"],
+        ["wildfly","26.1 (javax)"],
+        ["postgresql","13"],
+        ["log4j","2.x"],
+        ["openssl","1.1.1"]
+      ]
+    },
+    {
+      "k": "javawin",
+      "n": "Java na Windows Server (Tomcat + Apache + VC++ + PostgreSQL)",
+      "os": ["winsrv","2012 R2"],
+      "c": [
+        ["openjdk","8"],
+        ["tomcat","8.5"],
+        ["httpd","2.4"],
+        ["vcredist","2012"],
+        ["postgresql","11"],
+        ["log4j","1.2"]
+      ]
+    },
+    {
+      "k": "desk",
+      "n": "Aplikacja desktopowa (Windows 10/11 + JRE + Oracle XE + VC++)",
+      "os": ["winclient","10 Pro 22H2"],
+      "c": [
+        ["jre","8"],
+        ["oraclexe","11g XE"],
+        ["vcredist","2013"]
+      ]
+    },
+    {
+      "k": "kiosk",
+      "n": "Kiosk / urządzenie (Windows IoT LTSC + .NET + VC++)",
+      "os": ["winclient","10 IoT Enterprise LTSC 2021"],
+      "c": [
+        ["dotnet","6"],
+        ["vcredist","2015–2022 (v14)"]
+      ]
+    },
+    {
+      "k": "lamp",
+      "n": "Portal PHP — LAMP (Ubuntu + Apache + PHP + MariaDB)",
+      "os": ["ubuntu","18.04"],
+      "c": [
+        ["httpd","2.4"],
+        ["php","7.4"],
+        ["mariadb","10.3"],
+        ["openssl","1.1.1"]
+      ]
+    },
+    {
+      "k": "wamp",
+      "n": "PHP na Windows (Apache + PHP + VC++ + MySQL)",
+      "os": ["winsrv","2012 R2"],
+      "c": [
+        ["httpd","2.2"],
+        ["php","5.6"],
+        ["vcredist","2012"],
+        ["mysql","5.7"]
+      ]
+    },
+    {
+      "k": "dotnet",
+      "n": ".NET na Windows Server (SQL Server + VC++)",
+      "os": ["winsrv","2016"],
+      "c": [
+        ["dotnet","6"],
+        ["mssql","2016"],
+        ["vcredist","2013"]
+      ]
+    },
+    {
+      "k": "cpp",
+      "n": "Aplikacja C++ na Windows (VC++ + SQL Server + OpenSSL)",
+      "os": ["winsrv","2008 R2"],
+      "c": [
+        ["vcredist","2010"],
+        ["mssql","2012"],
+        ["openssl","1.0.2"]
+      ]
+    },
+    {
+      "k": "python",
+      "n": "Python/Django (Debian + nginx + PostgreSQL)",
+      "os": ["debian","10"],
+      "c": [
+        ["nginx","1.20"],
+        ["python","3.8"],
+        ["postgresql","12"],
+        ["openssl","1.1.1"]
+      ]
+    },
+    {
+      "k": "node",
+      "n": "Node.js (Ubuntu + nginx + PostgreSQL)",
+      "os": ["ubuntu","20.04"],
+      "c": [
+        ["nginx","1.20"],
+        ["node","16"],
+        ["postgresql","13"]
+      ]
+    },
+    {
+      "k": "oradwh",
+      "n": "Hurtownia danych Oracle (RHEL + Java + Python)",
+      "os": ["rhel","7"],
+      "c": [
+        ["oracle","11gR2"],
+        ["java","8"],
+        ["python","2.7"]
+      ]
+    },
+    {
+      "k": "xedev",
+      "n": "Mała aplikacja na Oracle XE (Ubuntu + OpenJDK + Tomcat)",
+      "os": ["ubuntu","20.04"],
+      "c": [
+        ["openjdk","11"],
+        ["tomcat","9"],
+        ["oraclexe","18c XE"]
+      ]
+    }
+  ],
+  "families": {
+    "winsrv": {
+      "name": "Windows Server",
+      "cat": "os",
+      "os": "win",
+      "cad": 1,
+      "lag": 25,
+      "h": [4,6,6,2,160],
+      "old": "2012 R2",
+      "jump": {
+        "default": 4,
+        "from": {
+          "2008 R2": 1
+        }
+      },
+      "breaks": [
+        {"at":"2025","s":"med","t":"Nowe domyślne ustawienia bezpieczeństwa (m.in. wymagane podpisywanie SMB, usunięty NTLMv1) — sprawdź starsze integracje, udziały sieciowe i konta usług."}
+      ],
+      "mnote": "Aktualizacja w miejscu jest możliwa najwyżej o kilka wersji (z 2008 R2 tylko do 2012 R2); zalecana nowa instalacja i przeniesienie ról. Sprawdź sterowniki i agentów (AV, backup, monitoring).",
+      "lic": "perp",
+      "licNote": "Licencje rdzeniowe + CAL; z Software Assurance nowa wersja w cenie.",
+      "esuName": "Windows Server ESU (płatne)",
+      "sync": {
+        "slug": "windows-server",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Microsoft$","product":"^Windows|SMBv1|HTTP\\.sys|HTTP Protocol Stack|CSRSS|Win32k|DXGKRNL"}
+      ]
+    },
+    "winclient": {
+      "name": "Windows 10 / 11",
+      "cat": "os",
+      "os": "win",
+      "cad": 1,
+      "lag": 25,
+      "h": [3,5,6,2,80],
+      "old": "10 Pro 22H2",
+      "gen": {
+        "pro": [2,2],
+        "ltsc": [5,5],
+        "iot": [5,10]
+      },
+      "breaks": [
+        {"at":"11 Pro 23H2","s":"high","t":"Windows 11 wymaga TPM 2.0, Secure Boot i obsługiwanego procesora — starszy sprzęt może wymagać wymiany."}
+      ],
+      "mnote": "Pro: nowa wersja funkcji co rok, wsparcie 24 mies. — coroczna aktualizacja. Enterprise LTSC: 5 lat bez nowych funkcji; IoT Enterprise LTSC: 10 lat, tylko z urządzeniem (OEM).",
+      "lic": "perp",
+      "licNote": "Pro: licencja OEM/detaliczna, nowe wersje funkcji bezpłatnie. LTSC: licencja zbiorcza — nowe LTSC wymaga Software Assurance lub zakupu. IoT LTSC: licencja tylko z urządzeniem.",
+      "esuName": "Windows 10 ESU (płatne)",
+      "licByChannel": true,
+      "sync": {
+        "slug": "windows",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Microsoft$","product":"^Windows|SMBv1|HTTP\\.sys|HTTP Protocol Stack|CSRSS|Win32k|DXGKRNL"}
+      ]
+    },
+    "rhel": {
+      "name": "Red Hat Enterprise Linux",
+      "cat": "os",
+      "os": "linux",
+      "cad": 3,
+      "lag": 14,
+      "h": [6,8,6,2,160],
+      "old": "7",
+      "stepwise": true,
+      "breaks": [
+        {"at":"8","s":"high","t":"Leapp aktualizuje tylko o jedną wersję główną. Python 2 nie jest domyślny, yum→dnf, iptables→nftables, network-scripts przestarzałe."},
+        {"at":"9","s":"med","t":"Domyślna polityka kryptograficzna odrzuca podpisy SHA‑1 i stare protokoły; OpenSSL 3 — sprawdź certyfikaty i połączenia ze starszymi systemami."},
+        {"at":"10","s":"high","t":"Wymagany procesor x86‑64‑v3 — starszy sprzęt lub wirtualizacja z ograniczonym zestawem instrukcji może nie uruchomić systemu."}
+      ],
+      "mnote": "Po EOL (koniec Maintenance) poprawki tylko w płatnym ELS.",
+      "lic": "sub",
+      "licNote": "Subskrypcja Red Hat obejmuje poprawki i nowe wersje.",
+      "paidAll": "Subskrypcja Red Hat",
+      "esuName": "RHEL ELS (płatny dodatek)",
+      "sync": {
+        "slug": "rhel",
+        "mode": "default"
+      },
+      "alts": [
+        {
+          "to": "almalinux",
+          "h": 40,
+          "same": true,
+          "notes": [
+            {"s":"med","t":"Konwersja w miejscu (almalinux-deploy / ELevate) z 8 i 9; z RHEL 7 tylko nowa instalacja lub ELevate. Brak wsparcia Red Hat — wsparcie społeczności lub zewnętrzne."},
+            {"s":"info","t":"Brak subskrypcji Red Hat."}
+          ]
+        }
+      ],
+      "kevMatch": [
+        {"vendor":"^Linux$","product":"Kernel"},
+        {"vendor":"^Red Hat$","product":"Polkit|Libuser"}
+      ]
+    },
+    "almalinux": {
+      "name": "AlmaLinux",
+      "cat": "os",
+      "os": "linux",
+      "cad": 3,
+      "lag": 10,
+      "h": [6,8,6,2,160],
+      "old": "8",
+      "stepwise": true,
+      "mnote": "Bezpłatny, binarnie zgodny odpowiednik RHEL; wsparcie społeczności lub płatne wsparcie zewnętrzne.",
+      "breaksFrom": "rhel",
+      "sync": {
+        "slug": "almalinux",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Linux$","product":"Kernel"},
+        {"vendor":"^Red Hat$","product":"Polkit|Libuser"}
+      ]
+    },
+    "ubuntu": {
+      "name": "Ubuntu Server LTS",
+      "cat": "os",
+      "os": "linux",
+      "cad": 3,
+      "lag": 10,
+      "h": [5,8,6,2,120],
+      "old": "18.04",
+      "stepwise": true,
+      "breaks": [
+        {"at":"22.04","s":"med","t":"OpenSSL 3 (stare algorytmy i certyfikaty SHA‑1 odrzucane), PHP 8.1, Python 3.10."},
+        {"at":"24.04","s":"low","t":"Python 3.12 (usunięte distutils), nowy format źródeł APT (deb822)."}
+      ],
+      "mnote": "Aktualizacja do‑release‑upgrade przechodzi przez kolejne LTS. Okres po EOS (ESM) wymaga subskrypcji Ubuntu Pro.",
+      "paidExt": "Ubuntu Pro (ESM)",
+      "sync": {
+        "slug": "ubuntu",
+        "mode": "ubuntu"
+      },
+      "kevMatch": [
+        {"vendor":"^Linux$","product":"Kernel"},
+        {"vendor":"^Red Hat$","product":"Polkit"}
+      ]
+    },
+    "debian": {
+      "name": "Debian",
+      "cat": "os",
+      "os": "linux",
+      "cad": 3,
+      "lag": 10,
+      "h": [5,8,6,2,120],
+      "old": "10",
+      "stepwise": true,
+      "breaks": [
+        {"at":"12","s":"med","t":"OpenSSL 3, PHP 8.2, Python 3.11 z PEP 668 (pip poza venv blokowany)."},
+        {"at":"13","s":"low","t":"/tmp domyślnie w tmpfs (czyszczony przy restarcie) — sprawdź aplikacje trzymające tam pliki."}
+      ],
+      "mnote": "EOS = koniec wsparcia bezpieczeństwa Debiana, EOL = koniec Debian LTS. Aktualizacja tylko o jedną wersję naraz.",
+      "esuName": "Debian ELTS (Freexian, płatne)",
+      "sync": {
+        "slug": "debian",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Linux$","product":"Kernel"},
+        {"vendor":"^Red Hat$","product":"Polkit"}
+      ]
+    },
+    "java": {
+      "name": "Java (Oracle JDK)",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 3,
+      "lag": 45,
+      "h": [4,10,8,2,200],
+      "old": "8",
+      "breaks": [
+        {"at":"11","s":"high","t":"Usunięte moduły Java EE i CORBA (JAXB, JAX‑WS, javax.activation) — trzeba dodać je jako zależności; zmiany class loadera."},
+        {"at":"17","s":"high","t":"Silna enkapsulacja wnętrz JDK (brak --illegal-access) — stare biblioteki używające refleksji (Lombok, cglib, ASM) wymagają aktualizacji; usunięty Nashorn."},
+        {"at":"21","s":"low","t":"Domyślne kodowanie UTF‑8 (od JDK 18) — sprawdź pliki, raporty i integracje w Windows‑1250."},
+        {"at":"25","s":"med","t":"Security Manager trwale wyłączony, usunięty port Windows x86 32‑bit; ostrzeżenia dla JNI i sun.misc.Unsafe."}
+      ],
+      "mnote": "Daty wg Oracle Java SE (Premier/Extended); dystrybucje OpenJDK mają własne terminy.",
+      "paidExt": "Oracle Java SE Subscription (wsparcie rozszerzone)",
+      "licNote": "Oracle JDK w produkcji wymaga subskrypcji; darmowe dystrybucje OpenJDK (Temurin, Corretto) mają własne terminy.",
+      "sync": {
+        "slug": "oracle-jdk",
+        "mode": "premier"
+      },
+      "alts": [
+        {
+          "to": "corretto",
+          "h": 24,
+          "same": true,
+          "notes": [
+            {"s":"low","t":"Zamiennik zgodny z Java SE (TCK) — zwykle wystarczą testy regresji; zmiana JAVA_HOME, instalatora i mechanizmu aktualizacji."},
+            {"s":"info","t":"Brak subskrypcji Oracle Java SE."}
+          ]
+        }
+      ],
+      "kevMatch": [
+        {"vendor":"^Oracle$","product":"Java|JRE"}
+      ]
+    },
+    "openjdk": {
+      "name": "OpenJDK (Eclipse Temurin)",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 3,
+      "lag": 30,
+      "h": [4,10,8,2,180],
+      "old": "11",
+      "mnote": "Daty wg deklaracji Adoptium (Eclipse Temurin) — „co najmniej do”; inni dostawcy OpenJDK mają własne terminy.",
+      "breaksFrom": "java",
+      "sync": {
+        "slug": "eclipse-temurin",
+        "mode": "default",
+        "skip": ["rel"]
+      },
+      "kevMatch": [
+        {"vendor":"^Oracle$","product":"Java|JRE"}
+      ]
+    },
+    "corretto": {
+      "name": "Amazon Corretto (OpenJDK)",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 3,
+      "lag": 30,
+      "h": [4,10,8,2,180],
+      "old": "11",
+      "mnote": "Bezpłatna dystrybucja OpenJDK od Amazon z długim wsparciem LTS; zgodna z Java SE (TCK).",
+      "breaksFrom": "java",
+      "sync": {
+        "slug": "amazon-corretto",
+        "mode": "default",
+        "skip": ["rel"]
+      },
+      "kevMatch": [
+        {"vendor":"^Oracle$","product":"Java|JRE"}
+      ]
+    },
+    "jre": {
+      "name": "Java Runtime (JRE)",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 3,
+      "lag": 30,
+      "h": [2,8,6,2,120],
+      "old": "8",
+      "mnote": "Od Java 11 Oracle nie wydaje osobnego JRE — dane wg Eclipse Temurin JRE. Oracle JRE 8 w zastosowaniach komercyjnych wymaga subskrypcji.",
+      "breaksFrom": "java",
+      "sync": {
+        "slug": "eclipse-temurin",
+        "mode": "default",
+        "skip": ["rel"]
+      },
+      "alts": [
+        {
+          "to": "corretto",
+          "h": 24,
+          "same": true,
+          "notes": [
+            {"s":"low","t":"Zastąpienie JRE pełnym JDK Corretto tej samej wersji; zgodne z Java SE (TCK)."}
+          ]
+        }
+      ],
+      "kevMatch": [
+        {"vendor":"^Oracle$","product":"Java|JRE"}
+      ]
+    },
+    "dotnet": {
+      "name": ".NET",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 1,
+      "lag": 7,
+      "h": [3,8,5,1.5,120],
+      "old": "6",
+      "breaks": [],
+      "mnote": "Każda wersja główna: nowy TFM, przebudowa i przegląd zmian niekompatybilnych w ASP.NET Core / EF Core.",
+      "sync": {
+        "slug": "dotnet",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Microsoft$","product":"\\.NET"}
+      ]
+    },
+    "vcredist": {
+      "name": "Visual C++ Redistributable",
+      "cat": "runtime",
+      "os": "win",
+      "cad": 6,
+      "lag": 30,
+      "h": [1,4,3,1,40],
+      "old": "2012",
+      "breaks": [
+        {"at":"2015–2022 (v14)","s":"high","t":"Aplikacje i moduły zbudowane starszym zestawem (v90–v120) trzeba przebudować pod v14x; stare pakiety działają obok, ale bez poprawek."}
+      ],
+      "mnote": "Pakiet v14 musi być w wersji co najmniej takiej jak kompilator użyty do zbudowania aplikacji.",
+      "kevMatch": [
+        {"vendor":"^Microsoft$","product":"Visual C\\+\\+"}
+      ]
+    },
+    "python": {
+      "name": "Python",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 3,
+      "lag": 10,
+      "h": [3,6,4,1.5,60],
+      "old": "3.8",
+      "breaks": [
+        {"at":"3.8","s":"high","t":"Python 2 → 3: str/bytes, print, dzielenie, biblioteki — przepisanie części kodu."},
+        {"at":"3.12","s":"med","t":"Usunięte distutils, asyncore, asynchat, imp — zależności muszą być zaktualizowane."},
+        {"at":"3.14","s":"med","t":"Usunięte stare moduły PEP 594 (cgi, crypt, telnetlib, nntplib…) od 3.13."}
+      ],
+      "sync": {
+        "slug": "python",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Python","product":"Python"}
+      ]
+    },
+    "node": {
+      "name": "Node.js",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 2,
+      "lag": 7,
+      "h": [3,6,4,1.5,60],
+      "old": "16",
+      "breaks": [
+        {"at":"18","s":"med","t":"OpenSSL 3 — starsze narzędzia (np. webpack 4) zgłaszają ERR_OSSL_EVP_UNSUPPORTED."}
+      ],
+      "mnote": "Natywne dodatki (node-gyp) trzeba przebudować przy każdej wersji głównej.",
+      "sync": {
+        "slug": "nodejs",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Node","product":"Node"}
+      ]
+    },
+    "php": {
+      "name": "PHP",
+      "cat": "runtime",
+      "os": "any",
+      "cad": 1,
+      "lag": 7,
+      "h": [2,6,4,1.5,80],
+      "old": "7.4",
+      "breaks": [
+        {"at":"7.4","s":"high","t":"Usunięte ext/mysql (mysql_*) i ereg — przejście na mysqli/PDO."},
+        {"at":"8.1","s":"high","t":"PHP 8: inne porównania tekst↔liczba, usunięte each() i create_function(), TypeError zamiast ostrzeżeń."},
+        {"at":"8.4","s":"low","t":"Deprecjacja niejawnych typów nullable i innych konstrukcji — przegląd ostrzeżeń."}
+      ],
+      "sync": {
+        "slug": "php",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^PHP( Group)?$","product":"^PHP$|FastCGI"}
+      ]
+    },
+    "httpd": {
+      "name": "Apache HTTP Server",
+      "cat": "web",
+      "os": "any",
+      "cad": 4,
+      "lag": 10,
+      "h": [3,4,4,1.5,40],
+      "old": "2.4",
+      "breaks": [
+        {"at":"2.4","s":"high","t":"Kontrola dostępu Order/Allow/Deny → Require (mod_authz_core), domyślny MPM event, zmiany modułów — przegląd konfiguracji vhostów."}
+      ],
+      "mnote": "Seria 2.4 nie ma ogłoszonego EOL — daty to prognoza.",
+      "sync": {
+        "slug": "apache-http-server",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Apache$","product":"^HTTP Server"}
+      ]
+    },
+    "tomcat": {
+      "name": "Apache Tomcat",
+      "cat": "web",
+      "os": "any",
+      "cad": 2,
+      "lag": 14,
+      "h": [3,6,5,1.5,80],
+      "old": "8.5",
+      "breaks": [
+        {"at":"10.1","s":"high","t":"Przestrzeń nazw javax.* → jakarta.* (Jakarta EE 9+) — aplikację trzeba przebudować (np. Tomcat Migration Tool, OpenRewrite)."},
+        {"at":"11","s":"med","t":"Jakarta EE 11, wymagana Java 17+, usunięte przestarzałe API."}
+      ],
+      "sync": {
+        "slug": "tomcat",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^Apache$","product":"Tomcat"}
+      ]
+    },
+    "wildfly": {
+      "name": "WildFly",
+      "cat": "web",
+      "os": "any",
+      "cad": 3,
+      "lag": 21,
+      "h": [4,8,5,1.5,120],
+      "old": "26.1 (javax)",
+      "breaks": [
+        {"at":"27+ (jakarta)*","s":"high","t":"Jakarta EE 10: przestrzeń nazw javax.* → jakarta.* — przebudowa aplikacji; usunięte przestarzałe podsystemy (np. legacy security); nowsze wydania wymagają Java 17."}
+      ],
+      "mnote": "Społeczność wspiera tylko najnowsze wydanie (co ok. 3 miesiące) — trzeba aktualizować na bieżąco; wsparcie długoterminowe tylko w komercyjnym JBoss EAP.",
+      "kevMatch": [
+        {"vendor":"^Red Hat$","product":"JBoss"}
+      ]
+    },
+    "nginx": {
+      "name": "nginx",
+      "cat": "web",
+      "os": "any",
+      "cad": 3,
+      "lag": 7,
+      "h": [2,4,4,1,16],
+      "old": "1.20",
+      "breaks": [],
+      "mnote": "Gałąź stabilna wspierana ok. rok — przejście na nową gałąź co roku.",
+      "sync": {
+        "slug": "nginx",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^(F5|Nginx)$","product":"nginx|NGINX"}
+      ]
+    },
+    "postgresql": {
+      "name": "PostgreSQL",
+      "cat": "db",
+      "os": "any",
+      "cad": 3,
+      "lag": 14,
+      "h": [3,6,5,1.5,80],
+      "old": "12",
+      "breaks": [
+        {"at":"12","s":"med","t":"Usunięty recovery.conf — konfiguracja replikacji w postgresql.conf; usunięte WITH OIDS."},
+        {"at":"15","s":"med","t":"Odebrane domyślne prawo CREATE w schemacie public; usunięty tryb exclusive backup."},
+        {"at":"18","s":"low","t":"initdb domyślnie włącza sumy kontrolne stron — pg_upgrade wymaga zgodnego ustawienia w starym i nowym klastrze."}
+      ],
+      "mnote": "Zmiana wersji głównej: pg_upgrade lub dump/restore; rozszerzenia (np. PostGIS) muszą istnieć dla wersji docelowej; ANALYZE po migracji.",
+      "sync": {
+        "slug": "postgresql",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"PostgreSQL","product":""}
+      ]
+    },
+    "mariadb": {
+      "name": "MariaDB",
+      "cat": "db",
+      "os": "any",
+      "cad": 3,
+      "lag": 20,
+      "h": [4,8,6,2,100],
+      "old": "10.3",
+      "breaks": [
+        {"at":"10.6","s":"low","t":"Zmiany w InnoDB (usunięte zmienne innodb_*), utf8 = utf8mb3."},
+        {"at":"11.4","s":"med","t":"Nowy model kosztów optymalizatora (od 11.0) — możliwe zmiany planów zapytań; wymagane testy wydajności."}
+      ],
+      "mnote": "Po aktualizacji uruchom mariadb-upgrade; zalecane przechodzenie przez kolejne wersje LTS.",
+      "esuName": "MariaDB — wsparcie komercyjne (płatne)",
+      "sync": {
+        "slug": "mariadb",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"MariaDB","product":""}
+      ]
+    },
+    "mysql": {
+      "name": "MySQL",
+      "cat": "db",
+      "os": "any",
+      "cad": 3,
+      "lag": 30,
+      "h": [4,8,6,2,100],
+      "old": "5.7",
+      "via": ["8.0"],
+      "breaks": [
+        {"at":"8.0","s":"high","t":"Domyślne caching_sha2_password (stare sterowniki klientów), utf8mb4, usunięty query cache, nowe słowa zarezerwowane."},
+        {"at":"8.4 LTS","s":"med","t":"mysql_native_password domyślnie wyłączony; usunięte przestarzałe zmienne."}
+      ],
+      "mnote": "Aktualizacja tylko przez kolejne serie (5.7 → 8.0 → 8.4).",
+      "licNote": "Community bezpłatnie; MySQL Enterprise to płatna subskrypcja.",
+      "sync": {
+        "slug": "mysql",
+        "mode": "default"
+      },
+      "alts": [
+        {
+          "to": "mariadb",
+          "h": 60,
+          "notes": [
+            {"s":"med","t":"Zgodność z MySQL częściowa — różnice w JSON, uwierzytelnianiu, replikacji i nowszych funkcjach MySQL 8.x."}
+          ]
+        }
+      ],
+      "kevMatch": [
+        {"vendor":"^Oracle$","product":"MySQL"}
+      ]
+    },
+    "oracle": {
+      "name": "Oracle Database",
+      "cat": "db",
+      "os": "any",
+      "cad": 3,
+      "lag": 60,
+      "h": [8,16,8,3,320],
+      "old": "12.2",
+      "via": ["19c"],
+      "breaks": [
+        {"at":"19c","s":"med","t":"Użyj AutoUpgrade; sprawdź przestarzałe parametry i certyfikację na docelowym systemie."},
+        {"at":"26ai","s":"high","t":"Architektura non‑CDB niewspierana — konieczna konwersja do PDB (multitenant); bezpośrednia aktualizacja tylko z 19c/21c."}
+      ],
+      "lic": "supp",
+      "paidExt": "Oracle Extended Support (dopłata)",
+      "licNote": "Licencja wieczysta + roczne wsparcie; po przerwie we wsparciu — opłata za przywrócenie i zaległe opłaty.",
+      "sync": {
+        "slug": "oracle-database",
+        "mode": "premier"
+      },
+      "alts": [
+        {
+          "to": "postgresql",
+          "h": 600,
+          "notes": [
+            {"s":"high","t":"PL/SQL → PL/pgSQL (pakiety, procedury), sekwencje, typy (NUMBER, DATE), w Oracle pusty ciąg = NULL — konwersja kodu i danych (np. narzędzie ora2pg)."},
+            {"s":"med","t":"Zmiana sterowników (ojdbc → pgjdbc), kopii zapasowych, monitoringu i procedur administracyjnych; szkolenie zespołu."},
+            {"s":"info","t":"Brak opłat licencyjnych i za wsparcie Oracle; płatne wsparcie PostgreSQL opcjonalne (różni dostawcy)."}
+          ]
+        }
+      ],
+      "kevMatch": [
+        {"vendor":"^Oracle$","product":"Database"}
+      ]
+    },
+    "oraclexe": {
+      "name": "Oracle Database XE / Free",
+      "cat": "db",
+      "os": "any",
+      "cad": 12,
+      "lag": 120,
+      "h": [6,12,8,2,160],
+      "old": "11g XE",
+      "breaks": [
+        {"at":"18c XE","s":"high","t":"XE 18c+ to architektura multitenant (CDB + PDB XEPDB1) — inne parametry połączenia; brak aktualizacji w miejscu, migracja przez eksport/import (Data Pump)."},
+        {"at":"23ai Free","s":"med","t":"Brak aktualizacji w miejscu z XE — eksport/import; nowa nazwa usługi (FREEPDB1)."}
+      ],
+      "mnote": "Edycja bezpłatna bez wsparcia producenta (forum społeczności); poprawki tylko przez nowe wydania. Limity: 11g XE 1 CPU / 1 GB RAM / 11 GB danych; 18c–23ai: 2 CPU / 2 GB RAM / 12 GB danych.",
+      "alts": [
+        {
+          "to": "postgresql",
+          "h": 200,
+          "notes": [
+            {"s":"med","t":"Konwersja schematu i PL/SQL (np. ora2pg); brak limitów XE (CPU, RAM, 12 GB danych)."},
+            {"s":"info","t":"PostgreSQL ma regularne poprawki bezpieczeństwa — XE ich nie ma."}
+          ]
+        }
+      ],
+      "kevMatch": [
+        {"vendor":"^Oracle$","product":"Database"}
+      ]
+    },
+    "mssql": {
+      "name": "Microsoft SQL Server",
+      "cat": "db",
+      "os": "win",
+      "cad": 2,
+      "lag": 30,
+      "h": [4,8,6,2,120],
+      "old": "2016",
+      "jump": {
+        "default": 9,
+        "from": {
+          "2012": 5
+        }
+      },
+      "breaks": [
+        {"at":"2022","s":"low","t":"Nowsze sterowniki domyślnie szyfrują połączenia (Encrypt=true) — sprawdź łańcuchy połączeń i certyfikat serwera."}
+      ],
+      "mnote": "Po aktualizacji ustaw poziom zgodności baz (compatibility level) i porównaj plany zapytań (Query Store).",
+      "lic": "perp",
+      "licNote": "Licencje na rdzenie lub serwer + CAL; z Software Assurance nowa wersja w cenie.",
+      "esuName": "SQL Server ESU (płatne)",
+      "sync": {
+        "slug": "mssqlserver",
+        "mode": "default"
+      },
+      "alts": [
+        {
+          "to": "postgresql",
+          "h": 500,
+          "notes": [
+            {"s":"high","t":"T‑SQL → PL/pgSQL, typy danych, kolacje, wielkość liter identyfikatorów, zadania SQL Agent (np. pgloader, Babelfish)."},
+            {"s":"info","t":"Brak licencji na rdzenie i CAL."}
+          ]
+        }
+      ],
+      "kevMatch": [
+        {"vendor":"^Microsoft$","product":"SQL Server"}
+      ]
+    },
+    "openssl": {
+      "name": "OpenSSL",
+      "cat": "lib",
+      "os": "any",
+      "cad": 3,
+      "lag": 7,
+      "h": [3,6,6,2,60],
+      "old": "1.1.1",
+      "breaks": [
+        {"at":"3.0 LTS","s":"high","t":"Przestarzałe niskopoziomowe API (RSA_*, HMAC_*…), algorytmy legacy (MD4, DES, RC4) tylko przez legacy provider — rekompilacja aplikacji i modułów."}
+      ],
+      "sync": {
+        "slug": "openssl",
+        "mode": "default"
+      },
+      "kevMatch": [
+        {"vendor":"^OpenSSL$","product":"OpenSSL"}
+      ]
+    },
+    "log4j": {
+      "name": "Apache Log4j",
+      "cat": "lib",
+      "os": "any",
+      "cad": 4,
+      "lag": 5,
+      "h": [2,4,4,1,24],
+      "old": "1.2",
+      "breaks": [
+        {"at":"2.x","s":"high","t":"Inne API i format konfiguracji (log4j.properties → log4j2.xml); przejściowo most log4j-1.2-api. Wersja ≥ 2.17.1 (Log4Shell)."}
+      ],
+      "sync": {
+        "slug": "log4j",
+        "mode": "default",
+        "ignore": ["2.12","2.3"]
+      },
+      "kevMatch": [
+        {"vendor":"^Apache$","product":"Log4j"}
+      ]
+    }
+  }
+}

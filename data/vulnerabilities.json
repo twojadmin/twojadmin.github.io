@@ -1,0 +1,356 @@
+{
+  "schema": 1,
+  "updated": "2026-11-21",
+  "sources": ["CISA Known Exploited Vulnerabilities Catalog (https://www.cisa.gov/known-exploited-vulnerabilities-catalog)"],
+  "note": "„rate” = założona liczba istotnych dla produktu podatności rocznie (podstawa symulacji, edytowalna ręcznie). „kev” = prawdziwe podatności aktywnie wykorzystywane wg CISA KEV, aktualizowane skryptem tools/update-data.mjs.",
+  "families": {
+    "winsrv": {
+      "rate": 14,
+      "kev": {
+        "count2y": 46,
+        "total": 212,
+        "items": [
+          {"id":"CVE-2026-96951","name":"Microsoft Windows Command Injection Vulnerability","product":"Microsoft Windows","added":"2026-10-13","ransomware":false,"desc":"Microsoft Windows Shell contains a command injection vulnerability that allows an unauthorized attacker to bypass a security feature over a network."},
+          {"id":"CVE-2026-81963","name":"Microsoft Windows Link Following Vulnerability","product":"Microsoft Windows","added":"2026-09-08","ransomware":false,"desc":"Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM."},
+          {"id":"CVE-2026-85880","name":"Microsoft Windows Heap-Based Buffer Overflow Vulnerability","product":"Microsoft Windows","added":"2026-09-08","ransomware":false,"desc":"Microsoft Windows Advanced Local Procedure Call contains a heap-based buffer overflow vulnerability that allows an attacker to elevate privileges locally."},
+          {"id":"CVE-2026-68820","name":"Microsoft Windows Ancillary Function Driver for WinSock Use-After-Free Vulnerability","product":"Microsoft Windows Ancillary Function Driver for WinSock","added":"2026-08-11","ransomware":false,"desc":"Microsoft Windows Ancillary Function Driver for WinSock contains a use-after-free vulnerability that allows an authorized attacker to elevate privileges locally."},
+          {"id":"CVE-2008-4250","name":"Microsoft Windows Buffer Overflow Vulnerability","product":"Microsoft Windows","added":"2026-05-20","ransomware":false,"desc":"Microsoft Windows contains a buffer overflow vulnerability in the Windows Server Service that allows remote attackers to execute arbitrary code via a crafted RPC request that triggers an overflow during path canonicalization."},
+          {"id":"CVE-2026-32202","name":"Microsoft Windows Protection Mechanism Failure Vulnerability","product":"Microsoft Windows","added":"2026-04-28","ransomware":false,"desc":"Microsoft Windows Shell contains a protection mechanism failure vulnerability that allows an unauthorized attacker to perform spoofing over a network."},
+          {"id":"CVE-2025-60710","name":"Microsoft Windows Link Following Vulnerability","product":"Microsoft Windows","added":"2026-04-13","ransomware":true,"desc":"Microsoft Windows contains a link following vulnerability that allows for privilege escalation"},
+          {"id":"CVE-2023-36424","name":"Microsoft Windows Out-of-Bounds Read Vulnerability","product":"Microsoft Windows","added":"2026-04-13","ransomware":false,"desc":"Microsoft Windows Common Log File System Driver contains an out-of-bounds read vulnerability that could allow a threat actor for privileges escalation"}
+        ]
+      }
+    },
+    "winclient": {
+      "rate": 14,
+      "kev": {
+        "count2y": 46,
+        "total": 212,
+        "items": [
+          {"id":"CVE-2026-96951","name":"Microsoft Windows Command Injection Vulnerability","product":"Microsoft Windows","added":"2026-10-13","ransomware":false,"desc":"Microsoft Windows Shell contains a command injection vulnerability that allows an unauthorized attacker to bypass a security feature over a network."},
+          {"id":"CVE-2026-81963","name":"Microsoft Windows Link Following Vulnerability","product":"Microsoft Windows","added":"2026-09-08","ransomware":false,"desc":"Microsoft Windows Update Stack contains a link following vulnerability that allows a local attacker to escalate privileges locally up to SYSTEM."},
+          {"id":"CVE-2026-85880","name":"Microsoft Windows Heap-Based Buffer Overflow Vulnerability","product":"Microsoft Windows","added":"2026-09-08","ransomware":false,"desc":"Microsoft Windows Advanced Local Procedure Call contains a heap-based buffer overflow vulnerability that allows an attacker to elevate privileges locally."},
+          {"id":"CVE-2026-68820","name":"Microsoft Windows Ancillary Function Driver for WinSock Use-After-Free Vulnerability","product":"Microsoft Windows Ancillary Function Driver for WinSock","added":"2026-08-11","ransomware":false,"desc":"Microsoft Windows Ancillary Function Driver for WinSock contains a use-after-free vulnerability that allows an authorized attacker to elevate privileges locally."},
+          {"id":"CVE-2008-4250","name":"Microsoft Windows Buffer Overflow Vulnerability","product":"Microsoft Windows","added":"2026-05-20","ransomware":false,"desc":"Microsoft Windows contains a buffer overflow vulnerability in the Windows Server Service that allows remote attackers to execute arbitrary code via a crafted RPC request that triggers an overflow during path canonicalization."},
+          {"id":"CVE-2026-32202","name":"Microsoft Windows Protection Mechanism Failure Vulnerability","product":"Microsoft Windows","added":"2026-04-28","ransomware":false,"desc":"Microsoft Windows Shell contains a protection mechanism failure vulnerability that allows an unauthorized attacker to perform spoofing over a network."},
+          {"id":"CVE-2025-60710","name":"Microsoft Windows Link Following Vulnerability","product":"Microsoft Windows","added":"2026-04-13","ransomware":true,"desc":"Microsoft Windows contains a link following vulnerability that allows for privilege escalation"},
+          {"id":"CVE-2023-36424","name":"Microsoft Windows Out-of-Bounds Read Vulnerability","product":"Microsoft Windows","added":"2026-04-13","ransomware":false,"desc":"Microsoft Windows Common Log File System Driver contains an out-of-bounds read vulnerability that could allow a threat actor for privileges escalation"}
+        ]
+      }
+    },
+    "rhel": {
+      "rate": 10,
+      "kev": {
+        "count2y": 17,
+        "total": 35,
+        "items": [
+          {"id":"CVE-2026-46300","name":"Linux Kernel Missing Initialization of a Variable Vulnerability","product":"Linux Kernel","added":"2026-10-28","ransomware":false,"desc":"Linux Kernel contains a missing initialization of a variable vulnerability that could allow for unintended modification of page-cache-backed data via failure to preserve the shared-fragment marker during socket buffer coalescing, causing ES"},
+          {"id":"CVE-2025-39964","name":"Linux Kernel Race Condition Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains a race condition vulnerability which allows concurrent writes to the same AF_ALG socket causing data to be unpredictably interleaved and creating inconsistencies in the socket's internal state."},
+          {"id":"CVE-2026-53266","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds write vulnerability in the ebtables SNAT target which allows an ARP sender hardware address rewrite to write directly into a nonlinear socket-buffer fragment backed by a splice-imported file page. The "},
+          {"id":"CVE-2025-39682","name":"Linux Kernel Improper Check for Unusual or Exceptional Conditions Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an improper check for unusual or exceptional conditions vulnerability in the TLS receive path which allows a zero-length record retrieved from the rx_list to bypass the intended recvmsg() record-type handling, potentia"},
+          {"id":"CVE-2026-53362","name":"Linux Kernel Unspecified Vulnerability","product":"Linux Kernel","added":"2026-08-27","ransomware":false,"desc":"Linux Kernel contains an unspecified vulnerability that can allow for privilege escalation via IPv6 networking subsystem. This vulnerability can impact multiple products, including but not limited to Suse, Red Hat, and other products using "},
+          {"id":"CVE-2015-3246","name":"Red Hat Libuser Race Condition Vulnerability","product":"Red Hat Libuser","added":"2026-08-26","ransomware":false,"desc":"Red Hat libuser contains a race condition vulnerability that allows authenticated local users to corrupt the /etc/passwd file to cause a denial of service or privilege escalation."},
+          {"id":"CVE-2022-0995","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-08-26","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds memory write vulnerability which could allow a local user to gain privileged access or cause a denial of service on the system."},
+          {"id":"CVE-2022-0492","name":"Linux Kernel Improper Authentication Vulnerability","product":"Linux Kernel","added":"2026-06-02","ransomware":false,"desc":"Linux Kernel contains an improper authentication vulnerability which could allow for privilege escalation via the cgroups v1 release_agent feature."}
+        ]
+      }
+    },
+    "almalinux": {
+      "rate": 10,
+      "kev": {
+        "count2y": 17,
+        "total": 35,
+        "items": [
+          {"id":"CVE-2026-46300","name":"Linux Kernel Missing Initialization of a Variable Vulnerability","product":"Linux Kernel","added":"2026-10-28","ransomware":false,"desc":"Linux Kernel contains a missing initialization of a variable vulnerability that could allow for unintended modification of page-cache-backed data via failure to preserve the shared-fragment marker during socket buffer coalescing, causing ES"},
+          {"id":"CVE-2025-39964","name":"Linux Kernel Race Condition Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains a race condition vulnerability which allows concurrent writes to the same AF_ALG socket causing data to be unpredictably interleaved and creating inconsistencies in the socket's internal state."},
+          {"id":"CVE-2026-53266","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds write vulnerability in the ebtables SNAT target which allows an ARP sender hardware address rewrite to write directly into a nonlinear socket-buffer fragment backed by a splice-imported file page. The "},
+          {"id":"CVE-2025-39682","name":"Linux Kernel Improper Check for Unusual or Exceptional Conditions Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an improper check for unusual or exceptional conditions vulnerability in the TLS receive path which allows a zero-length record retrieved from the rx_list to bypass the intended recvmsg() record-type handling, potentia"},
+          {"id":"CVE-2026-53362","name":"Linux Kernel Unspecified Vulnerability","product":"Linux Kernel","added":"2026-08-27","ransomware":false,"desc":"Linux Kernel contains an unspecified vulnerability that can allow for privilege escalation via IPv6 networking subsystem. This vulnerability can impact multiple products, including but not limited to Suse, Red Hat, and other products using "},
+          {"id":"CVE-2015-3246","name":"Red Hat Libuser Race Condition Vulnerability","product":"Red Hat Libuser","added":"2026-08-26","ransomware":false,"desc":"Red Hat libuser contains a race condition vulnerability that allows authenticated local users to corrupt the /etc/passwd file to cause a denial of service or privilege escalation."},
+          {"id":"CVE-2022-0995","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-08-26","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds memory write vulnerability which could allow a local user to gain privileged access or cause a denial of service on the system."},
+          {"id":"CVE-2022-0492","name":"Linux Kernel Improper Authentication Vulnerability","product":"Linux Kernel","added":"2026-06-02","ransomware":false,"desc":"Linux Kernel contains an improper authentication vulnerability which could allow for privilege escalation via the cgroups v1 release_agent feature."}
+        ]
+      }
+    },
+    "ubuntu": {
+      "rate": 10,
+      "kev": {
+        "count2y": 16,
+        "total": 34,
+        "items": [
+          {"id":"CVE-2026-46300","name":"Linux Kernel Missing Initialization of a Variable Vulnerability","product":"Linux Kernel","added":"2026-10-28","ransomware":false,"desc":"Linux Kernel contains a missing initialization of a variable vulnerability that could allow for unintended modification of page-cache-backed data via failure to preserve the shared-fragment marker during socket buffer coalescing, causing ES"},
+          {"id":"CVE-2025-39964","name":"Linux Kernel Race Condition Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains a race condition vulnerability which allows concurrent writes to the same AF_ALG socket causing data to be unpredictably interleaved and creating inconsistencies in the socket's internal state."},
+          {"id":"CVE-2026-53266","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds write vulnerability in the ebtables SNAT target which allows an ARP sender hardware address rewrite to write directly into a nonlinear socket-buffer fragment backed by a splice-imported file page. The "},
+          {"id":"CVE-2025-39682","name":"Linux Kernel Improper Check for Unusual or Exceptional Conditions Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an improper check for unusual or exceptional conditions vulnerability in the TLS receive path which allows a zero-length record retrieved from the rx_list to bypass the intended recvmsg() record-type handling, potentia"},
+          {"id":"CVE-2026-53362","name":"Linux Kernel Unspecified Vulnerability","product":"Linux Kernel","added":"2026-08-27","ransomware":false,"desc":"Linux Kernel contains an unspecified vulnerability that can allow for privilege escalation via IPv6 networking subsystem. This vulnerability can impact multiple products, including but not limited to Suse, Red Hat, and other products using "},
+          {"id":"CVE-2022-0995","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-08-26","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds memory write vulnerability which could allow a local user to gain privileged access or cause a denial of service on the system."},
+          {"id":"CVE-2022-0492","name":"Linux Kernel Improper Authentication Vulnerability","product":"Linux Kernel","added":"2026-06-02","ransomware":false,"desc":"Linux Kernel contains an improper authentication vulnerability which could allow for privilege escalation via the cgroups v1 release_agent feature."},
+          {"id":"CVE-2026-31431","name":"Linux Kernel Incorrect Resource Transfer Between Spheres Vulnerability","product":"Linux Kernel","added":"2026-05-01","ransomware":false,"desc":"Linux Kernel contains an incorrect resource transfer between spheres vulnerability that could allow for privilege escalation."}
+        ]
+      }
+    },
+    "debian": {
+      "rate": 9,
+      "kev": {
+        "count2y": 16,
+        "total": 34,
+        "items": [
+          {"id":"CVE-2026-46300","name":"Linux Kernel Missing Initialization of a Variable Vulnerability","product":"Linux Kernel","added":"2026-10-28","ransomware":false,"desc":"Linux Kernel contains a missing initialization of a variable vulnerability that could allow for unintended modification of page-cache-backed data via failure to preserve the shared-fragment marker during socket buffer coalescing, causing ES"},
+          {"id":"CVE-2025-39964","name":"Linux Kernel Race Condition Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains a race condition vulnerability which allows concurrent writes to the same AF_ALG socket causing data to be unpredictably interleaved and creating inconsistencies in the socket's internal state."},
+          {"id":"CVE-2026-53266","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds write vulnerability in the ebtables SNAT target which allows an ARP sender hardware address rewrite to write directly into a nonlinear socket-buffer fragment backed by a splice-imported file page. The "},
+          {"id":"CVE-2025-39682","name":"Linux Kernel Improper Check for Unusual or Exceptional Conditions Vulnerability","product":"Linux Kernel","added":"2026-09-18","ransomware":false,"desc":"Linux Kernel contains an improper check for unusual or exceptional conditions vulnerability in the TLS receive path which allows a zero-length record retrieved from the rx_list to bypass the intended recvmsg() record-type handling, potentia"},
+          {"id":"CVE-2026-53362","name":"Linux Kernel Unspecified Vulnerability","product":"Linux Kernel","added":"2026-08-27","ransomware":false,"desc":"Linux Kernel contains an unspecified vulnerability that can allow for privilege escalation via IPv6 networking subsystem. This vulnerability can impact multiple products, including but not limited to Suse, Red Hat, and other products using "},
+          {"id":"CVE-2022-0995","name":"Linux Kernel Out-of-Bounds Write Vulnerability","product":"Linux Kernel","added":"2026-08-26","ransomware":false,"desc":"Linux Kernel contains an out-of-bounds memory write vulnerability which could allow a local user to gain privileged access or cause a denial of service on the system."},
+          {"id":"CVE-2022-0492","name":"Linux Kernel Improper Authentication Vulnerability","product":"Linux Kernel","added":"2026-06-02","ransomware":false,"desc":"Linux Kernel contains an improper authentication vulnerability which could allow for privilege escalation via the cgroups v1 release_agent feature."},
+          {"id":"CVE-2026-31431","name":"Linux Kernel Incorrect Resource Transfer Between Spheres Vulnerability","product":"Linux Kernel","added":"2026-05-01","ransomware":false,"desc":"Linux Kernel contains an incorrect resource transfer between spheres vulnerability that could allow for privilege escalation."}
+        ]
+      }
+    },
+    "java": {
+      "rate": 5,
+      "kev": {
+        "count2y": 0,
+        "total": 13,
+        "items": [
+          {"id":"CVE-2016-3427","name":"Oracle Java SE and JRockit Unspecified Vulnerability","product":"Oracle Java SE and JRockit","added":"2023-05-12","ransomware":false,"desc":"Oracle Java SE and JRockit contains an unspecified vulnerability that allows remote attackers to affect confidentiality, integrity, and availability via vectors related to Java Management Extensions (JMX). This vulnerability can be exploite"},
+          {"id":"CVE-2013-2423","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in hotspot for Java Runtime Environment (JRE) allows remote attackers to affect integrity."},
+          {"id":"CVE-2013-0431","name":"Oracle JRE Sandbox Bypass Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle allows remote attackers to bypass the Java security sandbox."},
+          {"id":"CVE-2013-0422","name":"Oracle JRE Remote Code Execution Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"A vulnerability in the way Java restricts the permissions of Java applets could allow an attacker to execute commands on a vulnerable system."},
+          {"id":"CVE-2010-0840","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) in Java SE component allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors."},
+          {"id":"CVE-2013-2465","name":"Oracle Java SE Unspecified Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle Java SE allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors related to 2D"},
+          {"id":"CVE-2012-5076","name":"Oracle Java SE Sandbox Bypass Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":false,"desc":"The default Java security properties configuration did not restrict access to the com.sun.org.glassfish.external and com.sun.org.glassfish.gmbal packages. An untrusted Java application or applet could use these flaws to bypass Java sandbox "},
+          {"id":"CVE-2015-4902","name":"Oracle Java SE Integrity Check Vulnerability","product":"Oracle Java SE","added":"2022-03-03","ransomware":false,"desc":"Unspecified vulnerability in Oracle Java SE allows remote attackers to affect integrity via Unknown vectors related to deployment."}
+        ]
+      }
+    },
+    "openjdk": {
+      "rate": 5,
+      "kev": {
+        "count2y": 0,
+        "total": 13,
+        "items": [
+          {"id":"CVE-2016-3427","name":"Oracle Java SE and JRockit Unspecified Vulnerability","product":"Oracle Java SE and JRockit","added":"2023-05-12","ransomware":false,"desc":"Oracle Java SE and JRockit contains an unspecified vulnerability that allows remote attackers to affect confidentiality, integrity, and availability via vectors related to Java Management Extensions (JMX). This vulnerability can be exploite"},
+          {"id":"CVE-2013-2423","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in hotspot for Java Runtime Environment (JRE) allows remote attackers to affect integrity."},
+          {"id":"CVE-2013-0431","name":"Oracle JRE Sandbox Bypass Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle allows remote attackers to bypass the Java security sandbox."},
+          {"id":"CVE-2013-0422","name":"Oracle JRE Remote Code Execution Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"A vulnerability in the way Java restricts the permissions of Java applets could allow an attacker to execute commands on a vulnerable system."},
+          {"id":"CVE-2010-0840","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) in Java SE component allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors."},
+          {"id":"CVE-2013-2465","name":"Oracle Java SE Unspecified Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle Java SE allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors related to 2D"},
+          {"id":"CVE-2012-5076","name":"Oracle Java SE Sandbox Bypass Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":false,"desc":"The default Java security properties configuration did not restrict access to the com.sun.org.glassfish.external and com.sun.org.glassfish.gmbal packages. An untrusted Java application or applet could use these flaws to bypass Java sandbox "},
+          {"id":"CVE-2015-4902","name":"Oracle Java SE Integrity Check Vulnerability","product":"Oracle Java SE","added":"2022-03-03","ransomware":false,"desc":"Unspecified vulnerability in Oracle Java SE allows remote attackers to affect integrity via Unknown vectors related to deployment."}
+        ]
+      }
+    },
+    "corretto": {
+      "rate": 5,
+      "kev": {
+        "count2y": 0,
+        "total": 13,
+        "items": [
+          {"id":"CVE-2016-3427","name":"Oracle Java SE and JRockit Unspecified Vulnerability","product":"Oracle Java SE and JRockit","added":"2023-05-12","ransomware":false,"desc":"Oracle Java SE and JRockit contains an unspecified vulnerability that allows remote attackers to affect confidentiality, integrity, and availability via vectors related to Java Management Extensions (JMX). This vulnerability can be exploite"},
+          {"id":"CVE-2013-2423","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in hotspot for Java Runtime Environment (JRE) allows remote attackers to affect integrity."},
+          {"id":"CVE-2013-0431","name":"Oracle JRE Sandbox Bypass Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle allows remote attackers to bypass the Java security sandbox."},
+          {"id":"CVE-2013-0422","name":"Oracle JRE Remote Code Execution Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"A vulnerability in the way Java restricts the permissions of Java applets could allow an attacker to execute commands on a vulnerable system."},
+          {"id":"CVE-2010-0840","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) in Java SE component allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors."},
+          {"id":"CVE-2013-2465","name":"Oracle Java SE Unspecified Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle Java SE allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors related to 2D"},
+          {"id":"CVE-2012-5076","name":"Oracle Java SE Sandbox Bypass Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":false,"desc":"The default Java security properties configuration did not restrict access to the com.sun.org.glassfish.external and com.sun.org.glassfish.gmbal packages. An untrusted Java application or applet could use these flaws to bypass Java sandbox "},
+          {"id":"CVE-2015-4902","name":"Oracle Java SE Integrity Check Vulnerability","product":"Oracle Java SE","added":"2022-03-03","ransomware":false,"desc":"Unspecified vulnerability in Oracle Java SE allows remote attackers to affect integrity via Unknown vectors related to deployment."}
+        ]
+      }
+    },
+    "jre": {
+      "rate": 5,
+      "kev": {
+        "count2y": 0,
+        "total": 13,
+        "items": [
+          {"id":"CVE-2016-3427","name":"Oracle Java SE and JRockit Unspecified Vulnerability","product":"Oracle Java SE and JRockit","added":"2023-05-12","ransomware":false,"desc":"Oracle Java SE and JRockit contains an unspecified vulnerability that allows remote attackers to affect confidentiality, integrity, and availability via vectors related to Java Management Extensions (JMX). This vulnerability can be exploite"},
+          {"id":"CVE-2013-2423","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in hotspot for Java Runtime Environment (JRE) allows remote attackers to affect integrity."},
+          {"id":"CVE-2013-0431","name":"Oracle JRE Sandbox Bypass Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle allows remote attackers to bypass the Java security sandbox."},
+          {"id":"CVE-2013-0422","name":"Oracle JRE Remote Code Execution Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":true,"desc":"A vulnerability in the way Java restricts the permissions of Java applets could allow an attacker to execute commands on a vulnerable system."},
+          {"id":"CVE-2010-0840","name":"Oracle JRE Unspecified Vulnerability","product":"Oracle Java Runtime Environment (JRE)","added":"2022-05-25","ransomware":false,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) in Java SE component allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors."},
+          {"id":"CVE-2013-2465","name":"Oracle Java SE Unspecified Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":true,"desc":"Unspecified vulnerability in the Java Runtime Environment (JRE) component in Oracle Java SE allows remote attackers to affect confidentiality, integrity, and availability via Unknown vectors related to 2D"},
+          {"id":"CVE-2012-5076","name":"Oracle Java SE Sandbox Bypass Vulnerability","product":"Oracle Java SE","added":"2022-03-28","ransomware":false,"desc":"The default Java security properties configuration did not restrict access to the com.sun.org.glassfish.external and com.sun.org.glassfish.gmbal packages. An untrusted Java application or applet could use these flaws to bypass Java sandbox "},
+          {"id":"CVE-2015-4902","name":"Oracle Java SE Integrity Check Vulnerability","product":"Oracle Java SE","added":"2022-03-03","ransomware":false,"desc":"Unspecified vulnerability in Oracle Java SE allows remote attackers to affect integrity via Unknown vectors related to deployment."}
+        ]
+      }
+    },
+    "dotnet": {
+      "rate": 4,
+      "kev": {
+        "count2y": 1,
+        "total": 5,
+        "items": [
+          {"id":"CVE-2024-29059","name":"Microsoft .NET Framework Information Disclosure Vulnerability","product":"Microsoft .NET Framework","added":"2025-02-04","ransomware":false,"desc":"Microsoft .NET Framework contains an information disclosure vulnerability that exposes the ObjRef URI to an attacker, ultimately enabling remote code execution."},
+          {"id":"CVE-2023-38180","name":"Microsoft .NET Core and Visual Studio Denial-of-Service Vulnerability","product":"Microsoft .NET Core and Visual Studio","added":"2023-08-09","ransomware":false,"desc":"Microsoft .NET Core and Visual Studio contain an unspecified vulnerability that allows for denial-of-service (DoS)."},
+          {"id":"CVE-2017-8759","name":"Microsoft .NET Framework Remote Code Execution Vulnerability","product":"Microsoft .NET Framework","added":"2021-11-03","ransomware":false,"desc":"Microsoft .NET Framework contains a remote code execution vulnerability when processing untrusted input that could allow an attacker to take control of an affected system."},
+          {"id":"CVE-2020-0646","name":"Microsoft .NET Framework Remote Code Execution Vulnerability","product":"Microsoft .NET Framework","added":"2021-11-03","ransomware":false,"desc":"Microsoft .NET Framework contains an improper input validation vulnerability that allows for remote code execution."},
+          {"id":"CVE-2020-1147","name":"Microsoft .NET Framework, SharePoint, and Visual Studio Remote Code Execution Vulnerability","product":"Microsoft .NET Framework, SharePoint, Visual Studio","added":"2021-11-03","ransomware":false,"desc":"Microsoft .NET Framework, Microsoft SharePoint, and Visual Studio contain a remote code execution vulnerability when the software fails to check the source markup of XML file input. Successful exploitation allows an attacker to execute code"}
+        ]
+      }
+    },
+    "vcredist": {
+      "rate": 0.6,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "python": {
+      "rate": 2,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "node": {
+      "rate": 4,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "php": {
+      "rate": 3,
+      "kev": {
+        "count2y": 2,
+        "total": 5,
+        "items": [
+          {"id":"CVE-2026-109618","name":"PHP Memory Corruption Vulnerability","product":"PHP Group PHP","added":"2026-10-26","ransomware":false,"desc":"PHP contains an out-of-memory corruption vulnerability that allows for unauthenticated remote code execution."},
+          {"id":"CVE-2026-109619","name":"PHP Stale Internal Request-State Vulnerability","product":"PHP Group PHP","added":"2026-10-26","ransomware":false,"desc":"PHP contains a stale internal request-state vulnerability that allows for unauthenticated remote code execution."},
+          {"id":"CVE-2024-4577","name":"PHP-CGI OS Command Injection Vulnerability","product":"PHP Group PHP","added":"2024-06-12","ransomware":true,"desc":"PHP, specifically Windows-based PHP used in CGI mode, contains an OS command injection vulnerability that allows for arbitrary code execution. This vulnerability is a patch bypass for CVE-2012-1823."},
+          {"id":"CVE-2019-11043","name":"PHP FastCGI Process Manager (FPM) Buffer Overflow Vulnerability","product":"PHP FastCGI Process Manager (FPM)","added":"2022-03-25","ransomware":true,"desc":"In some versions of PHP in certain configurations of FPM setup, it is possible to cause FPM module to write past allocated buffers allowing the possibility of remote code execution."},
+          {"id":"CVE-2012-1823","name":"PHP-CGI Query String Parameter Vulnerability","product":"PHP PHP","added":"2022-03-25","ransomware":false,"desc":"sapi/cgi/cgi_main.c in PHP, when configured as a CGI script, does not properly handle query strings, which allows remote attackers to execute arbitrary code."}
+        ]
+      }
+    },
+    "httpd": {
+      "rate": 4,
+      "kev": {
+        "count2y": 1,
+        "total": 4,
+        "items": [
+          {"id":"CVE-2024-38475","name":"Apache HTTP Server Improper Escaping of Output Vulnerability","product":"Apache HTTP Server","added":"2025-05-01","ransomware":false,"desc":"Apache HTTP Server contains an improper escaping of output vulnerability in mod_rewrite that allows an attacker to map URLs to filesystem locations that are permitted to be served by the server but are not intentionally/directly reachable b"},
+          {"id":"CVE-2021-42013","name":"Apache HTTP Server Path Traversal Vulnerability","product":"Apache HTTP Server","added":"2021-11-03","ransomware":true,"desc":"Apache HTTP Server contains a path traversal vulnerability that allows an attacker to perform remote code execution if files outside directories configured by Alias-like directives are not under default require all denied or if CGI scripts "},
+          {"id":"CVE-2021-41773","name":"Apache HTTP Server Path Traversal Vulnerability","product":"Apache HTTP Server","added":"2021-11-03","ransomware":true,"desc":"Apache HTTP Server contains a path traversal vulnerability that allows an attacker to perform remote code execution if files outside directories configured by Alias-like directives are not under default �require all denied� or if CGI script"},
+          {"id":"CVE-2019-0211","name":"Apache HTTP Server Privilege Escalation Vulnerability","product":"Apache HTTP Server","added":"2021-11-03","ransomware":false,"desc":"Apache HTTP Server, with MPM event, worker or prefork, code executing in less-privileged child processes or threads (including scripts executed by an in-process scripting interpreter) could execute code with the privileges of the parent pro"}
+        ]
+      }
+    },
+    "tomcat": {
+      "rate": 4,
+      "kev": {
+        "count2y": 2,
+        "total": 6,
+        "items": [
+          {"id":"CVE-2026-34486","name":"Apache Tomcat Missing Encryption of Sensitive Data Vulnerability","product":"Apache Tomcat","added":"2026-08-04","ransomware":false,"desc":"Apache Tomcat contains a missing encryption of sensitive data vulnerability that allows the bypass of the EncryptInterceptor. This vulnerability can be chained with CVE‑2025‑24813."},
+          {"id":"CVE-2025-24813","name":"Apache Tomcat Path Equivalence Vulnerability","product":"Apache Tomcat","added":"2025-04-01","ransomware":false,"desc":"Apache Tomcat contains a path equivalence vulnerability that allows a remote attacker to execute code, disclose information, or inject malicious content via a partial PUT request. This vulnerability can be chained with CVE‑2026‑34486."},
+          {"id":"CVE-2016-8735","name":"Apache Tomcat Remote Code Execution Vulnerability","product":"Apache Tomcat","added":"2023-05-12","ransomware":false,"desc":"Apache Tomcat contains an unspecified vulnerability that allows for remote code execution if JmxRemoteLifecycleListener is used and an attacker can reach Java Management Extension (JMX) ports. This CVE exists because this listener wasn't up"},
+          {"id":"CVE-2017-12617","name":"Apache Tomcat Remote Code Execution Vulnerability","product":"Apache Tomcat","added":"2022-03-25","ransomware":false,"desc":"When running Apache Tomcat, it is possible to upload a JSP file to the server via a specially crafted request. This JSP could then be requested and any code it contained would be executed by the server."},
+          {"id":"CVE-2017-12615","name":"Apache Tomcat on Windows Remote Code Execution Vulnerability","product":"Apache Tomcat","added":"2022-03-25","ransomware":true,"desc":"When running Apache Tomcat on Windows with HTTP PUTs enabled, it is possible to upload a JSP file to the server via a specially crafted request. This JSP could then be requested and any code it contained would be executed by the server."},
+          {"id":"CVE-2020-1938","name":"Apache Tomcat Improper Privilege Management Vulnerability","product":"Apache Tomcat","added":"2022-03-03","ransomware":false,"desc":"Apache Tomcat treats Apache JServ Protocol (AJP) connections as having higher trust than, for example, a similar HTTP connection. If such connections are available to an attacker, they can be exploited."}
+        ]
+      }
+    },
+    "wildfly": {
+      "rate": 3,
+      "kev": {
+        "count2y": 0,
+        "total": 5,
+        "items": [
+          {"id":"CVE-2018-14667","name":"Red Hat JBoss RichFaces Framework Expression Language Injection Vulnerability","product":"Red Hat JBoss RichFaces Framework","added":"2023-09-28","ransomware":false,"desc":"Red Hat JBoss RichFaces Framework contains an expression language injection vulnerability via the UserResource resource. A remote, unauthenticated attacker could exploit this vulnerability to execute malicious code using a chain of Java ser"},
+          {"id":"CVE-2010-1428","name":"Red Hat JBoss Information Disclosure Vulnerability","product":"Red Hat JBoss","added":"2022-05-25","ransomware":true,"desc":"Unauthenticated access to the JBoss Application Server Web Console (/web-console) is blocked by default. However, it was found that this block was incomplete, and only blocked GET and POST HTTP verbs. A remote attacker could use this flaw t"},
+          {"id":"CVE-2010-0738","name":"Red Hat JBoss Authentication Bypass Vulnerability","product":"Red Hat JBoss","added":"2022-05-25","ransomware":true,"desc":"The JMX-Console web application in JBossAs in Red Hat JBoss Enterprise Application Platform performs access control only for the GET and POST methods, which allows remote attackers to send requests to this application's GET handler by using"},
+          {"id":"CVE-2017-12149","name":"Red Hat JBoss Application Server Remote Code Execution Vulnerability","product":"Red Hat JBoss Application Server","added":"2021-12-10","ransomware":true,"desc":"The JBoss Application Server, shipped with Red Hat Enterprise Application Platform 5.2, allows an attacker to execute arbitrary code via crafted serialized data."},
+          {"id":"CVE-2010-1871","name":"Red Hat Linux JBoss Seam 2 Remote Code Execution Vulnerability","product":"Red Hat JBoss Seam 2","added":"2021-12-10","ransomware":false,"desc":"JBoss Seam 2 (jboss-seam2), as used in JBoss Enterprise Application Platform 4.3.0 for Red Hat Linux, allows attackers to perform remote code execution. This vulnerability can only be exploited when the Java Security Manager is not properly"}
+        ]
+      }
+    },
+    "nginx": {
+      "rate": 2,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "postgresql": {
+      "rate": 2,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "mariadb": {
+      "rate": 3,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "mysql": {
+      "rate": 4,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "oracle": {
+      "rate": 4,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "oraclexe": {
+      "rate": 3,
+      "kev": {
+        "count2y": 0,
+        "total": 0,
+        "items": []
+      }
+    },
+    "mssql": {
+      "rate": 3,
+      "kev": {
+        "count2y": 1,
+        "total": 2,
+        "items": [
+          {"id":"CVE-2019-1068","name":"Microsoft SQL Server Remote Code Execution Vulnerability","product":"Microsoft SQL Server","added":"2026-08-26","ransomware":false,"desc":"Microsoft SQL Server contains a remote code execution vulnerability that could allow an attacker to execute code in the context of the SQL Server Database Engine service account."},
+          {"id":"CVE-2020-0618","name":"Microsoft SQL Server Reporting Services Remote Code Execution Vulnerability","product":"Microsoft SQL Server","added":"2024-09-18","ransomware":true,"desc":"Microsoft SQL Server Reporting Services contains a deserialization vulnerability when handling page requests incorrectly. An authenticated attacker can exploit this vulnerability to execute code in the context of the Report Server service a"}
+        ]
+      }
+    },
+    "openssl": {
+      "rate": 6,
+      "kev": {
+        "count2y": 0,
+        "total": 1,
+        "items": [
+          {"id":"CVE-2014-0160","name":"OpenSSL Information Disclosure Vulnerability","product":"OpenSSL OpenSSL","added":"2022-05-04","ransomware":false,"desc":"The TLS and DTLS implementations in OpenSSL do not properly handle Heartbeat Extension packets, which allows remote attackers to obtain sensitive information."}
+        ]
+      }
+    },
+    "log4j": {
+      "rate": 1.5,
+      "kev": {
+        "count2y": 0,
+        "total": 2,
+        "items": [
+          {"id":"CVE-2021-45046","name":"Apache Log4j2 Deserialization of Untrusted Data Vulnerability","product":"Apache Log4j2","added":"2023-05-01","ransomware":true,"desc":"Apache Log4j2 contains a deserialization of untrusted data vulnerability due to the incomplete fix of CVE-2021-44228, where the Thread Context Lookup Pattern is vulnerable to remote code execution in certain non-default configurations."},
+          {"id":"CVE-2021-44228","name":"Apache Log4j2 Remote Code Execution Vulnerability","product":"Apache Log4j2","added":"2021-12-10","ransomware":true,"desc":"Apache Log4j2 contains a vulnerability where JNDI features do not protect against attacker-controlled JNDI-related endpoints, allowing for remote code execution."}
+        ]
+      }
+    }
+  },
+  "kevCatalog": {
+    "version": "2026.11.20",
+    "released": "2026-11-20T17:48:39.1516Z"
+  }
+}
