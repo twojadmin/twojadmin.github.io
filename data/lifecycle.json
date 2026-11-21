@@ -11,7 +11,8 @@
     "ch": "kanał (Windows: pro/ltsc/iot)",
     "java": "minimalna wersja Javy",
     "norec": "nie proponuj jako domyślnej",
-    "nopatch": "wersja bez poprawek bezpieczeństwa (cała rodzina: noPatches w products.json)"
+    "nopatch": "wersja bez poprawek bezpieczeństwa (cała rodzina: noPatches w products.json)",
+    "followsOs": "(products.json) wersja i daty wsparcia wynikają z systemu operacyjnego"
   },
   "families": {
     "winsrv": [
@@ -133,6 +134,11 @@
       {"l":"8.4","rel":"2024-11-21","eos":"2026-12-31","eol":"2028-12-31","cycle":"8.4"},
       {"l":"8.5","rel":"2025-11-20","eos":"2027-12-31","eol":"2029-12-31","cycle":"8.5"},
       {"l":"8.6","rel":"2026-11-19","eos":"2028-12-31","eol":"2030-12-31","cycle":"8.6"}
+    ],
+    "iis": [
+      {"l":"7.5","rel":"2009-10-22","eos":"2015-01-13","eol":"2020-01-14","esu":"2023-01-10"},
+      {"l":"8.5","rel":"2013-11-25","eos":"2018-10-09","eol":"2023-10-10","esu":"2026-10-13"},
+      {"l":"10","rel":"2024-11-01","eos":"2029-11-13","eol":"2034-11-14"}
     ],
     "httpd": [
       {"l":"2.2","rel":"2005-12-01","eos":"2017-07-11","eol":"2017-07-11","cycle":"2.2"},
