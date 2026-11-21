@@ -56,6 +56,8 @@ Katalog CISA KEV nie pozwala na pobieranie z przeglądarki — podatności aktua
 Pola dat w `lifecycle.json`: `eos` — koniec pełnego wsparcia, `eol` — koniec poprawek (darmowych lub
 w ramach wsparcia rozszerzonego), `esu` — koniec płatnego wsparcia po EOL. Tryb mapowania z endoflife.date
 (`sync.mode` w `products.json`): `default`, `premier` (Oracle) lub `ubuntu` (ESM).
+Produkty, które w ogóle nie dostają poprawek (np. Oracle XE / Free), mają w `products.json` flagę `"noPatches": true`
+(pojedynczą wersję można oznaczyć `"nopatch": true` w `lifecycle.json`) — symulacja traktuje je wtedy jako stale niezałatane.
 
 ## Informacje prawne
 
