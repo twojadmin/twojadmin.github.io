@@ -1,0 +1,11 @@
+{
+  "name": "symulator-cyklu-wsparcia",
+  "private": true,
+  "type": "module",
+  "description": "Symulator cyklu wsparcia (strona statyczna). Skrypt aktualizacji danych: npm run update-data",
+  "scripts": {
+    "update-data": "node tools/update-data.mjs",
+    "update-data:dry": "node tools/update-data.mjs --dry-run"
+  },
+  "engines": { "node": ">=18" }
+}
