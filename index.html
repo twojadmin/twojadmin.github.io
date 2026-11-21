@@ -77,6 +77,9 @@
     <h3>Darmowe odpowiedniki</h3>
     <p class="hint">Zamiast aktualizować płatny produkt, plan może przewidzieć przejście na bezpłatny odpowiednik (np. Oracle Database → PostgreSQL, Oracle JDK → Amazon Corretto, RHEL → AlmaLinux). Uwzględniane są godziny migracji, ryzyka zgodności i brak opłat licencyjnych.</p>
     <div id="altBox"></div>
+    <h3>Daty i czasochłonność migracji</h3>
+    <p class="hint">Suwak ustawia miesiąc przejścia na nową wersję (go‑live) — w starym scenariuszu przesuwa kroki planu danego składnika, w nowym wdrożeniu ustala datę najbliższej migracji. Pole godzin zastępuje szacowaną pracochłonność migracji (puste = wartość automatyczna).</p>
+    <div id="migBox"></div>
     <h3>Kroki</h3>
     <div class="scroll"><table id="planTable"></table></div>
     <h3>Potencjalne problemy zgodności</h3>
@@ -214,6 +217,7 @@
       <li><b>Produkt niebezpieczny:</b> krytyczna lub wysoka podatność otwarta dłużej niż SLA w składniku, którego nie da się załatać (EOL, niewykupione wsparcie, brak aktualizacji). Mitygacje ograniczają ryzyko, ale go nie usuwają.</li>
       <li><b>Mitygacje:</b> gdy poprawki nie ma albo nie zdąży w SLA, liczona jest mitygacja (zabezpieczenie zastępcze). Z prawdopodobieństwem równym „skuteczności” chroni ona od momentu wdrożenia — taka podatność nie czyni produktu niebezpiecznym, ale pozostaje otwarta do załatania. Nieskuteczna lub niemożliwa mitygacja nie zmienia oceny zagrożenia.</li>
       <li><b>Darmowe odpowiedniki:</b> w starym scenariuszu zamiana zastępuje aktualizację w planie modernizacji; w nowym wdrożeniu odpowiednik jest wdrażany od początku (ok. 3 miesiące adaptacji aplikacji). Po zamianie składnik ma terminy wsparcia, tempo podatności i godziny prac odpowiednika.</li>
+      <li><b>Ręczne daty migracji:</b> suwak w planie ustawia miesiąc go‑live migracji składnika, a pole godzin — jej pracochłonność. IIS jest częścią Windows: jego wersja i wsparcie wynikają z systemu, a migracja następuje razem z migracją systemu.</li>
       <li><b>Dane:</b> tempo podatności w symulacji pochodzi z <code>data/vulnerabilities.json</code> (pole „rate”); składniki z większą liczbą wpisów w katalogu CISA KEV są częściej celem fal 0‑day.</li>
       <li><b>Zgodność:</b> reguły dla typowych pułapek (javax→jakarta, wymagana wersja Javy, VC++ dla Apache/PHP na Windows, certyfikacja Oracle/SQL Server na danym OS, OpenSSL 3, wersje PHP/Python w repozytoriach, glibc dla Node.js itp.). To lista kontrolna, nie gwarancja — sprawdź dokumentację producentów.</li>
     </ul>

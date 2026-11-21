@@ -226,6 +226,16 @@
         ]
       }
     },
+    "iis": {
+      "rate": 2,
+      "kev": {
+        "count2y": 0,
+        "total": 1,
+        "items": [
+          {"id":"CVE-2017-7269","name":"Microsoft Windows Server Buffer Overflow Vulnerability","product":"Microsoft Internet Information Services (IIS)","added":"2021-11-03","ransomware":false,"desc":"Microsoft Windows Server 2003 R2 contains a buffer overflow vulnerability in Internet Information Services (IIS) 6.0 which allows remote attackers to execute code via a long header beginning with \"If: <http://\" in a PROPFIND request."}
+        ]
+      }
+    },
     "httpd": {
       "rate": 4,
       "kev": {

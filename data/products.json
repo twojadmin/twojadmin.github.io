@@ -39,7 +39,7 @@
     ],
     [
       "Serwery WWW i aplikacji",
-      ["httpd","tomcat","wildfly","nginx"]
+      ["iis","httpd","tomcat","wildfly","nginx"]
     ],
     [
       "Bazy danych",
@@ -132,9 +132,10 @@
     },
     {
       "k": "dotnet",
-      "n": ".NET na Windows Server (SQL Server + VC++)",
+      "n": ".NET na Windows Server (IIS + SQL Server + VC++)",
       "os": ["winsrv","2016"],
       "c": [
+        ["iis","10"],
         ["dotnet","6"],
         ["mssql","2016"],
         ["vcredist","2013"]
@@ -189,6 +190,28 @@
         ["openjdk","11"],
         ["tomcat","9"],
         ["oraclexe","18c XE"]
+      ]
+    },
+    {
+      "k": "iisnet",
+      "n": "Aplikacja .NET na IIS (Windows Server + SQL Server)",
+      "os": ["winsrv","2016"],
+      "c": [
+        ["iis","10"],
+        ["dotnet","6"],
+        ["mssql","2016"],
+        ["vcredist","2015–2022 (v14)"]
+      ]
+    },
+    {
+      "k": "iisphp",
+      "n": "PHP na IIS (Windows Server + MySQL + VC++)",
+      "os": ["winsrv","2012 R2"],
+      "c": [
+        ["iis","8.5"],
+        ["php","7.4"],
+        ["mysql","5.7"],
+        ["vcredist","2015–2022 (v14)"]
       ]
     }
   ],
@@ -555,6 +578,24 @@
       },
       "kevMatch": [
         {"vendor":"^PHP( Group)?$","product":"^PHP$|FastCGI"}
+      ]
+    },
+    "iis": {
+      "name": "IIS (Internet Information Services)",
+      "cat": "web",
+      "os": "win",
+      "cad": 1,
+      "lag": 25,
+      "h": [1,3,3,1,40],
+      "old": "8.5",
+      "followsOs": true,
+      "esuName": "Windows ESU (płatne)",
+      "breaks": [
+        {"at":"10","s":"low","t":"IIS 10: HTTP/2, a w Windows Server 2022+ TLS 1.3 i nowe domyślne zestawy szyfrów — sprawdź starszych klientów i integracje."}
+      ],
+      "mnote": "IIS jest częścią systemu Windows: poprawki przychodzą z Windows Update, a wersja i wsparcie wynikają z wersji systemu. Zmiana systemu oznacza przeniesienie witryn i konfiguracji (np. Web Deploy).",
+      "kevMatch": [
+        {"vendor":"^Microsoft$","product":"IIS|Internet Information Services"}
       ]
     },
     "httpd": {
