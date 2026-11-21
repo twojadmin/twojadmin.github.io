@@ -161,6 +161,12 @@ svg .ink { fill: var(--ink); }
           <button data-v="newsrv">Nowy serwer + przełączenie</button>
         </div>
       </div>
+      <div class="fld">Płatne wsparcie (ESU, ELS, Extended, Ubuntu Pro)
+        <div class="seg" data-w="buy">
+          <button data-v="yes">Wykupione</button>
+          <button data-v="no">Niewykupione</button>
+        </div>
+      </div>
       <label class="fld oldonly">Ostatnie poprawki zainstalowano
         <input type="date" id="lastPatch">
       </label>
@@ -190,7 +196,17 @@ svg .ink { fill: var(--ink); }
   </section>
 
   <section class="card">
+    <h2>Zakupy, licencje i płatne wsparcie</h2>
+    <div class="callout" id="dangerBox"></div>
+    <h3>Zmiany wymagające zakupu nowego produktu lub licencji</h3>
+    <div class="scroll"><table id="buyTable"></table></div>
+    <h3>Okresy wymagające wykupienia wsparcia</h3>
+    <div class="scroll"><table id="paidTable"></table></div>
+  </section>
+
+  <section class="card">
     <h2>Oś czasu wsparcia, aktualizacji i podatności</h2>
+    <p class="hint">Każda wersja składnika ma osobny wiersz. Wyblakły pasek to cały cykl życia wersji, pełny kolor — okres, w którym produkt jej używa.</p>
     <div class="legend" id="tlLegend"></div>
     <div class="scroll"><div id="timeline"></div></div>
   </section>
@@ -254,7 +270,7 @@ svg .ink { fill: var(--ink); }
         <label>SLA krytyczne / wysokie (dni) <span class="row"><input type="number" id="slaC" value="7" min="1"> / <input type="number" id="slaH" value="30" min="1"></span></label>
         <label>Zespół (FTE, 140 h/mies.) <input type="number" id="fte" value="1.5" min="0.1" step="0.1"></label>
         <label>Regresja na zależny składnik: <span class="val" id="regV"></span><input type="range" id="reg" min="0" max="60" step="5" value="25"></label>
-        <label class="inline"><input type="checkbox" id="autoMig" checked> Migruj automatycznie przed EOS</label>
+        <label class="inline"><input type="checkbox" id="autoMig" checked> Migruj automatycznie przed końcem poprawek</label>
         <label>Wyprzedzenie migracji (mies.) <input type="number" id="lead" value="6" min="0" max="24"></label>
         <label class="inline"><input type="checkbox" id="waves" checked> Fale 0‑day (jak Log4Shell)</label>
       </div>
@@ -278,11 +294,14 @@ svg .ink { fill: var(--ink); }
   <section class="card note">
     <h2>Jak liczy symulacja</h2>
     <ul>
-      <li><b>Nowe wdrożenie:</b> każdy składnik w wybranej serii (domyślnie najnowszej wspieranej) z kompletem poprawek; dalej regularne aktualizacje, obsługa CVE i — jeśli włączone — migracje przed EOS.</li>
+      <li><b>Nowe wdrożenie:</b> każdy składnik w wybranej serii (domyślnie najnowszej wspieranej) z kompletem poprawek; dalej regularne aktualizacje, obsługa CVE i — jeśli włączone — migracje przed końcem dostępnych poprawek.</li>
       <li><b>Stary serwer — bez aktualizacji:</b> stare wersje, nikt nie instaluje poprawek. Zaległe podatności od daty ostatnich poprawek plus nowe CVE kumulują się; dla krytycznych i wysokich liczone są tylko mitygacje (zabezpieczenia zastępcze).</li>
       <li><b>Stary serwer — z planem:</b> etap 0 (inwentaryzacja, analiza zgodności, triage zaległych CVE), etap 1 (doinstalowanie zaległych poprawek w seriach jeszcze wspieranych), następnie migracje według planu. <i>W miejscu</i> — kolejno, z krokami pośrednimi tam, gdzie producent wymaga (np. RHEL 7→8→9, MySQL 5.7→8.0→8.4, Oracle przez 19c). <i>Nowy serwer</i> — budowa nowego środowiska z wersjami docelowymi i jedno przełączenie.</li>
       <li><b>CVE:</b> proces Poissona o intensywności CVE/rok × mnożnik trendu (stały 1; wykładniczy (1+g)<sup>t</sup>; liniowy 1+g·t). Ważność: 12% krytyczne, 35% wysokie, 43% średnie, 10% niskie. Każda wymaga weryfikacji. Krytyczne/wysokie: mitygacja, jeśli poprawka nie zdąży w SLA; aktualizacja awaryjna, jeśli najbliższa planowa nie mieści się w SLA. Po EOL — tylko mitygacja, podatność pozostaje otwarta do migracji.</li>
       <li><b>Testy:</b> × (1 + współczynnik regresji × liczba składników zależnych, także pośrednio). Migracja = godziny migracji + pełna regresja.</li>
+      <li><b>Płatne wsparcie:</b> okresy oznaczone jako płatne (np. Windows Server/SQL Server ESU, RHEL ELS, Ubuntu Pro ESM, Oracle Extended Support, Oracle Java SE, komercyjny Spring) dają poprawki tylko po wykupieniu. Przy opcji „Niewykupione” poprawki kończą się wraz z darmowym wsparciem. Aktualizacje RHEL wymagają aktywnej subskrypcji.</li>
+      <li><b>Zakupy:</b> Windows Server i SQL Server — nowa wersja to nowa licencja (chyba że jest Software Assurance); Oracle Database — nowa wersja w ramach aktywnego wsparcia; RHEL — w ramach subskrypcji; pozostałe składniki są bezpłatne.</li>
+      <li><b>Produkt niebezpieczny:</b> krytyczna lub wysoka podatność otwarta dłużej niż SLA w składniku, którego nie da się załatać (EOL, niewykupione wsparcie, brak aktualizacji). Mitygacje ograniczają ryzyko, ale go nie usuwają.</li>
       <li><b>Zgodność:</b> reguły dla typowych pułapek (javax→jakarta, wymagana wersja Javy, VC++ dla Apache/PHP na Windows, certyfikacja Oracle/SQL Server na danym OS, OpenSSL 3, wersje PHP/Python w repozytoriach, glibc dla Node.js itp.). To lista kontrolna, nie gwarancja — sprawdź dokumentację producentów.</li>
     </ul>
   </section>
@@ -424,6 +443,20 @@ const FAM = {
     v: [V("2.x", "2014-01-01", "2028-12-31", "2029-12-31", FC), V("3.x", "2025-10-03", "2032-12-31", "2033-12-31", { fc: true, java: "17" })],
     breaks: [{ at: "3.x", s: "med", t: "Nowe pakiety tools.jackson.*, zmienione ustawienia domyślne, wymagana Java 17." }] },
 };
+/* licencje i płatne wsparcie */
+const LIC_N = { perp: "Nowa wersja = zakup nowej licencji (bez Software Assurance)", supp: "Nowa wersja w ramach aktywnego wsparcia producenta", sub: "Nowa wersja w ramach aktywnej subskrypcji", free: "Bez opłat licencyjnych" };
+Object.assign(FAM.winsrv, { lic: "perp", licNote: "Licencje rdzeniowe + CAL; z Software Assurance nowa wersja w cenie.", esuName: "Windows Server ESU (płatne)" });
+FAM.winsrv.v[0].esu = "2023-01-10"; FAM.winsrv.v[1].esu = "2026-10-13";
+Object.assign(FAM.rhel, { lic: "sub", licNote: "Subskrypcja Red Hat obejmuje poprawki i nowe wersje.", paidAll: "Subskrypcja Red Hat", esuName: "RHEL ELS (płatny dodatek)" });
+FAM.rhel.v[0].esu = "2028-06-30";
+Object.assign(FAM.ubuntu, { paidExt: "Ubuntu Pro (ESM)" });
+Object.assign(FAM.java, { paidExt: "Oracle Java SE Subscription (wsparcie rozszerzone)", licNote: "Oracle JDK w produkcji wymaga subskrypcji; darmowe dystrybucje OpenJDK (Temurin, Corretto) mają własne terminy." });
+Object.assign(FAM.oracle, { lic: "supp", paidExt: "Oracle Extended Support (dopłata)", licNote: "Licencja wieczysta + roczne wsparcie; po przerwie we wsparciu — opłata za przywrócenie i zaległe opłaty." });
+Object.assign(FAM.mssql, { lic: "perp", licNote: "Licencje na rdzenie lub serwer + CAL; z Software Assurance nowa wersja w cenie.", esuName: "SQL Server ESU (płatne)" });
+FAM.mssql.v[0].esu = "2025-07-08"; FAM.mssql.v[1].esu = "2027-07-13";
+Object.assign(FAM.springboot, { paidExt: "Komercyjne wsparcie Spring (Tanzu)" });
+Object.assign(FAM.mysql, { licNote: "Community bezpłatnie; MySQL Enterprise to płatna subskrypcja." });
+for (const k in FAM) if (!FAM[k].lic) FAM[k].lic = "free";
 const OS_FAMS = ["winsrv", "rhel", "ubuntu", "debian"];
 const GROUPS = [["Środowiska uruchomieniowe", ["java", "dotnet", "vcredist", "python", "node", "php"]], ["Serwery WWW i aplikacji", ["httpd", "tomcat", "nginx"]],
   ["Bazy danych", ["postgresql", "mariadb", "mysql", "oracle", "mssql"]], ["Biblioteki i frameworki", ["openssl", "log4j", "springboot", "jackson"]]];
@@ -466,6 +499,14 @@ function route(f, a, b) {
   }
   return out;
 }
+function mkVer(F, x, over) {
+  const v = { label: x ? x.l : over.label, eos: over && over.eos != null ? over.eos : D(x.eos), eol: over && over.eol != null ? over.eol : D(x.eol), fc: x ? !!x.fc : true,
+    paidExt: F && F.paidExt && x ? F.paidExt : null, esu: x && x.esu ? D(x.esu) : null, esuName: F ? F.esuName : null, paidAll: F && x ? F.paidAll || null : null };
+  v.eol = Math.max(v.eol, v.eos);
+  return v;
+}
+const patchEnd = (v, buy) => buy ? Math.max(v.eol, v.esu || 0) : v.paidExt ? v.eos : v.eol;
+function compVer(c) { const F = FAM[c.fam]; return mkVer(F, F && F.v[c.vi], { label: c.ver, eos: D(c.eos), eol: D(c.eol) }); }
 const isWinOs = f => FAM[f] && FAM[f].os === "win";
 const famAllowed = (f, osF) => FAM[f].os === "any" || FAM[f].os === FAM[osF].os;
 
@@ -476,7 +517,7 @@ let comps = [];    // składniki do symulacji
 let uid = 1;
 function defaultW() {
   const t0 = D(todayStr());
-  return { scen: "new", oldMode: "plan", strat: "inplace", lastPatch: fmt(addMonths(t0, -36)), tpl: "javaee", os: { f: "rhel", v: null }, sel: {} };
+  return { buy: "yes", scen: "new", oldMode: "plan", strat: "inplace", lastPatch: fmt(addMonths(t0, -36)), tpl: "javaee", os: { f: "rhel", v: null }, sel: {} };
 }
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 function startT() { return D($("start").value || todayStr()); }
@@ -559,7 +600,7 @@ function computePlan(p) {
   const order = topo();
   const tgts = {};
   order.forEach(c => { if (c.fam === "custom") return; const ti = recIdx(c.fam, t0); if (ti > c.vi) tgts[c.id] = ti; });
-  const supported = comps.filter(c => D(c.eol) > t0);
+  const supported = comps.filter(c => patchEnd(compVer(c), p.buy) > t0);
   const P0 = { kind: "phase", name: "Etap 0: inwentaryzacja, analiza zgodności, triage zaległych podatności", start: t0, end: addMonths(t0, 1), hours: 8 + 4 * comps.length, notes: [] };
   const P1 = { kind: "phase", name: "Etap 1: doinstalowanie zaległych poprawek w seriach jeszcze wspieranych", start: addMonths(t0, 1), end: addMonths(t0, 2),
     hours: supported.reduce((s, c) => s + c.upd * 1.5 + c.test * tf(c), 0), notes: supported.length ? [{ s: "info", t: "Dotyczy: " + supported.map(c => c.name + " " + c.ver).join(", ") }] : [{ s: "info", t: "Żaden składnik nie jest już wspierany — poprawek brak, pozostają mitygacje." }] };
@@ -632,7 +673,7 @@ const TYPES = [["ver", "Weryfikacja podatności", "--s1"], ["mit", "Mitygacja", 
 const pickSev = x => { let a = 0; for (const [s, pr] of SEV) { a += pr; if (x < a) return s; } return "low"; };
 
 function simulate(p, o = {}) {
-  const trend = o.trend || p.trend, mode = o.mode || p.mode;
+  const trend = o.trend || p.trend, mode = o.mode || p.mode, buy = o.buy != null ? o.buy : p.buy;
   const t0 = p.start, tEnd = addMonths(t0, p.horizon * 12);
   const mult = t => { const y = Math.max(0, (t - t0) / YEAR); return trend === "exp" ? Math.pow(1 + p.growth, y) : trend === "lin" ? 1 + p.growth * y : 1; };
   const multMax = mult(tEnd);
@@ -643,10 +684,11 @@ function simulate(p, o = {}) {
   const tfOf = c => 1 + p.reg * (deps[c.id] - 1);
   const spread = (a, b, c, ver, type, h, desc) => { if (h <= 0) return; a = Math.max(a, t0); if (b <= a) b = a + MON; const n = Math.max(1, Math.round((b - a) / MON)); for (let k = 0; k < n; k++) add(a + (k + 0.5) * (b - a) / n, c, ver, type, h / n, desc); };
 
+  const isPaid = (v, t) => !!v.paidAll || (!!v.paidExt && t >= v.eos) || t >= v.eol;
   function handleCve(e, c, ver, seg, r, testF) {
     const { t, sev } = e;
     const id = "CVE-" + new Date(t).getUTCFullYear() + "-" + String(10000 + Math.floor(r() * 89999));
-    const supported = t < ver.eol, frozen = t < seg.frozenUntil, migrates = seg.end < tEnd;
+    const supported = t < ver.pe, frozen = t < seg.frozenUntil, migrates = seg.end < tEnd;
     const ev = { t, comp: c.id, ver: ver.label, sev, id, wave: !!e.wave, backlog: !!e.backlog, supported, mitig: false, emergency: false, bundled: false, patchAt: null, closedAt: null };
     const nextUpd = from => seg.upd.find(x => x >= from);
     const ch = sev === "crit" || sev === "high";
@@ -667,9 +709,9 @@ function simulate(p, o = {}) {
         if (patch > t + sla * DAY) { ev.mitig = true; add(t + DAY, c, ver.label, "mit", c.mit * SEV_F[sev], "Mitygacja " + id + " (poprawka poza SLA)"); }
         const deadline = Math.max(patch, t + sla * DAY), np = nextUpd(patch);
         if (np != null && np <= deadline) { ev.bundled = true; ev.closedAt = np; }
-        else if (patch < Math.min(ver.eol, seg.end)) {
+        else if (patch < Math.min(ver.pe, seg.end)) {
           ev.emergency = true; ev.closedAt = patch;
-          updates.push({ t: patch, comp: c.id, ver: ver.label, kind: "emerg" });
+          updates.push({ t: patch, comp: c.id, ver: ver.label, kind: "emerg", paid: isPaid(ver, patch) });
           add(patch, c, ver.label, "upd", c.upd, "Aktualizacja awaryjna " + id);
           add(patch, c, ver.label, "test", c.test * testF * 0.5, "Testy ukierunkowane " + id);
         } else ev.closedAt = np != null ? np : migrates ? seg.end : null;
@@ -678,7 +720,7 @@ function simulate(p, o = {}) {
         const np = nextUpd(patch); ev.bundled = np != null; ev.closedAt = np != null ? np : migrates ? seg.end : null;
       }
     } else {
-      if (ch) { ev.mitig = true; add(t + DAY, c, ver.label, "mit", c.mit * 1.5 * SEV_F[sev], "Mitygacja " + id + " — wersja po EOL"); }
+      if (ch) { ev.mitig = true; add(t + DAY, c, ver.label, "mit", c.mit * 1.5 * SEV_F[sev], "Mitygacja " + id + " — brak poprawek (EOL lub niewykupione wsparcie)"); }
       else if (sev === "med") { ev.mitig = true; add(t + DAY, c, ver.label, "mit", c.mit * 0.5, "Częściowa mitygacja " + id + " (EOL)"); }
       ev.closedAt = migrates ? seg.end : null;
     }
@@ -690,33 +732,34 @@ function simulate(p, o = {}) {
     const testF = tfOf(c), F = FAM[c.fam];
     const [dEos, dEol] = CAT_DEF[c.cat] || [3, 5];
     let vi = c.fam === "custom" ? Infinity : c.vi;
-    let ver = { label: c.ver, eos: D(c.eos), eol: Math.max(D(c.eol), D(c.eos)), fc: F && F.v[c.vi] && F.v[c.vi].fc };
-    const forced = plan && plan.forced[c.id] ? plan.forced[c.id].map(x => ({ ...x })) : [];
-    let frozenUntil = mode === "new" ? t0 : mode === "noupd" ? Infinity : ver.eol > t0 ? plan.catchUp : forced.length ? forced[0].at : Infinity;
+    let ver = compVer(c); ver.pe = patchEnd(ver, buy);
+    const forced = plan && plan.forced[c.id] && !o.noMig ? plan.forced[c.id].map(x => ({ ...x })) : [];
+    let frozenUntil = mode === "new" ? t0 : mode === "noupd" ? Infinity : ver.pe > t0 ? plan.catchUp : forced.length ? forced[0].at : Infinity;
     if (plan) add(t0 + 10 * DAY, c, ver.label, "ver", plan.P0.hours / comps.length, "Inwentaryzacja i analiza zgodności");
     let segStart = t0, gen = 1, guard = 0, first = true;
     while (segStart < tEnd && guard++ < 30) {
       let mig = null;
       if (forced.length) mig = forced.shift();
-      else if (p.autoMig && mode !== "noupd") {
-        let at = Math.max(addMonths(ver.eos, -p.lead), addMonths(segStart, 3));
-        if (first && ver.eos <= addMonths(t0, 3)) at = addMonths(t0, 3);
+      else if (p.autoMig && mode !== "noupd" && !o.noMig) {
+        // migracja przed końcem dostępnych poprawek (darmowe wsparcie rozszerzone lub wykupione płatne)
+        let at = Math.max(addMonths(ver.pe, -p.lead), addMonths(segStart, 3));
+        if (first && ver.pe <= addMonths(t0, 3)) at = addMonths(t0, 3);
         if (at < tEnd) mig = { at, hStart: addMonths(at, -3), hEnd: at, toIdx: "auto", mig: c.mig, test: c.test * testF * 3 };
       }
       const segEnd = mig && mig.at < tEnd ? mig.at : tEnd;
-      const seg = { comp: c.id, label: ver.label, start: segStart, end: segEnd, eos: ver.eos, eol: ver.eol, fc: ver.fc, frozenUntil, upd: [] };
+      const seg = { comp: c.id, label: ver.label, start: segStart, end: segEnd, eos: ver.eos, eol: ver.eol, fc: ver.fc, frozenUntil, upd: [], ver };
       segs.push(seg);
-      if (plan && first && ver.eol > t0 && plan.catchUp < segEnd) {
-        seg.upd.push(plan.catchUp); updates.push({ t: plan.catchUp, comp: c.id, ver: ver.label, kind: "catchup" });
+      if (plan && first && ver.pe > t0 && plan.catchUp < segEnd) {
+        seg.upd.push(plan.catchUp); updates.push({ t: plan.catchUp, comp: c.id, ver: ver.label, kind: "catchup", paid: isPaid(ver, plan.catchUp) });
         add(plan.catchUp, c, ver.label, "upd", c.upd * 1.5, "Doinstalowanie zaległych poprawek");
         add(plan.catchUp, c, ver.label, "test", c.test * testF, "Testy po doinstalowaniu poprawek");
       }
       const u0 = Math.max(segStart, frozenUntil);
       if (u0 < segEnd) {
         let u = addMonths(u0, c.cad * (0.3 + 0.7 * r()));
-        while (u < segEnd && u < ver.eol) {
+        while (u < segEnd && u < ver.pe) {
           seg.upd.push(u);
-          updates.push({ t: u, comp: c.id, ver: ver.label, kind: u < ver.eos ? "plan" : "sec" });
+          updates.push({ t: u, comp: c.id, ver: ver.label, kind: u < ver.eos ? "plan" : "sec", paid: isPaid(ver, u) });
           add(u, c, ver.label, "upd", c.upd, "Aktualizacja planowa");
           add(u, c, ver.label, "test", c.test * testF, "Testy aktualizacji planowej");
           u = addMonths(u, c.cad);
@@ -743,11 +786,12 @@ function simulate(p, o = {}) {
       const oldI = vi, oldL = ver.label; let nv;
       if (mig.toIdx === "auto") {
         let best = -1;
-        if (F && vi !== Infinity) F.v.forEach((x, j) => { if (j > vi && D(x.rel) <= mig.at && D(x.eos) > addMonths(mig.at, 9) && (best < 0 || D(x.eos) >= D(F.v[best].eos))) best = j; });
-        if (best >= 0) { vi = best; const x = F.v[vi]; nv = { label: x.l, eos: D(x.eos), eol: Math.max(D(x.eol), D(x.eos)), fc: x.fc }; }
-        else { vi = Infinity; nv = { label: "kolejna" + (gen > 1 ? " (" + gen + ")" : "") + "*", eos: addMonths(mig.at, dEos * 12), eol: addMonths(mig.at, dEol * 12), fc: true }; gen++; }
-      } else { vi = mig.toIdx; const x = F.v[vi]; nv = { label: x.l, eos: D(x.eos), eol: Math.max(D(x.eol), D(x.eos)), fc: x.fc }; }
-      migs.push({ comp: c.id, from: oldL, to: nv.label, start: Math.max(mig.hStart, t0), end: mig.at, planned: mig.toIdx !== "auto" });
+        if (F && vi !== Infinity) F.v.forEach((x, j) => { if (j > vi && D(x.rel) <= mig.at && patchEnd(mkVer(F, x), buy) > addMonths(mig.at, 12) && (best < 0 || D(x.eos) >= D(F.v[best].eos))) best = j; });
+        if (best >= 0) { vi = best; nv = mkVer(F, F.v[vi]); }
+        else { vi = Infinity; nv = mkVer(null, null, { label: "kolejna" + (gen > 1 ? " (" + gen + ")" : "") + "*", eos: addMonths(mig.at, dEos * 12), eol: addMonths(mig.at, dEol * 12) }); gen++; }
+      } else { vi = mig.toIdx; nv = mkVer(F, F.v[vi]); }
+      nv.pe = patchEnd(nv, buy);
+      migs.push({ comp: c.id, from: oldL, to: nv.label, start: Math.max(mig.hStart, t0), end: mig.at, planned: mig.toIdx !== "auto", famI: vi });
       if (F && oldI !== Infinity && vi !== Infinity) migNotes.push({ comp: c.id, at: mig.at, from: oldL, to: nv.label, items: breaksBetween(c.fam, oldI, vi) });
       ver = nv; segStart = mig.at; if (frozenUntil > segStart) frozenUntil = segStart;
     }
@@ -772,12 +816,12 @@ function simulate(p, o = {}) {
       const seg = segs.find(s => s.comp === c.id && t >= s.start && t < s.end); if (!seg) continue;
       comps.forEach(o => add(t, o, "—", "ver", 2, "Inwentaryzacja po fali 0-day"));
       add(t + DAY, c, seg.label, "mit", c.mit * 2, "Mitygacja fali 0-day");
-      handleCve({ t, sev: "crit", wave: true }, c, { label: seg.label, eos: seg.eos, eol: seg.eol }, seg, wr, tfOf(c));
+      handleCve({ t, sev: "crit", wave: true }, c, seg.ver, seg, wr, tfOf(c));
     }
   }
   work.sort((a, b) => a.t - b.t); cves.sort((a, b) => a.t - b.t);
   const baseRate = comps.reduce((s, c) => s + c.cve, 0) + (p.waves ? 0.33 : 0);
-  return { t0, tEnd, mode, work, cves, updates, segs, migs, migNotes, deps, baseRate };
+  return { t0, tEnd, mode, buy, work, cves, updates, segs, migs, migNotes, deps, baseRate };
 }
 
 /* ================= zgodność ================= */
@@ -866,11 +910,12 @@ function renderWizard() {
   document.querySelectorAll("#wizard .oldonly").forEach(el => el.style.display = W.scen === "old" ? "" : "none");
   $("lastPatch").value = W.lastPatch;
   $("tpl").innerHTML = `<option value="">— wybierz szablon —</option>` + TPL.map(t => `<option value="${t.k}" ${t.k === W.tpl ? "selected" : ""}>${esc(t.n)}</option>`).join("");
-  $("scenInfo").innerHTML = W.scen === "new"
-    ? "<b>Nowe wdrożenie:</b> składniki w najnowszych wspieranych seriach z kompletem poprawek (możesz wybrać inną serię). Symulacja pokazuje utrzymanie: aktualizacje, CVE, migracje przed EOS."
+  const buyTxt = W.buy === "no" ? " <b>Płatne wsparcie niewykupione</b> — w okresach płatnych brak poprawek." : "";
+  $("scenInfo").innerHTML = (W.scen === "new"
+    ? "<b>Nowe wdrożenie:</b> składniki w najnowszych wspieranych seriach z kompletem poprawek (możesz wybrać inną serię). Symulacja pokazuje utrzymanie: aktualizacje, CVE, migracje przed końcem poprawek."
     : W.oldMode === "noupd"
       ? `<b>Stary serwer bez aktualizacji:</b> wybrane stare wersje, ostatnie poprawki ${esc(W.lastPatch)}. Podatności narastają, bo nikt nie instaluje poprawek. Plan modernizacji poniżej jest rekomendacją — przełącz „Z planem modernizacji”, aby go zasymulować.`
-      : `<b>Stary serwer z planem modernizacji:</b> stare wersje (ostatnie poprawki ${esc(W.lastPatch)}) → plan: ${W.strat === "inplace" ? "aktualizacje w miejscu krok po kroku" : "budowa nowego serwera i jedno przełączenie"}.`;
+      : `<b>Stary serwer z planem modernizacji:</b> stare wersje (ostatnie poprawki ${esc(W.lastPatch)}) → plan: ${W.strat === "inplace" ? "aktualizacje w miejscu krok po kroku" : "budowa nowego serwera i jedno przełączenie"}.`) + buyTxt;
   $("osPicks").innerHTML = OS_FAMS.map(f => {
     const on = W.os.f === f, l = on ? W.os.v : FAM[f].v[W.scen === "new" ? recIdx(f, t0) : oldIdx(f, t0)].l;
     return `<label class="pick ${on ? "on" : ""}"><span class="top"><input type="radio" name="os" data-os="${f}" ${on ? "checked" : ""}>${esc(FAM[f].name)}</span>
@@ -972,13 +1017,46 @@ function buckets(res, kind) {
 }
 function yAxis(s, L, R, W, y, maxV, f = nf) { for (let i = 0; i <= 4; i++) { const v = maxV * i / 4; s.push(`<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${i ? "var(--grid)" : "var(--axis)"}"/><text x="${L - 6}" y="${y(v) + 4}" font-size="11" text-anchor="end">${f.format(v)}</text>`); } }
 
-/* ================= oś czasu ================= */
-function renderTimeline(res) {
-  const el = $("timeline"), W_ = Math.max(860, el.parentElement.clientWidth);
-  const L = 190, R = 16, top = 34, rowH = 40, H = top + (comps.length + 1) * rowH + 10;
-  const x = t => L + (t - res.t0) / (res.tEnd - res.t0) * (W_ - L - R);
-  const s = [svgOpen(W_, H, "Oś czasu wsparcia składników")];
-  s.push(`<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--critical)" opacity="0.18"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--critical)" stroke-width="2" opacity="0.7"/></pattern></defs>`);
+/* ================= fazy wsparcia i zagrożenie ================= */
+const PH_N = { full: "pełne wsparcie", ext: "rozszerzone — darmowe poprawki bezpieczeństwa", paid: "płatne wsparcie (wykupione) — poprawki dostępne", unpaid: "wymaga płatnego wsparcia — NIEWYKUPIONE, brak poprawek", eol: "po EOL — brak poprawek" };
+function phasesOf(v, buy) {
+  const out = [["full", -Infinity, v.eos]];
+  if (v.eol > v.eos) out.push([v.paidExt ? (buy ? "paid" : "unpaid") : "ext", v.eos, v.eol]);
+  if (v.esu && v.esu > v.eol) out.push([buy ? "paid" : "unpaid", v.eol, v.esu]);
+  out.push(["eol", Math.max(v.eol, v.esu || 0), Infinity]);
+  return out;
+}
+const phaseAt = (v, t, buy) => phasesOf(v, buy).find(([, a, b]) => t >= a && t < b)[0];
+const segAt = (res, compId, t) => res.segs.find(g => g.comp === compId && t >= g.start && t < g.end);
+// poziom zagrożenia w miesiącu: 2 = niebezpieczny (krytyczna/wysoka podatność po terminie SLA w składniku bez poprawek), 1 = podwyższone ryzyko
+function dangerSeries(res, p) {
+  const months = []; for (let m = res.t0; m < res.tEnd; m = addMonths(m, 1)) months.push(m);
+  let first = null, reason = "", dangerMonths = 0;
+  const lv = months.map(m => {
+    const mid = Math.min(addMonths(m, 0.5), res.tEnd - 1);
+    const unp = {};
+    comps.forEach(c => { const g = segAt(res, c.id, mid); if (g && (mid >= g.ver.pe || mid < g.frozenUntil)) unp[c.id] = g; });
+    const late = res.cves.filter(v => (v.sev === "crit" || v.sev === "high") && v.t <= mid - (v.sev === "crit" ? p.slaC : p.slaH) * DAY && (v.closedAt == null || v.closedAt > mid));
+    const bad = late.filter(v => unp[v.comp]);
+    if (bad.length) {
+      dangerMonths++;
+      if (first == null) { first = m; const v = bad[0], c = comps.find(x => x.id === v.comp), g = unp[v.comp]; reason = `${v.id} (${SEV_N[v.sev]}) w ${c.name} ${g.label} — ${mid >= g.ver.pe ? (phaseAt(g.ver, mid, res.buy) === "unpaid" ? "płatne wsparcie niewykupione" : "wersja po EOL") : "poprawki nie są instalowane"}`; }
+      return { l: 2, n: bad.length, u: Object.keys(unp).length };
+    }
+    return { l: late.length || Object.keys(unp).length ? 1 : 0, n: 0, late: late.length, u: Object.keys(unp).length };
+  });
+  return { months, lv, first, reason, dangerMonths };
+}
+
+/* ================= oś czasu: wiersz na każdą wersję ================= */
+function renderTimeline(res, dz) {
+  const el = $("timeline"), W_ = Math.max(900, el.parentElement.clientWidth);
+  const rows = []; comps.forEach(c => res.segs.filter(g => g.comp === c.id).forEach((g, k) => rows.push({ c, g, k })));
+  const L = 200, R = 16, top = 34, rowH = 34, prodH = 44, H = top + prodH + rows.length * rowH + 10;
+  const x = t => L + (Math.min(Math.max(t, res.t0), res.tEnd) - res.t0) / (res.tEnd - res.t0) * (W_ - L - R);
+  const s = [svgOpen(W_, H, "Oś czasu wsparcia — wiersz na każdą wersję")];
+  s.push(`<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="var(--critical)" opacity="0.18"/><line x1="0" y1="0" x2="0" y2="6" stroke="var(--critical)" stroke-width="2" opacity="0.7"/></pattern>
+    <pattern id="paidp" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="7" height="7" fill="var(--warning)" opacity="0.45"/><line x1="0" y1="0" x2="0" y2="7" stroke="var(--ink-2)" stroke-width="1.6" opacity="0.8"/></pattern></defs>`);
   const d0 = new Date(res.t0);
   for (let q = Date.UTC(d0.getUTCFullYear(), Math.floor(d0.getUTCMonth() / 3) * 3 + 3, 1); q < res.tEnd; q = addMonths(q, 3)) {
     const isY = new Date(q).getUTCMonth() === 0, X = x(q);
@@ -986,66 +1064,113 @@ function renderTimeline(res) {
     if (isY) s.push(`<text x="${X + 4}" y="${top - 12}" font-size="12" class="ink">${new Date(q).getUTCFullYear()}</text>`);
   }
   if (x(Date.UTC(d0.getUTCFullYear() + 1, 0, 1)) - L > 80) s.push(`<text x="${L + 4}" y="${top - 12}" font-size="11">${fmt(res.t0)}</text>`);
-  s.push(`<text x="8" y="${top + 16}" font-size="12.5" class="ink" font-weight="650">Produkt</text><text x="8" y="${top + 30}" font-size="11">ryzyko wsparcia</text>`);
-  for (let m = res.t0; m < res.tEnd; m = addMonths(m, 1)) {
-    const me = Math.min(addMonths(m, 1), res.tEnd), mid = (m + me) / 2; let eol = 0, ext = 0; const names = [];
-    comps.forEach(c => { const g = res.segs.find(g => g.comp === c.id && mid >= g.start && mid < g.end); if (!g) return; const st = stOf(g.eos, g.eol, mid); if (st === "eol") { eol++; names.push(c.name + " " + g.label + " (EOL)"); } else if (st === "ext") { ext++; names.push(c.name + " " + g.label + " (rozszerzone)"); } });
-    const col = eol >= 2 ? "var(--critical)" : eol === 1 ? "var(--serious)" : ext ? "var(--warning)" : "var(--good)";
-    const open = res.cves.filter(v => v.t <= mid && (v.closedAt == null || v.closedAt > mid)).length;
-    const tt = `<b>${fmtM(m)} — produkt</b><br>Po EOL: ${eol}, rozszerzone: ${ext}<br>Otwarte podatności: ${open}${names.length ? "<br><span class='muted'>" + names.map(esc).join("<br>") + "</span>" : ""}`;
-    s.push(`<rect x="${x(m)}" y="${top + 8}" width="${Math.max(1, x(me) - x(m) - 1)}" height="18" fill="${col}" opacity="${eol ? 0.85 : ext ? 0.55 : 0.35}" data-tip="${attr(tt)}"/>`);
-  }
-  comps.forEach((c, i) => {
-    const y = top + (i + 1) * rowH, cy = y + 19;
-    s.push(`<line x1="0" x2="${W_}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="0.5"/>`);
-    s.push(`<text x="8" y="${y + 16}" font-size="12.5" class="ink">${esc(trunc(c.name, 24))}</text><text x="8" y="${y + 30}" font-size="11">${esc(CAT_NAMES[c.cat])} · zależnych: ${res.deps[c.id] - 1}</text>`);
-    res.segs.filter(g => g.comp === c.id).forEach(g => {
-      [["full", g.start, Math.min(g.end, g.eos)], ["ext", Math.max(g.start, g.eos), Math.min(g.end, g.eol)], ["eol", Math.max(g.start, g.eol), g.end]].forEach(([st, a, b]) => {
-        if (b <= a) return;
-        const tt = `<b>${esc(c.name)} ${esc(g.label)}</b><br>${ST_N[st]}<br>${fmt(a)} → ${fmt(b)}<br><span class='muted'>EOS ${fmt(g.eos)} · EOL ${fmt(g.eol)}${g.fc ? " (prognoza)" : ""}</span>`;
-        s.push(`<rect x="${x(a)}" y="${cy - 7}" width="${Math.max(1, x(b) - x(a) - 1)}" height="14" rx="3" fill="${st === "eol" ? "url(#hatch)" : ST_C[st]}" opacity="${st === "eol" ? 1 : 0.42}" data-tip="${attr(tt)}"/>`);
-      });
-      if (g.frozenUntil > g.start) {
-        const b = Math.min(g.frozenUntil, g.end);
-        const tt = `<b>Brak aktualizacji</b><br>${esc(c.name)} ${esc(g.label)}<br>${fmt(g.start)} → ${b >= res.tEnd ? "koniec horyzontu" : fmt(b)}<br>Poprawki nie są instalowane — podatności pozostają otwarte.`;
-        s.push(`<rect x="${x(g.start)}" y="${cy - 10}" width="${Math.max(2, x(b) - x(g.start) - 1)}" height="20" rx="4" fill="none" stroke="var(--ink-2)" stroke-width="1.2" stroke-dasharray="3 3" data-tip="${attr(tt)}"/>`);
+  // wiersz produktu: poziom zagrożenia
+  s.push(`<text x="8" y="${top + 17}" font-size="12.5" class="ink" font-weight="650">Produkt</text><text x="8" y="${top + 31}" font-size="11">bezpieczeństwo</text>`);
+  const LV = [["var(--good)", 0.4, "bezpieczny — poprawki dostępne i instalowane"], ["var(--warning)", 0.6, "podwyższone ryzyko"], ["var(--critical)", 0.9, "NIEBEZPIECZNY — krytyczne/wysokie podatności bez możliwości załatania"]];
+  dz.months.forEach((m, i) => {
+    const me = Math.min(addMonths(m, 1), res.tEnd), d = dz.lv[i], [col, op, n] = LV[d.l];
+    const tt = `<b>${fmtM(m)} — ${n}</b>` + (d.l === 2 ? `<br>Otwarte krytyczne/wysokie po terminie SLA w składnikach bez poprawek: ${d.n}` : d.l === 1 ? `<br>${d.late ? "Poprawki spóźnione względem SLA: " + d.late + "<br>" : ""}Składniki bez poprawek: ${d.u}` : "");
+    s.push(`<rect x="${x(m)}" y="${top + 8}" width="${Math.max(1, x(me) - x(m) - 1)}" height="22" fill="${col}" opacity="${op}" data-tip="${attr(tt)}"/>`);
+  });
+  if (dz.first != null) { const X = x(dz.first); s.push(`<line x1="${X}" x2="${X}" y1="${top + 4}" y2="${H - 6}" stroke="var(--critical)" stroke-width="2" stroke-dasharray="6 4"/>`); const lx = Math.min(X + 5, W_ - 175); s.push(`<rect x="${lx - 3}" y="${top + 10}" width="162" height="18" rx="4" fill="var(--surface)" stroke="var(--critical)"/><text x="${lx + 3}" y="${top + 23}" font-size="12" font-weight="650" fill="var(--critical)">niebezpieczny od ${fmtM(dz.first)}</text>`); }
+  let y = top + prodH;
+  rows.forEach(({ c, g, k }) => {
+    const cy = y + rowH / 2;
+    s.push(`<line x1="0" x2="${W_}" y1="${y}" y2="${y}" stroke="${k ? "var(--grid)" : "var(--axis)"}" stroke-width="${k ? 0.5 : 1}"/>`);
+    if (k === 0) s.push(`<text x="8" y="${y + 14}" font-size="12.5" class="ink" font-weight="600">${esc(trunc(c.name, 25))}</text><text x="8" y="${y + 28}" font-size="11">wersja ${esc(trunc(g.label, 20))}</text>`);
+    else s.push(`<text x="20" y="${y + 21}" font-size="12" class="ink">↳ wersja ${esc(trunc(g.label, 20))}</text>`);
+    const v = g.ver;
+    // cały cykl życia wersji (wyblakły) + okres użytkowania (pełny kolor)
+    phasesOf(v, res.buy).forEach(([ph, a, b]) => {
+      if (b <= res.t0 || a >= res.tEnd) return;
+      const fill = ph === "eol" || ph === "unpaid" ? "url(#hatch)" : ph === "paid" ? "url(#paidp)" : ph === "full" ? "var(--good)" : "var(--warning)";
+      const baseOp = ph === "full" || ph === "ext" ? 0.42 : 1;
+      const tt = `<b>${esc(c.name)} ${esc(g.label)}</b><br>${PH_N[ph]}${ph === "paid" || ph === "unpaid" ? "<br>Program: " + esc(a >= v.eol ? v.esuName || "wsparcie płatne" : v.paidExt) : ""}<br>${a > res.t0 ? fmt(a) : "…"} → ${b < res.tEnd ? fmt(b) : "…"}<br><span class='muted'>EOS ${fmt(v.eos)} · EOL ${fmt(v.eol)}${v.esu ? " · płatne do " + fmt(v.esu) : ""}${v.fc ? " (prognoza)" : ""}</span>`;
+      s.push(`<rect x="${x(a)}" y="${cy - 6}" width="${Math.max(1, x(b) - x(a) - 1)}" height="12" rx="3" fill="${fill}" opacity="${baseOp * 0.25}" data-tip="${attr(tt)}"/>`);
+      const ua = Math.max(a, g.start), ub = Math.min(b, g.end);
+      if (ub > ua) {
+        s.push(`<rect x="${x(ua)}" y="${cy - 7}" width="${Math.max(1, x(ub) - x(ua) - 1)}" height="14" rx="3" fill="${fill}" opacity="${baseOp}" data-tip="${attr(tt + "<br><b>W użyciu</b> " + fmt(ua) + " → " + fmt(ub))}"/>`);
+        if ((ph === "paid" || ph === "unpaid") && x(ub) - x(ua) > 56) s.push(`<text x="${x(ua) + 4}" y="${cy + 4}" font-size="10.5" class="ink" pointer-events="none">${ph === "paid" ? "płatne" : "niewykupione"}</text>`);
       }
-      const bw = x(g.end) - x(g.start);
-      if (bw > 30) s.push(`<text x="${x(g.start) + 4}" y="${cy + 4}" font-size="11" class="ink" pointer-events="none">${esc(trunc(g.label, Math.floor(bw / 7)))}</text>`);
     });
-    res.migs.filter(m => m.comp === c.id).forEach(m => {
-      const a = x(m.start), b = x(m.end);
-      const tt = `<b>${m.planned ? "Plan modernizacji" : "Migracja"}: ${esc(c.name)}</b><br>${esc(m.from)} → ${esc(m.to)}<br>${fmt(m.start)} → ${fmt(m.end)}`;
-      s.push(`<rect x="${a}" y="${cy - 12}" width="${Math.max(3, b - a)}" height="24" rx="4" fill="var(--s5)" opacity="0.18" stroke="var(--s5)" stroke-dasharray="3 2" data-tip="${attr(tt)}"/>`);
-      s.push(`<path d="M${b} ${cy - 8} l6 8 l-6 8 l-6 -8z" fill="var(--s5)" stroke="var(--surface)" stroke-width="1.5" data-tip="${attr(tt)}"/>`);
+    if (g.frozenUntil > g.start) {
+      const bb = Math.min(g.frozenUntil, g.end);
+      s.push(`<rect x="${x(g.start)}" y="${cy - 10}" width="${Math.max(2, x(bb) - x(g.start) - 1)}" height="20" rx="4" fill="none" stroke="var(--ink-2)" stroke-width="1.2" stroke-dasharray="3 3" data-tip="${attr(`<b>Brak aktualizacji</b><br>${esc(c.name)} ${esc(g.label)}<br>${fmt(g.start)} → ${bb >= res.tEnd ? "koniec horyzontu" : fmt(bb)}`)}"/>`);
+    }
+    // migracja na tę wersję: przygotowanie + go-live
+    if (k > 0) res.migs.filter(m => m.comp === c.id && m.end === g.start).forEach(m => {
+      const tt = `<b>${m.planned ? "Plan modernizacji" : "Migracja"}: ${esc(c.name)}</b><br>${esc(m.from)} → ${esc(m.to)}<br>przygotowanie ${fmt(m.start)} → go‑live ${fmt(m.end)}`;
+      s.push(`<rect x="${x(m.start)}" y="${cy - 11}" width="${Math.max(3, x(m.end) - x(m.start))}" height="22" rx="4" fill="var(--s5)" opacity="0.2" stroke="var(--s5)" stroke-dasharray="3 2" data-tip="${attr(tt)}"/>`);
+      s.push(`<path d="M${x(m.end)} ${cy - 8} l6 8 l-6 8 l-6 -8z" fill="var(--s5)" stroke="var(--surface)" stroke-width="1.5" data-tip="${attr(tt)}"/>`);
     });
-    res.updates.filter(u => u.comp === c.id).forEach(u => {
+    const inSeg = t => t >= g.start && t < g.end;
+    res.updates.filter(u => u.comp === c.id && inSeg(u.t)).forEach(u => {
       const X = x(u.t), em = u.kind === "emerg", cu = u.kind === "catchup";
-      const n = em ? "Aktualizacja awaryjna" : cu ? "Doinstalowanie zaległych poprawek" : u.kind === "sec" ? "Aktualizacja bezpieczeństwa (rozszerzone)" : "Aktualizacja planowa";
-      s.push(`<line x1="${X}" x2="${X}" y1="${em || cu ? cy - 18 : cy - 13}" y2="${cy - 8}" stroke="${em ? "var(--s3)" : cu ? "var(--s1)" : "var(--muted)"}" stroke-width="${em || cu ? 2.5 : 1.5}"/>`);
-      s.push(`<rect x="${X - 3}" y="${cy - 19}" width="6" height="12" fill="transparent" data-tip="${attr(`<b>${n}</b><br>${esc(c.name)} ${esc(u.ver)}<br>${fmt(u.t)}`)}"/>`);
+      const n = (em ? "Aktualizacja awaryjna" : cu ? "Doinstalowanie zaległych poprawek" : u.kind === "sec" ? "Aktualizacja bezpieczeństwa" : "Aktualizacja planowa") + (u.paid ? " — PŁATNA" : "");
+      const col = u.paid ? "var(--s2)" : em ? "var(--s3)" : cu ? "var(--s1)" : "var(--muted)";
+      s.push(`<line x1="${X}" x2="${X}" y1="${em || cu || u.paid ? cy - 15 : cy - 12}" y2="${cy - 7}" stroke="${col}" stroke-width="${em || cu || u.paid ? 2.5 : 1.5}"/>`);
+      if (u.paid) s.push(`<circle cx="${X}" cy="${cy - 15}" r="2.2" fill="${col}"/>`);
+      s.push(`<rect x="${X - 3}" y="${cy - 17}" width="6" height="11" fill="transparent" data-tip="${attr(`<b>${n}</b><br>${esc(c.name)} ${esc(u.ver)}<br>${fmt(u.t)}${u.paid ? "<br>wymaga: " + esc(v.paidAll && u.t < v.eos ? v.paidAll : u.t >= v.eol ? v.esuName || "płatne wsparcie" : v.paidExt || v.paidAll || "") : ""}`)}"/>`);
     });
-    res.cves.filter(v => v.comp === c.id && !v.backlog).forEach(v => {
-      const r = { crit: 5.5, high: 4.5, med: 3.5, low: 3 }[v.sev], col = SEV_C[v.sev], open = v.closedAt == null || v.closedAt >= res.tEnd;
-      const status = !v.supported ? "wersja po EOL — brak poprawki" : [v.mitig ? "mitygacja" : null, v.emergency ? "aktualizacja awaryjna " + fmt(v.patchAt) : null, v.bundled && v.closedAt ? "w aktualizacji " + fmt(v.closedAt) : null].filter(Boolean).join("; ");
-      const tt = `<b>${esc(v.id)}${v.wave ? " — fala 0‑day" : ""}</b><br>${esc(c.name)} ${esc(v.ver)}<br>Ważność: ${SEV_N[v.sev]} · ${fmt(v.t)}<br>${status}<br>${open ? "<b>Niezałatana do końca horyzontu</b>" : "Zamknięta: " + fmt(v.closedAt)}`;
-      const yy = cy + 12;
-      s.push(v.wave ? `<path d="M${x(v.t)} ${yy - 7} l7 12 h-14z" fill="${open ? "var(--surface)" : col}" stroke="${open ? col : "var(--surface)"}" stroke-width="${open ? 2 : 1.5}" data-tip="${attr(tt)}"/>`
-        : `<circle cx="${x(v.t)}" cy="${yy}" r="${r}" fill="${open ? "var(--surface)" : col}" stroke="${open ? col : "var(--surface)"}" stroke-width="2" data-tip="${attr(tt)}"/>`);
+    res.cves.filter(v2 => v2.comp === c.id && !v2.backlog && inSeg(v2.t)).forEach(v2 => {
+      const r = { crit: 5, high: 4.2, med: 3.3, low: 2.8 }[v2.sev], col = SEV_C[v2.sev], open = v2.closedAt == null || v2.closedAt >= res.tEnd;
+      const status = !v2.supported ? "brak poprawki (EOL lub niewykupione wsparcie)" : [v2.mitig ? "mitygacja" : null, v2.emergency ? "aktualizacja awaryjna " + fmt(v2.patchAt) : null, v2.bundled && v2.closedAt ? "w aktualizacji " + fmt(v2.closedAt) : null].filter(Boolean).join("; ");
+      const tt = `<b>${esc(v2.id)}${v2.wave ? " — fala 0‑day" : ""}</b><br>${esc(c.name)} ${esc(v2.ver)}<br>Ważność: ${SEV_N[v2.sev]} · ${fmt(v2.t)}<br>${status}<br>${open ? "<b>Niezałatana do końca horyzontu</b>" : "Zamknięta: " + fmt(v2.closedAt)}`;
+      const yy = cy + 10;
+      s.push(v2.wave ? `<path d="M${x(v2.t)} ${yy - 6} l6 11 h-12z" fill="${open ? "var(--surface)" : col}" stroke="${open ? col : "var(--surface)"}" stroke-width="${open ? 2 : 1.5}" data-tip="${attr(tt)}"/>`
+        : `<circle cx="${x(v2.t)}" cy="${yy}" r="${r}" fill="${open ? "var(--surface)" : col}" stroke="${open ? col : "var(--surface)"}" stroke-width="2" data-tip="${attr(tt)}"/>`);
     });
+    y += rowH;
   });
   const today = Date.now();
   if (today > res.t0 && today < res.tEnd) s.push(`<line x1="${x(today)}" x2="${x(today)}" y1="${top - 6}" y2="${H}" stroke="var(--accent)" stroke-width="1.5"/>`);
   s.push(`<line x1="${L}" x2="${L}" y1="${top - 6}" y2="${H}" stroke="var(--axis)"/></svg>`);
   el.innerHTML = s.join("");
   $("tlLegend").innerHTML = [
-    `<span><i class="sw" style="background:var(--good);opacity:.5"></i>Pełne wsparcie (do EOS)</span>`, `<span><i class="sw" style="background:var(--warning);opacity:.6"></i>Poprawki bezp. / rozszerzone</span>`,
-    `<span><i class="sw hatch"></i>Po EOL</span>`, `<span><i class="sw frz"></i>Brak aktualizacji</span>`,
-    `<span><i class="sw line" style="background:var(--muted);width:2px;height:10px"></i>Aktualizacja planowa</span>`, `<span><i class="sw line" style="background:var(--s3);width:3px;height:12px"></i>awaryjna</span>`,
-    `<span><i class="sw line" style="background:var(--s1);width:3px;height:12px"></i>zaległe poprawki</span>`, `<span><i class="sw" style="background:var(--s5);transform:rotate(45deg);width:9px;height:9px"></i>Migracja</span>`,
+    `<span><i class="sw" style="background:var(--good);opacity:.5"></i>Pełne wsparcie</span>`, `<span><i class="sw" style="background:var(--warning);opacity:.6"></i>Rozszerzone — darmowe poprawki</span>`,
+    `<span><i class="sw" style="background:repeating-linear-gradient(-45deg,var(--ink-2) 0 2px,var(--warning) 2px 6px)"></i>Płatne wsparcie (wykupione)</span>`, `<span><i class="sw hatch"></i>Brak poprawek (EOL / niewykupione)</span>`,
+    `<span><i class="sw frz"></i>Brak aktualizacji</span>`, `<span>wyblakłe — cykl życia wersji poza okresem użycia</span>`,
+    `<span><i class="sw line" style="background:var(--muted);width:2px;height:10px"></i>Aktualizacja</span>`, `<span><i class="sw dot" style="background:var(--s2);width:8px;height:8px"></i>Aktualizacja płatna</span>`,
+    `<span><i class="sw line" style="background:var(--s3);width:3px;height:12px"></i>awaryjna</span>`, `<span><i class="sw line" style="background:var(--s1);width:3px;height:12px"></i>zaległe poprawki</span>`,
+    `<span><i class="sw" style="background:var(--s5);transform:rotate(45deg);width:9px;height:9px"></i>Migracja (go‑live)</span>`,
     `<span><i class="sw dot" style="background:var(--critical)"></i>CVE krytyczna</span>`, `<span><i class="sw dot" style="background:var(--serious)"></i>wysoka</span>`,
     `<span><i class="sw dot" style="background:var(--warning)"></i>średnia</span>`, `<span><i class="sw dot" style="background:var(--low)"></i>niska</span>`,
-    `<span><i class="sw ring"></i>niezałatana do końca</span>`, `<span>▲ fala 0‑day</span>`].join("");
+    `<span><i class="sw ring"></i>niezałatana do końca</span>`, `<span>▲ fala 0‑day</span>`, `<span><i class="sw line" style="background:var(--critical)"></i>produkt niebezpieczny od</span>`].join("");
+}
+
+/* ================= zakupy, licencje, płatne wsparcie ================= */
+function purchases(res, p, plan) {
+  const buys = [], paid = [];
+  const nm = id => comps.find(c => c.id === id);
+  if (p.scen === "new") comps.forEach(c => { const F = FAM[c.fam]; if (F && F.lic !== "free") buys.push({ t: res.t0, c, change: "wdrożenie " + c.ver, need: F.lic === "perp" ? "buy" : "contract", note: (F.lic === "perp" ? "Zakup licencji. " : F.lic === "sub" ? "Zakup subskrypcji. " : "Zakup licencji i rocznego wsparcia. ") + (F.licNote || "") }); });
+  if (plan && p.mode === "plan" && p.strat === "newsrv" && plan.steps[0]) buys.push({ t: plan.steps[0].start, c: comps.find(c => c.cat === "os"), change: "nowy serwer", need: "buy", note: "Sprzęt lub maszyna wirtualna oraz licencja/subskrypcja systemu dla nowego serwera." });
+  res.migs.forEach(m => {
+    const c = nm(m.comp), F = FAM[c.fam]; if (!F || F.lic === "free") return;
+    buys.push({ t: m.end, c, change: `${m.from} → ${m.to}`, need: F.lic === "perp" ? "buy" : "contract", note: LIC_N[F.lic] + ". " + (F.licNote || "") });
+  });
+  res.segs.forEach(g => {
+    const c = nm(g.comp), v = g.ver, wins = [];
+    if (v.paidAll) wins.push([v.paidAll, g.start, g.end, "subskrypcja (cały okres użycia)"]);
+    if (v.paidExt && v.eol > v.eos) wins.push([v.paidExt, v.eos, v.eol, "wsparcie rozszerzone"]);
+    if (v.esu && v.esu > v.eol) wins.push([v.esuName || "wsparcie płatne", v.eol, v.esu, "wsparcie po EOL"]);
+    wins.forEach(([prog, a, b, kind]) => {
+      const ua = Math.max(a, g.start, res.t0), ub = Math.min(b, g.end, res.tEnd); if (ub <= ua) return;
+      const cv = res.cves.filter(x => x.comp === g.comp && x.t >= ua && x.t < ub && !x.backlog);
+      paid.push({ c, ver: g.label, prog, kind, a: ua, b: ub, sub: kind.startsWith("subskrypcja"), crit: cv.filter(x => x.sev === "crit" || x.sev === "high").length, all: cv.length });
+    });
+  });
+  buys.sort((a, b) => a.t - b.t); paid.sort((a, b) => a.a - b.a);
+  return { buys, paid };
+}
+function renderPurchases(res, p, plan, dz, dzAlt) {
+  const { buys, paid } = purchases(res, p, plan);
+  const dTxt = d => d.first != null ? `<b style="color:var(--critical)">od ${fmtM(d.first)}</b> — ${esc(d.reason)}; łącznie ${d.dangerMonths} mies. w horyzoncie` : `<b style="color:var(--good)">nie w horyzoncie symulacji</b>`;
+  $("dangerBox").innerHTML = `<div><b>Bieżący scenariusz${res.buy ? " (płatne wsparcie wykupione)" : " (płatne wsparcie niewykupione)"}:</b> produkt niebezpieczny ${dTxt(dz)}</div>` +
+    (res.buy ? `<div style="margin-top:4px"><b>Bez płatnego wsparcia, z migracjami:</b> ${dTxt(dzAlt.noBuy)}</div>` : "") +
+    `<div style="margin-top:4px"><b>Bez płatnego wsparcia i bez zakupu nowych wersji</b> (tylko darmowe poprawki, bez migracji): ${dTxt(dzAlt.none)}</div>
+    <div class="muted" style="margin-top:6px;font-size:12px">„Niebezpieczny” = istnieje krytyczna lub wysoka podatność otwarta dłużej niż SLA w składniku, dla którego nie można zainstalować poprawki (EOL, niewykupione wsparcie albo serwer bez aktualizacji).</div>`;
+  $("buyTable").innerHTML = `<tr><th>Data</th><th>Składnik</th><th>Zmiana</th><th>Zakup</th><th>Uwagi</th></tr>` + (buys.map(b => `<tr><td>${fmtM(b.t)}</td><td>${esc(b.c.name)}</td><td>${esc(b.change)}</td><td>${b.need === "buy" ? `<span class="badge"><i style="background:var(--critical)"></i>nowa licencja / produkt</span>` : `<span class="badge"><i style="background:var(--warning)"></i>w ramach aktywnej umowy</span>`}</td><td class="wrapc">${esc(b.note)}</td></tr>`).join("") || `<tr><td colspan="5" class="muted">Brak zmian wymagających zakupu — składniki są bezpłatne.</td></tr>`);
+  $("paidTable").innerHTML = `<tr><th>Składnik i wersja</th><th>Program wsparcia</th><th>Okres</th><th>Status w symulacji</th><th class="num">CVE kryt./wys. w okresie</th></tr>` + (paid.map(r => `<tr><td>${esc(r.c.name)} ${esc(r.ver)}</td><td>${esc(r.prog)}<div class="muted" style="font-size:11.5px">${esc(r.kind)}</div></td><td>${fmtM(r.a)} – ${fmtM(r.b)}</td><td>${r.sub ? `<span class="badge"><i style="background:var(--warning)"></i>wymagana subskrypcja</span>` : res.buy ? `<span class="badge"><i style="background:var(--good)"></i>wykupione — poprawki dostępne</span>` : `<span class="badge"><i style="background:var(--critical)"></i>niewykupione — brak poprawek</span>`}</td><td class="num">${r.crit} <span class="muted">/ ${r.all}</span></td></tr>`).join("") || `<tr><td colspan="5" class="muted">W horyzoncie żaden używany składnik nie wymaga płatnego wsparcia.</td></tr>`);
 }
 
 /* ================= ekspozycja (otwarte podatności) ================= */
@@ -1159,13 +1284,13 @@ function renderGraph(res) {
 }
 
 /* ================= KPI, plan, tabele ================= */
-function renderKpis(res, p, bk, plan, issues) {
+function renderKpis(res, p, bk, plan, issues, dz, dzAlt) {
   const tot = res.work.reduce((s, w) => s + w.h, 0), months = p.horizon * 12;
   const nw = res.cves.filter(c => !c.backlog), backlog = res.cves.filter(c => c.backlog);
   const openEnd = res.cves.filter(v => v.closedAt == null || v.closedAt >= res.tEnd);
   const em = res.updates.filter(u => u.kind === "emerg").length;
   let eolMonths = 0;
-  for (let m = res.t0; m < res.tEnd; m = addMonths(m, 1)) comps.forEach(c => { const g = res.segs.find(g => g.comp === c.id && m >= g.start && m < g.end); if (g && m >= g.eol) eolMonths++; });
+  for (let m = res.t0; m < res.tEnd; m = addMonths(m, 1)) comps.forEach(c => { const g = segAt(res, c.id, m); if (g && (m >= g.ver.pe || m < g.frozenUntil)) eolMonths++; });
   const cap = p.fte * 140 * (bucketKind === "q" ? 3 : 1), over = bk.filter(b => b.total > cap).length;
   const peak = bk.reduce((a, b) => b.total > a.total ? b : a, bk[0] || { total: 0, label: "—" });
   const ih = issues.filter(i => i.sev === "high").length, im = issues.filter(i => i.sev === "med").length;
@@ -1175,8 +1300,9 @@ function renderKpis(res, p, bk, plan, issues) {
   K.push(["Otwarte na koniec horyzontu", nf.format(openEnd.length), `krytyczne i wysokie: ${openEnd.filter(v => v.sev === "crit" || v.sev === "high").length}`],
     ["Mitygacje", nf.format(res.cves.filter(c => c.mitig).length), "poprawka poza SLA, brak aktualizacji lub EOL"],
     ["Aktualizacje awaryjne", nf.format(em), `planowe: ${res.updates.filter(u => u.kind !== "emerg").length}`],
-    ["Migracje wersji", nf.format(res.migs.length), plan && p.mode === "plan" ? `plan: ${nf.format(plan.total)} h do ${fmtM(plan.end)}` : p.mode === "noupd" ? "brak — serwer bez aktualizacji" : p.autoMig ? `wyprzedzenie ${p.lead} mies. przed EOS` : "automatyczne wyłączone"],
-    ["Składniko‑miesiące po EOL", nf.format(eolMonths), eolMonths ? "praca bez poprawek producenta" : "pełne pokrycie wsparciem"],
+    ["Migracje wersji", nf.format(res.migs.length), plan && p.mode === "plan" ? `plan: ${nf.format(plan.total)} h do ${fmtM(plan.end)}` : p.mode === "noupd" ? "brak — serwer bez aktualizacji" : p.autoMig ? `${p.lead} mies. przed końcem poprawek` : "automatyczne wyłączone"],
+    ["Produkt niebezpieczny od", dz.first != null ? fmtM(dz.first) : "—", "bez płatnego wsparcia i nowych wersji: " + (dzAlt.none.first != null ? fmtM(dzAlt.none.first) : "nie w horyzoncie")],
+    ["Składniko‑miesiące bez poprawek", nf.format(eolMonths), eolMonths ? "EOL, niewykupione wsparcie lub brak aktualizacji" : "pełne pokrycie poprawkami"],
     ["Problemy zgodności", `${ih} / ${im}`, "wysokie / średnie"],
     ["Szczyt obciążenia", nf.format(peak.total) + " h", `${peak.label} · przekroczeń pojemności: ${over}`]);
   $("kpis").innerHTML = K.map(([k, v, d]) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${esc(d)}</div></div>`).join("");
@@ -1195,7 +1321,7 @@ function renderPlan(p, plan, res, issues) {
     }).join("") + (plan.steps.length ? "" : `<tr><td colspan="6" class="muted">Wszystkie składniki są już w zalecanych seriach — wystarczy doinstalować poprawki.</td></tr>`);
   } else {
     $("planTitle").textContent = "Plan prac: migracje w horyzoncie symulacji";
-    $("planHint").textContent = p.autoMig ? `Migracje wynikają z dat EOS (wyprzedzenie ${p.lead} mies.). Dla nowego wdrożenia między migracjami wystarczą regularne aktualizacje.` : "Automatyczne migracje są wyłączone — składniki po EOL pozostają bez poprawek.";
+    $("planHint").textContent = p.autoMig ? `Migracje ${p.lead} mies. przed końcem dostępnych poprawek (darmowych albo — gdy wykupione — płatnych). Dla nowego wdrożenia między migracjami wystarczą regularne aktualizacje.` : "Automatyczne migracje są wyłączone — składniki po EOL pozostają bez poprawek.";
     const nm = id => comps.find(c => c.id === id).name;
     const rows = res.migs.slice().sort((a, b) => a.start - b.start);
     $("planTable").innerHTML = `<tr><th>Okres</th><th>Składnik</th><th>Zmiana wersji</th><th class="num">Godziny</th><th>Ryzyko</th><th>Uwagi i zgodność</th></tr>` + (rows.map(m => {
@@ -1225,8 +1351,9 @@ function renderMiles(res, plan, p) {
   const lim = addMonths(res.t0, 24), ev = [], seen = new Set(), nm = id => (comps.find(c => c.id === id) || { name: id }).name;
   res.segs.forEach(g => [["eos", g.eos, "Koniec pełnego wsparcia (EOS)", "var(--warning)"], ["eol", g.eol, "Koniec wsparcia (EOL)", "var(--critical)"]].forEach(([k, t, n, col]) => {
     const key = g.comp + k + t; if (seen.has(key)) return; seen.add(key);
-    if (t >= addMonths(res.t0, -12) && t <= lim && (g.eos !== g.eol || k === "eol")) ev.push({ t, txt: n, comp: nm(g.comp) + " " + g.label, col, past: t < res.t0 });
+    if (t >= addMonths(res.t0, -12) && t <= lim && (g.eos !== g.eol || k === "eol")) ev.push({ t, txt: n + (k === "eos" && g.ver.paidExt ? " — dalej płatne: " + g.ver.paidExt : ""), comp: nm(g.comp) + " " + g.label, col, past: t < res.t0 });
   }));
+  res.segs.forEach(g => { const e = g.ver.esu; if (e && e >= addMonths(res.t0, -12) && e <= lim && !seen.has(g.comp + "esu" + e)) { seen.add(g.comp + "esu" + e); ev.push({ t: e, txt: "Koniec płatnego wsparcia: " + (g.ver.esuName || ""), comp: nm(g.comp) + " " + g.label, col: "var(--critical)", past: e < res.t0 }); } });
   if (plan && p.mode === "plan") plan.steps.forEach(st => { if (st.start <= lim) ev.push({ t: st.start, txt: "Plan: " + st.name.replace(/:.*$/, "") + (st.to ? " → " + st.to : ""), comp: st.comp ? nm(st.comp) : "Całość", col: "var(--s5)" }); });
   else res.migs.forEach(m => { if (m.start <= lim) ev.push({ t: m.start, txt: "Start migracji " + m.from + " → " + m.to, comp: nm(m.comp), col: "var(--s5)" }); });
   res.cves.filter(c => c.t <= lim && !c.backlog && (c.sev === "crit" || c.wave)).forEach(c => ev.push({ t: c.t, txt: (c.wave ? "Fala 0‑day " : "CVE krytyczna ") + c.id + (c.supported ? "" : " (po EOL)"), comp: nm(c.comp), col: "var(--critical)" }));
@@ -1239,7 +1366,7 @@ let bucketKind = "q", lastRes = null;
 function P() {
   return { start: startT(), horizon: +$("horizon").value, trend: $("trend").value, growth: +$("growth").value / 100, seed: +$("seed").value || 1,
     slaC: +$("slaC").value || 7, slaH: +$("slaH").value || 30, fte: +$("fte").value || 1, reg: +$("reg").value / 100, autoMig: $("autoMig").checked,
-    lead: +$("lead").value || 0, waves: $("waves").checked, scen: W.scen, mode: W.scen === "new" ? "new" : W.oldMode, strat: W.strat, lastPatch: D(W.lastPatch) };
+    lead: +$("lead").value || 0, waves: $("waves").checked, buy: W.buy !== "no", scen: W.scen, mode: W.scen === "new" ? "new" : W.oldMode, strat: W.strat, lastPatch: D(W.lastPatch) };
 }
 function syncLabels() {
   $("horizonV").textContent = $("horizon").value + " lat"; $("growthV").textContent = $("growth").value + "%"; $("regV").textContent = $("reg").value + "%";
@@ -1272,10 +1399,15 @@ function run() {
   const altModeName = altMode === "plan" ? "Z planem modernizacji" : "Bez aktualizacji";
   lastRes = res;
   const issues = compatIssues(p, plan, res);
+  const dz = dangerSeries(res, p);
+  const dzNoBuy = p.buy ? dangerSeries(simulate(p, { buy: false }), p) : dz;
+  const dzNone = dangerSeries(simulate(p, { buy: false, noMig: true }), p);
+  const dzAlt = { noBuy: dzNoBuy, none: dzNone };
   const bk = buckets(res, bucketKind);
-  renderKpis(res, p, bk, plan, issues);
+  renderKpis(res, p, bk, plan, issues, dz, dzAlt);
+  renderPurchases(res, p, plan, dz, dzAlt);
   renderPlan(p, plan, res, issues);
-  renderTimeline(res);
+  renderTimeline(res, dz);
   renderExposure(res, resAltMode, altModeName, p);
   renderCves(res, bk);
   renderEffort(res, p, bk);
