@@ -10,7 +10,8 @@
     "fc": "daty prognozowane",
     "ch": "kanał (Windows: pro/ltsc/iot)",
     "java": "minimalna wersja Javy",
-    "norec": "nie proponuj jako domyślnej"
+    "norec": "nie proponuj jako domyślnej",
+    "nopatch": "wersja bez poprawek bezpieczeństwa (cała rodzina: noPatches w products.json)"
   },
   "families": {
     "winsrv": [

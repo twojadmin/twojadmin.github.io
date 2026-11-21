@@ -754,7 +754,7 @@
         {"at":"18c XE","s":"high","t":"XE 18c+ to architektura multitenant (CDB + PDB XEPDB1) — inne parametry połączenia; brak aktualizacji w miejscu, migracja przez eksport/import (Data Pump)."},
         {"at":"23ai Free","s":"med","t":"Brak aktualizacji w miejscu z XE — eksport/import; nowa nazwa usługi (FREEPDB1)."}
       ],
-      "mnote": "Edycja bezpłatna bez wsparcia producenta (forum społeczności); poprawki tylko przez nowe wydania. Limity: 11g XE 1 CPU / 1 GB RAM / 11 GB danych; 18c–23ai: 2 CPU / 2 GB RAM / 12 GB danych.",
+      "mnote": "Edycja bezpłatna bez wsparcia producenta: nie dostaje poprawek bezpieczeństwa — także najnowsze wydanie (23ai Free). Zmiana tylko przez instalację nowszego wydania i eksport/import danych. Limity: 11g XE 1 CPU / 1 GB RAM / 11 GB danych; 18c–23ai: 2 CPU / 2 GB RAM / 12 GB danych. Do zastosowań z danymi wrażliwymi rozważ PostgreSQL lub edycję płatną.",
       "alts": [
         {
           "to": "postgresql",
@@ -767,7 +767,8 @@
       ],
       "kevMatch": [
         {"vendor":"^Oracle$","product":"Database"}
-      ]
+      ],
+      "noPatches": true
     },
     "mssql": {
       "name": "Microsoft SQL Server",

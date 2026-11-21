@@ -66,10 +66,13 @@ function oldIdx(f, t0, filt) { const i = famV(f, FAM[f].old); if (i >= 0 && (!fi
 // cel modernizacji: najlepsza wersja w tym samym kanale (Pro/LTSC/IoT), jeśli taki istnieje
 function tgtIdx(f, cur, t0) { const ch = FAM[f].v[cur] && FAM[f].v[cur].ch; const i = ch ? recIdx(f, t0, x => x.ch === ch) : recIdx(f, t0); return FAM[f].v[i] && (!ch || FAM[f].v[i].ch === ch) ? i : recIdx(f, t0); }
 const stOf = (eos, eol, t) => t < eos ? "full" : t < eol ? "ext" : "eol";
-const ST_N = { full: "pełne wsparcie", ext: "tylko poprawki bezp. / rozszerzone", eol: "po EOL — brak poprawek" };
-const ST_S = { full: "wspierana", ext: "rozszerzone", eol: "po EOL" };
-const ST_C = { full: "var(--good)", ext: "var(--warning)", eol: "var(--critical)" };
-const verSt = (f, i, t) => { const v = FAM[f].v[i]; return stOf(D(v.eos), D(v.eol), t); };
+const ST_N = { full: "pełne wsparcie", ext: "tylko poprawki bezp. / rozszerzone", eol: "po EOL — brak poprawek", nopatch: "edycja bez wsparcia — brak poprawek bezpieczeństwa" };
+const ST_S = { full: "wspierana", ext: "rozszerzone", eol: "po EOL", nopatch: "bez poprawek" };
+const ST_C = { full: "var(--good)", ext: "var(--warning)", eol: "var(--critical)", nopatch: "var(--critical)" };
+// edycje, które nigdy nie dostają poprawek (np. Oracle XE / Free): flaga noPatches w products.json lub nopatch przy wersji
+const isNoPatch = (f, x) => !!(FAM[f] && (FAM[f].noPatches || (x && x.nopatch)));
+const verSt = (f, i, t) => { const v = FAM[f].v[i]; return isNoPatch(f, v) ? "nopatch" : stOf(D(v.eos), D(v.eol), t); };
+const compSt = (c, t) => isNoPatch(c.fam, FAM[c.fam] && FAM[c.fam].v[c.vi]) ? "nopatch" : stOf(D(c.eos), D(c.eol), t);
 function breaksBetween(f, a, b) { const F = FAM[f]; return (F.breaks || []).filter(x => { const i = famV(f, x.at); return i > a && i <= b; }); }
 function route(f, a, b) {
   const F = FAM[f], out = []; let cur = a, g = 0;
@@ -85,11 +88,12 @@ function route(f, a, b) {
 }
 function mkVer(F, x, over) {
   const v = { label: x ? x.l : over.label, eos: over && over.eos != null ? over.eos : D(x.eos), eol: over && over.eol != null ? over.eol : D(x.eol), fc: x ? !!x.fc : true,
-    paidExt: F && F.paidExt && x ? F.paidExt : null, esu: x && x.esu ? D(x.esu) : null, esuName: F ? F.esuName : null, paidAll: F && x ? F.paidAll || null : null, ch: x ? x.ch || null : over && over.ch || null };
+    paidExt: F && F.paidExt && x ? F.paidExt : null, esu: x && x.esu ? D(x.esu) : null, esuName: F ? F.esuName : null, paidAll: F && x ? F.paidAll || null : null, ch: x ? x.ch || null : over && over.ch || null,
+    nopatch: !!(F && x && (F.noPatches || x.nopatch)) };
   v.eol = Math.max(v.eol, v.eos);
   return v;
 }
-const patchEnd = (v, buy) => buy ? Math.max(v.eol, v.esu || 0) : v.paidExt ? v.eos : v.eol;
+const patchEnd = (v, buy) => v.nopatch ? -Infinity : buy ? Math.max(v.eol, v.esu || 0) : v.paidExt ? v.eos : v.eol;
 function compVer(c) { const F = FAM[c.fam]; return mkVer(F, F && F.v[c.vi], { label: c.ver, eos: D(c.eos), eol: D(c.eol) }); }
 const isWinOs = f => FAM[f] && FAM[f].os === "win";
 const famAllowed = (f, osF) => FAM[f].os === "any" || FAM[f].os === FAM[osF].os;
@@ -374,7 +378,7 @@ function simulate(p, o = {}) {
         mig = { at, hStart: t0, hEnd: at, toFam: altPending.to, toIdx: altTargetIdx(altPending, ver.label, t0), mig: altPending.h, test: cp.test * testF * 2, alt: altPending };
         altPending = null;
       }
-      else if (p.autoMig && mode !== "noupd" && !o.noMig) {
+      else if (p.autoMig && mode !== "noupd" && !o.noMig && !ver.nopatch) {
         // migracja przed końcem dostępnych poprawek (darmowe wsparcie rozszerzone lub wykupione płatne)
         let at = Math.max(addMonths(ver.pe, -p.lead), addMonths(segStart, 3));
         if (first && ver.pe <= addMonths(t0, 3)) at = addMonths(t0, 3);
@@ -555,7 +559,7 @@ function verOptions(f, sel, t0, filt) {
   const rec = recIdx(f, t0, filt);
   return FAM[f].v.map((x, i) => { if (filt && !filt(x)) return ""; const s = stOf(D(x.eos), D(x.eol), t0); return `<option value="${esc(x.l)}" ${x.l === sel ? "selected" : ""}>${esc(x.l)} — ${ST_S[s]}${i === rec ? " (zalecana)" : ""}</option>`; }).join("");
 }
-function stBadge(f, l, t0) { const i = famV(f, l); if (i < 0) return ""; const s = verSt(f, i, t0); const v = FAM[f].v[i]; return `<span class="st"><i style="background:${ST_C[s]}"></i>${ST_S[s]} · EOS ${v.eos.slice(0, 7)} · EOL ${v.eol.slice(0, 7)}</span>`; }
+function stBadge(f, l, t0) { const i = famV(f, l); if (i < 0) return ""; const s = verSt(f, i, t0); const v = FAM[f].v[i]; if (s === "nopatch") return `<span class="st"><i style="background:${ST_C[s]}"></i>bez poprawek bezpieczeństwa · nowe wydania bez aktualizacji w miejscu</span>`; return `<span class="st"><i style="background:${ST_C[s]}"></i>${ST_S[s]} · EOS ${v.eos.slice(0, 7)} · EOL ${v.eol.slice(0, 7)}</span>`; }
 function renderWizard() {
   const t0 = startT();
   document.querySelectorAll("#wizard .seg").forEach(g => g.querySelectorAll("button").forEach(b => b.classList.toggle("on", W[g.dataset.w] === b.dataset.v)));
@@ -671,8 +675,9 @@ function buckets(res, kind) {
 function yAxis(s, L, R, W, y, maxV, f = nf) { for (let i = 0; i <= 4; i++) { const v = maxV * i / 4; s.push(`<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="${i ? "var(--grid)" : "var(--axis)"}"/><text x="${L - 6}" y="${y(v) + 4}" font-size="11" text-anchor="end">${f.format(v)}</text>`); } }
 
 /* ================= fazy wsparcia i zagrożenie ================= */
-const PH_N = { full: "pełne wsparcie", ext: "rozszerzone — darmowe poprawki bezpieczeństwa", paid: "płatne wsparcie (wykupione) — poprawki dostępne", unpaid: "wymaga płatnego wsparcia — NIEWYKUPIONE, brak poprawek", eol: "po EOL — brak poprawek" };
+const PH_N = { full: "pełne wsparcie", ext: "rozszerzone — darmowe poprawki bezpieczeństwa", paid: "płatne wsparcie (wykupione) — poprawki dostępne", unpaid: "wymaga płatnego wsparcia — NIEWYKUPIONE, brak poprawek", eol: "po EOL — brak poprawek", nopatch: "edycja bez wsparcia producenta — brak poprawek bezpieczeństwa (zmiana tylko przez instalację nowszego wydania lub innego produktu)" };
 function phasesOf(v, buy) {
+  if (v.nopatch) return [["nopatch", -Infinity, Infinity]];
   const out = [["full", -Infinity, v.eos]];
   if (v.eol > v.eos) out.push([v.paidExt ? (buy ? "paid" : "unpaid") : "ext", v.eos, v.eol]);
   if (v.esu && v.esu > v.eol) out.push([buy ? "paid" : "unpaid", v.eol, v.esu]);
@@ -693,7 +698,7 @@ function dangerSeries(res, p) {
     const bad = late.filter(v => unp[v.comp] && !(v.mitigatedAt != null && v.mitigatedAt <= mid));
     if (bad.length) {
       dangerMonths++;
-      if (first == null) { first = m; const v = bad[0], c = comps.find(x => x.id === v.comp), g = unp[v.comp]; reason = `${v.id} (${SEV_N[v.sev]}) w ${c.name} ${g.label} — ${mid >= g.ver.pe ? (phaseAt(g.ver, mid, res.buy) === "unpaid" ? "płatne wsparcie niewykupione" : "wersja po EOL") : "poprawki nie są instalowane"}`; }
+      if (first == null) { first = m; const v = bad[0], c = comps.find(x => x.id === v.comp), g = unp[v.comp]; reason = `${v.id} (${SEV_N[v.sev]}) w ${c.name} ${g.label} — ${mid >= g.ver.pe ? (g.ver.nopatch ? "edycja bez poprawek bezpieczeństwa" : phaseAt(g.ver, mid, res.buy) === "unpaid" ? "płatne wsparcie niewykupione" : "wersja po EOL") : "poprawki nie są instalowane"}`; }
       return { l: 2, n: bad.length, u: Object.keys(unp).length };
     }
     return { l: late.length || Object.keys(unp).length ? 1 : 0, n: 0, late: late.length, u: Object.keys(unp).length };
@@ -736,14 +741,14 @@ function renderTimeline(res, dz) {
     // cały cykl życia wersji (wyblakły) + okres użytkowania (pełny kolor)
     phasesOf(v, res.buy).forEach(([ph, a, b]) => {
       if (b <= res.t0 || a >= res.tEnd) return;
-      const fill = ph === "eol" || ph === "unpaid" ? "url(#hatch)" : ph === "paid" ? "url(#paidp)" : ph === "full" ? "var(--good)" : "var(--warning)";
+      const fill = ph === "eol" || ph === "unpaid" || ph === "nopatch" ? "url(#hatch)" : ph === "paid" ? "url(#paidp)" : ph === "full" ? "var(--good)" : "var(--warning)";
       const baseOp = ph === "full" || ph === "ext" ? 0.42 : 1;
       const tt = `<b>${esc(c.name)} ${esc(g.label)}</b><br>${PH_N[ph]}${ph === "paid" || ph === "unpaid" ? "<br>Program: " + esc(a >= v.eol ? v.esuName || "wsparcie płatne" : v.paidExt) : ""}<br>${a > res.t0 ? fmt(a) : "…"} → ${b < res.tEnd ? fmt(b) : "…"}<br><span class='muted'>EOS ${fmt(v.eos)} · EOL ${fmt(v.eol)}${v.esu ? " · płatne do " + fmt(v.esu) : ""}${v.fc ? " (prognoza)" : ""}</span>`;
       s.push(`<rect x="${x(a)}" y="${cy - 6}" width="${Math.max(1, x(b) - x(a) - 1)}" height="12" rx="3" fill="${fill}" opacity="${baseOp * 0.25}" data-tip="${attr(tt)}"/>`);
       const ua = Math.max(a, g.start), ub = Math.min(b, g.end);
       if (ub > ua) {
         s.push(`<rect x="${x(ua)}" y="${cy - 7}" width="${Math.max(1, x(ub) - x(ua) - 1)}" height="14" rx="3" fill="${fill}" opacity="${baseOp}" data-tip="${attr(tt + "<br><b>W użyciu</b> " + fmt(ua) + " → " + fmt(ub))}"/>`);
-        if ((ph === "paid" || ph === "unpaid") && x(ub) - x(ua) > 56) s.push(`<text x="${x(ua) + 4}" y="${cy + 4}" font-size="10.5" class="ink" pointer-events="none">${ph === "paid" ? "płatne" : "niewykupione"}</text>`);
+        if ((ph === "paid" || ph === "unpaid" || ph === "nopatch") && x(ub) - x(ua) > 70) s.push(`<text x="${x(ua) + 4}" y="${cy + 4}" font-size="10.5" class="ink" pointer-events="none">${ph === "paid" ? "płatne" : ph === "nopatch" ? "bez poprawek" : "niewykupione"}</text>`);
       }
     });
     if (g.frozenUntil > g.start) {
@@ -782,7 +787,7 @@ function renderTimeline(res, dz) {
   el.innerHTML = s.join("");
   $("tlLegend").innerHTML = [
     `<span><i class="sw" style="background:var(--good);opacity:.5"></i>Pełne wsparcie</span>`, `<span><i class="sw" style="background:var(--warning);opacity:.6"></i>Rozszerzone — darmowe poprawki</span>`,
-    `<span><i class="sw" style="background:repeating-linear-gradient(-45deg,var(--ink-2) 0 2px,var(--warning) 2px 6px)"></i>Płatne wsparcie (wykupione)</span>`, `<span><i class="sw hatch"></i>Brak poprawek (EOL / niewykupione)</span>`,
+    `<span><i class="sw" style="background:repeating-linear-gradient(-45deg,var(--ink-2) 0 2px,var(--warning) 2px 6px)"></i>Płatne wsparcie (wykupione)</span>`, `<span><i class="sw hatch"></i>Brak poprawek (EOL / niewykupione / edycja bez wsparcia)</span>`,
     `<span><i class="sw frz"></i>Brak aktualizacji</span>`, `<span>wyblakłe — cykl życia wersji poza okresem użycia</span>`,
     `<span><i class="sw line" style="background:var(--muted);width:2px;height:10px"></i>Aktualizacja</span>`, `<span><i class="sw dot" style="background:var(--s2);width:8px;height:8px"></i>Aktualizacja płatna</span>`,
     `<span><i class="sw line" style="background:var(--s3);width:3px;height:12px"></i>awaryjna</span>`, `<span><i class="sw line" style="background:var(--s1);width:3px;height:12px"></i>zaległe poprawki</span>`,
@@ -940,7 +945,7 @@ function renderGraph(res) {
   comps.filter(c => c.direct).forEach(c => edge("__prod", c.id));
   const node = (id, title, sub, col, tt) => { const p0 = pos[id]; s.push(`<g data-tip="${attr(tt)}"><rect x="${p0.x - nodeW / 2}" y="${p0.y}" width="${nodeW}" height="${nodeH}" rx="8" fill="var(--surface-2)" stroke="${col}" stroke-width="2"/><text x="${p0.x}" y="${p0.y + 17}" text-anchor="middle" font-size="12" class="ink">${esc(trunc(title, Math.floor(nodeW / 7)))}</text><text x="${p0.x}" y="${p0.y + 31}" text-anchor="middle" font-size="11">${esc(trunc(sub, Math.floor(nodeW / 6.3)))}</text></g>`); };
   node("__prod", "Fikcyjny produkt", "zależności: " + comps.filter(c => c.direct).length, "var(--accent)", "<b>Fikcyjny produkt</b><br>Bezpośrednio używa: " + comps.filter(c => c.direct).map(c => esc(c.name)).join(", "));
-  comps.forEach(c => { const st = stOf(D(c.eos), D(c.eol), res.t0); node(c.id, c.name, c.ver + " · " + ST_S[st], ST_C[st], `<b>${esc(c.name)} ${esc(c.ver)}</b><br>Status na start: ${ST_N[st]}<br>Zależnych (z produktem): ${res.deps[c.id]}<br>Zależy od: ${c.deps.map(d => { const o = comps.find(x => x.id === d); return o ? esc(o.name) : ""; }).join(", ") || "—"}`); });
+  comps.forEach(c => { const st = compSt(c, res.t0); node(c.id, c.name, c.ver + " · " + ST_S[st], ST_C[st], `<b>${esc(c.name)} ${esc(c.ver)}</b><br>Status na start: ${ST_N[st]}<br>Zależnych (z produktem): ${res.deps[c.id]}<br>Zależy od: ${c.deps.map(d => { const o = comps.find(x => x.id === d); return o ? esc(o.name) : ""; }).join(", ") || "—"}`); });
   s.push("</svg>"); $("graph").innerHTML = s.join("");
 }
 
@@ -1001,7 +1006,7 @@ function renderSummary(res) {
     const segs = res.segs.filter(g => g.comp === c.id), w = res.work.filter(x => x.comp === c.id), byT = {};
     TYPES.forEach(([k]) => byT[k] = w.filter(x => x.type === k).reduce((s, x) => s + x.h, 0));
     const tot = Object.values(byT).reduce((a, b) => a + b, 0), cv = res.cves.filter(x => x.comp === c.id), cnt = k => cv.filter(x => x.sev === k).length;
-    const st = stOf(D(c.eos), D(c.eol), res.t0), up = res.updates.filter(u => u.comp === c.id);
+    const st = compSt(c, res.t0), up = res.updates.filter(u => u.comp === c.id);
     const open = cv.filter(v => v.closedAt == null || v.closedAt >= res.tEnd).length;
     return { tot, html: `<tr><td>${esc(c.name)}</td><td>${segs.map(g => esc(g.label)).join(" → ")}</td><td><span class="badge"><i style="background:${ST_C[st]}"></i>${ST_S[st]}</span></td>
       <td class="num">${up.filter(u => u.kind !== "emerg").length}</td><td class="num">${up.filter(u => u.kind === "emerg").length}</td><td class="num">${cnt("crit")} / ${cnt("high")} / ${cnt("med")} / ${cnt("low")}</td><td class="num">${open}</td>` +
